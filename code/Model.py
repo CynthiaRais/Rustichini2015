@@ -2,7 +2,9 @@
 
 import numpy
 import math
-import itertools
+import collections # to order items in dictionary result
+import bokeh
+import bokeh.plotting
 
 
 #firing rate_1
@@ -386,7 +388,7 @@ def one_trial(g_list_a, g_list_b, x_a, x_b, xmin_list, x_max_list, t, r_i_cj_a, 
                                          i_nu_ns,s_cj_a[0], s_cj_b[0], s_cj_a[1], s_cj_b[1], r_i_cv_cells)
         r_i_cv_cells, s_gaba_cv, i_nu_cv = cv_cells(t, r_i_cv_cells, s_gaba_cv,
                                                     i_nu_cv, s_cj_a[0], s_cj_b[0], s_ns[0], s_cj_a[1], s_cj_b[1], s_ns[1])
-        mean_ov_b[t]+= r_ov_b
+        mean_ov_b[t] = r_ov_b
 
         t += dt
 
@@ -417,6 +419,7 @@ def session():
     for j in range(0, 21):
         for k in range(0, 21):
                 result[(j, k)] = []
+    result = collections.OrderedDict(sorted(result.items(), key = lambda t: t[0]))
     for i in range(4000):
         x_a, x_b = quantity_juice()
         quantity_a.append(x_a)
@@ -436,33 +439,50 @@ def session():
         result[(x_a, x_b)].append([choice, mean_ov_b])
     return result
 
+
 def result_firing_rate():
-    ovb_rate_low, ovb_rate_high, ovb_rate_medium = 0, 0, 0
+
+    ''' on obtient la moyenne des ov_b rate en fonction du temps
+    et si l'essai a eu une offre forte, moyenne, faible '''
+
+    ovb_rate_low, ovb_rate_high, ovb_rate_medium = [], [], []
     low, medium, high = 0, 0, 0
     result = session()
-    for j in range(21):
-        for k in range(21):
-            category = 20/3
-            if result[(j,k)] < result[(j, category)]:
-                for i in range(len(result[(j,k)])):
-                    mean += result[(j,k)][1][i]
-                    ovb_rate_low.append
-                    low +=1
-            if result[(j,k)] > result[(j, category)]:
-                for i in range(len(result[(j, k)])):
-                    ovb_rate_high += result[(j, k)][i][1]
-                    high +=1
-            else :
-                for i in range(len(result[(j, k)])):
-                    ovb_rate_medium += result[(j, j)][i][1]
-                    medium += 1
-    mean_ovb_rate_low = ovb_rate_low / low
-    mean_ovb_rate_medium = ovb_rate_medium / medium
-    mean_ovb_rate_high = ovb_rate_high / high
-    return mean_ovb_rate_low, mean_ovb_rate_medium, mean_ovb_rate_high
+
+    ''' le terme k représente le temps,
+     le terme i représente la quantité de A,
+      le j représente la quantité de B
+      et le l représente la liste de l'essai l
+      pour un temps donné, on ajoute les r_ov_b pour chaque (i,j) pour chaque essai l '''
+
+    for k in range(2000):
+        mean_low, mean_high, mean_medium = 0, 0, 0
+        for i in range(20):
+            for j in range(6):
+                    for l in range(len(result[(i,j)])):
+                        mean_low += result[(i,j)][l][1][k]
+                        low += 1
+             for j in range(7,13):
+                    for l in range(len(result[(i,j)])):
+                        mean_medium += result[(i,j)][l][1][k]
+                        medium += 1
+             for j in range(14,20):
+                    for l in range(len(result[(i,j)])):
+                        mean_high += result[(i,j)][l][1][k]
+                        high += 1
+        ovb_rate_low.append(mean_low / low)
+        ovb_rate_medium.append(mean_medium / medium)
+        ovb_rate_high.append(mean_high / high)
+    return ovb_rate_low, ovb_rate_medium, ovb_rate_high
+
+ovb_rate_low, ovb_rate_medium, ovb_rate_high = result_firing_rate()
+X_axis = range(2000)
 
 
-print(session())
+bokeh.plotting.output_notebook()
+figure_4 = bokeh.plotting.figure(title="Figure 4 A", plot_width=300, plot_height=300)
+figure_4.multi_line([X_axis, X_axis, X_axis] , [ovb_rate_low, ovb_rate_medium, ovb_rate_high], color =['blue', 'green', 'red'] )
+
 
 
 

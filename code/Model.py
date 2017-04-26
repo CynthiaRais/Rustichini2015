@@ -14,7 +14,7 @@ def firing_pyr_cells(r_i, phi, τ_ampa, dt): #1
 
 def firing_rate_I(r_I, phi, τ_gaba, dt): #2
     """Update the firing rate of interneurons (eq. 2)"""
-    r_I = ((-r_I + phi) / τ_gaba) * dt
+    r_I += ((-r_I + phi) / τ_gaba) * dt
     return r_I
 
 def channel_ampa(S_ampa, τ_ampa, r_i, dt): #3
@@ -29,7 +29,7 @@ def channel_nmda(S_nmda, S_nmda_1, τ_nmda, γ, r_i, dt): #4
 
 def channel_gaba(S_gaba, τ_gaba, r_I, dt): #5
     """Open GABA channels (eq. 5)"""
-    S_gaba = (-S_gaba / τ_gaba + r_I) * dt
+    S_gaba += (-S_gaba / τ_gaba + r_I) * dt
     return S_gaba
 
 def Φ(I_syn, c, gain, i): # 6

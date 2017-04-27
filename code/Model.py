@@ -22,9 +22,9 @@ def channel_ampa(S_ampa, τ_ampa, r_i, dt): #3
     S_ampa += ((- S_ampa / τ_ampa) + r_i) * dt
     return S_ampa
 
-def channel_nmda(S_nmda, S_nmda_1, τ_nmda, γ, r_i, dt): #4
+def channel_nmda(S_nmda, τ_nmda, γ, r_i, dt): #4
     """Open NMDA channels (eq. 4)"""
-    S_nmda += ((-S_nmda / τ_nmda) + (1 - S_nmda_1) * γ * r_i) * dt
+    S_nmda += ((-S_nmda / τ_nmda) + (1 - S_nmda) * γ * r_i) * dt
     return S_nmda
 
 def channel_gaba(S_gaba, τ_gaba, r_I, dt): #5
@@ -148,7 +148,7 @@ c_I = 615
 # Parameters used to model OV cells
 r_o = 0 # spike/s (0 or 6)
 Δ_r = 8 # spike/s
-t_offer = 0 # s
+t_offer = 0.5 # s
 a = t_offer + 0.175 # s
 b = 0.030 # s
 c = t_offer + 0.400 # s
@@ -162,7 +162,7 @@ dt = 0.0005 # s
 
 g_max = 0
 list_g = []
-T = np.arange(0, 1, dt)
+T = np.arange(0, 1.5, dt)
 for T_i in T:
     g = (1 / (1 + np.exp(-(T_i - a) / b))) * (1 / (1 + np.exp((T_i - c) / d)))
     list_g.append(g)
@@ -184,13 +184,13 @@ w_m = 1 - f * (w_p - 1) / (1 - f)
 I_stim_cv, I_stim_ns = 0, 0
 
 
-def ov_a_cells(g_list_a, t, x_a, xmin, x_max):
+def ov_a_cells(t, x_a, xmin, x_max):
 
     r_ov_a = firing_ov_cells(x_a, xmin, x_max, t, b, d, r_o, Δ_r)
     return r_ov_a
 
 
-def ov_b_cells(g_list_b, t, x_b, xmin, x_max):
+def ov_b_cells(t, x_b, xmin, x_max):
 
     r_ov_b = firing_ov_cells(x_b, xmin, x_max, t, b, d, r_o, Δ_r)
     return r_ov_b
@@ -200,7 +200,7 @@ def cj_a_cells(t, r_i_cj_a, S_ampa_cj_a, S_nmda_cj_a, S_gaba_cj_a, I_eta_cj_a,
                S_ampa_cj_b, S_ampa_ns, S_nmda_cj_b, S_nmda_ns, r_i_cv_cells, r_ov_a):
 
     S_ampa_cj_a = channel_ampa(S_ampa_cj_a, τ_ampa, r_i_cj_a, dt)
-    S_nmda_cj_a = channel_nmda(S_nmda_cj_a, S_nmda_cj_a, τ_nmda, γ, r_i_cj_a, dt)
+    S_nmda_cj_a = channel_nmda(S_nmda_cj_a, τ_nmda, γ, r_i_cj_a, dt)
     S_gaba_cj_a = channel_gaba(S_gaba_cj_a, τ_gaba, r_i_cv_cells, dt)
     S_cj_a = [S_ampa_cj_a, S_nmda_cj_a, S_gaba_cj_a]
 
@@ -215,6 +215,7 @@ def cj_a_cells(t, r_i_cj_a, S_ampa_cj_a, S_nmda_cj_a, S_gaba_cj_a, I_eta_cj_a,
     phi_cj_a = Φ(I_syn_cj_a, c_E, g_E, I_E)
 
     r_i_cj_a = firing_pyr_cells(r_i_cj_a, phi_cj_a, τ_ampa, dt)
+
     return r_i_cj_a, S_cj_a, I_eta_cj_a
 
 
@@ -222,10 +223,10 @@ def cj_b_cells(t, r_i_cj_b, S_ampa_cj_b, S_nmda_cj_b, S_gaba_cj_b, I_eta_cj_b,
                S_ampa_cj_a, S_ampa_ns, S_nmda_cj_a, S_nmda_ns, r_i_cv_cells, r_ov_b):
 
     S_ampa_cj_b = channel_ampa(S_ampa_cj_b, τ_ampa, r_i_cj_b, dt) # equation 3
-    S_nmda_cj_b = channel_nmda(S_nmda_cj_b, S_nmda_cj_a, τ_nmda, γ, r_i_cj_b, dt) # equation 4
+    S_nmda_cj_b = channel_nmda(S_nmda_cj_b, τ_nmda, γ, r_i_cj_b, dt) # equation 4
     S_gaba_cj_b = channel_gaba(S_gaba_cj_b, τ_gaba, r_i_cv_cells, dt) # equation 5
     S_cj_b = [S_ampa_cj_b, S_nmda_cj_b, S_gaba_cj_b]
-    print('S_ampa_cj_b, S_nmda_cj_b, S_gaba_cj_b', S_cj_b)
+
     I_eta_cj_b = white_noise(I_eta_cj_b, τ_ampa, σ_eta, t, dt) # equation 18
     I_ampa_ext_cj_b = I_ampa_ext(J_ampa_ext_pyr, τ_ampa, C_ext, r_ext, I_eta_cj_b) # equation 8
     I_ampa_rec_cj_b = I_ampa_rec(N_E, f, J_ampa_rec_pyr, w_p, w_m, S_ampa_cj_b, S_ampa_cj_a, S_ampa_ns) # equation 9
@@ -235,12 +236,7 @@ def cj_b_cells(t, r_i_cj_b, S_ampa_cj_b, S_nmda_cj_b, S_gaba_cj_b, I_eta_cj_b,
 
     I_syn_cj_b = I_syn(I_ampa_ext_cj_b, I_ampa_rec_cj_b, I_nmda_rec_cj_b, I_gaba_rec_cj_b, I_stim_cj_b) #equation 7
 
-    print('I_syn_cj_b', I_syn_cj_b)
-    print( 'I_ampa_ext_cj_b, I_ampa_rec_cj_b, I_nmda_rec_cj_b, I_gaba_rec_cj_b, I_stim_cj_b',
-           I_ampa_ext_cj_b, I_ampa_rec_cj_b, I_nmda_rec_cj_b, I_gaba_rec_cj_b, I_stim_cj_b)
-
     phi_cj_b = Φ(I_syn_cj_b, c_E, g_E, I_E) #equation 6
-    print('phi_cj_b', phi_cj_b)
     r_i_cj_b = firing_pyr_cells(r_i_cj_b, phi_cj_b, τ_ampa, dt) #equation 1
     return r_i_cj_b, S_cj_b, I_eta_cj_b
 
@@ -249,7 +245,7 @@ def ns_cells(t, r_i_ns, S_ampa_ns, S_nmda_ns, S_gaba_ns, I_eta_ns,
              S_ampa_cj_a, S_ampa_cj_b, S_nmda_cj_a, S_nmda_cj_b, r_i_cv_cells):
 
     S_ampa_ns = channel_ampa(S_ampa_ns, τ_ampa, r_i_ns, dt) #equation 3
-    S_nmda_ns = channel_nmda(S_nmda_ns, S_nmda_cj_a, τ_nmda, γ, r_i_ns, dt) #equation 4
+    S_nmda_ns = channel_nmda(S_nmda_ns, τ_nmda, γ, r_i_ns, dt) #equation 4
     S_gaba_ns = channel_gaba(S_gaba_ns, τ_gaba, r_i_cv_cells, dt) #equation 5
     S_ns = [S_ampa_ns, S_nmda_ns, S_gaba_ns]
 
@@ -298,29 +294,30 @@ def quantity_juice():
     return x_a, x_b
 
 
-def one_trial(g_list_a, g_list_b, x_a, x_b, xmin_list, x_max_list, t,
+def one_trial(x_a, x_b, xmin_list, x_max_list, t,
               r_i_cj_a, r_i_cj_b, r_i_ns, r_i_cv_cells,
               I_eta_cj_a, I_eta_cj_b, I_eta_ns, I_eta_cv,
               S_cj_a, S_cj_b, S_ns, S_gaba_cv):
 
-    mean_ov_b, r_i_cj_b_tot = [], []
-    while t < 1.000:
+    mean_ov_b, r_i_cj_b_tot, r_i_cj_a_tot, r_i_ns_tot, r_i_cv_cells_tot = [], [], [], [], []
+    while t < 1.500:
 
-        r_ov_a = ov_a_cells(g_list_a, t, x_a, xmin_list[0], x_max_list[0])
-        r_ov_b = ov_b_cells(g_list_b, t, x_b, xmin_list[1], x_max_list[1])
-
+        r_ov_a = ov_a_cells(t, x_a, xmin_list[0], x_max_list[0])
+        r_ov_b = ov_b_cells(t, x_b, xmin_list[1], x_max_list[1])
         r_i_cj_a, S_cj_a, I_eta_cj_a = cj_a_cells(t, r_i_cj_a, S_cj_a[0], S_cj_a[1], S_cj_a[2],
                                                  I_eta_cj_a, S_cj_b[0], S_ns[0], S_cj_b[1], S_ns[1], r_i_cv_cells, r_ov_a)
         r_i_cj_b, S_cj_b, I_eta_cj_b = cj_b_cells(t, r_i_cj_b, S_cj_b[0], S_cj_b[1], S_cj_b[2],
                                                  I_eta_cj_b, S_cj_a[0], S_ns[0], S_cj_a[1], S_ns[1], r_i_cv_cells, r_ov_b)
         r_i_ns, S_ns, I_eta_ns = ns_cells(t, r_i_ns, S_ns[0], S_ns[1], S_ns[2],
                                          I_eta_ns,S_cj_a[0], S_cj_b[0], S_cj_a[1], S_cj_b[1], r_i_cv_cells)
-        r_i_cv_cells, S_gaba_cv, I_eta_cv = cv_cells(t, r_i_cv_cells, S_gaba_cv,
+        r_i_cv_cells, S_gaba_cv, I_eta_cv= cv_cells(t, r_i_cv_cells, S_gaba_cv,
                                                     I_eta_cv, S_cj_a[0], S_cj_b[0], S_ns[0], S_cj_a[1], S_cj_b[1], S_ns[1])
         mean_ov_b.append(r_ov_b)
         r_i_cj_b_tot.append(r_i_cj_b)
-        #print('r_ov_b', r_ov_b)
-        #print('x_a, x_b, r_i_cj_a, r_i_cj_b, r_i_ns, r_i_cv_cells', x_a, x_b, r_i_cj_a, r_i_cj_b, r_i_ns, r_i_cv_cells)
+        r_i_cj_a_tot.append(r_i_cj_a)
+        r_i_ns_tot.append(r_i_ns)
+        r_i_cv_cells_tot.append(r_i_cv_cells)
+
         t += dt
 
     if r_i_cj_a > r_i_cj_b :
@@ -328,9 +325,8 @@ def one_trial(g_list_a, g_list_b, x_a, x_b, xmin_list, x_max_list, t,
     elif r_i_cj_a < r_i_cj_b:
         choice = 'choice B'
     else :
-        return 'error in choice'
-    print(r_i_cj_a)
-    return choice, mean_ov_b
+        choice ='no choice'
+    return (choice, mean_ov_b, r_i_cj_a_tot, r_i_cj_b_tot, r_i_ns_tot, r_i_cv_cells_tot)
 
 
 def session():
@@ -338,9 +334,9 @@ def session():
     I_eta_cj_a, I_eta_cj_b, I_eta_ns, I_eta_cv = 0, 0, 0, 0
     S_cj_a, S_cj_b, S_ns = [0, 0, 0], [0, 0, 0], [0, 0, 0]
     S_gaba_cv = 0
-    t = 0.0005
+    t = 0
     quantity_a, quantity_b = [], []
-    g_list_a, g_list_b = [], []
+
     result = {}
 
     for j in range(0, 21):
@@ -351,23 +347,24 @@ def session():
         x_a, x_b = quantity_juice()
         quantity_a.append(x_a)
         quantity_b.append(x_b)
+    print('x_a, x_b', quantity_a[0],quantity_b[0] )
     xmin_a = np.min(quantity_a)
     xmin_b = np.min(quantity_b)
     x_max_a = np.max(quantity_a)
     x_max_b = np.max(quantity_b)
     xmin_list = [xmin_a, xmin_b]
     x_max_list = [x_max_a, x_max_b]
+
     for i in range(1):
-        choice, mean_ov_b = one_trial(g_list_a, g_list_b, quantity_a[i], quantity_b[i], xmin_list, x_max_list, t,
-                                      r_i_cj_a, r_i_cj_b, r_i_ns, r_i_cv_cells,
-                                      I_eta_cj_a, I_eta_cj_b, I_eta_ns, I_eta_cv,
-                                      S_cj_a, S_cj_b, S_ns, S_gaba_cv)
-        result[(x_a, x_b)].append([choice, mean_ov_b])
+        (choice, mean_ov_b, r_i_cj_a_tot, r_i_cj_b_tot, r_i_ns_tot, r_i_cv_cells_tot) = one_trial(quantity_a[i], quantity_b[i], xmin_list, x_max_list, t,
+                                                                                r_i_cj_a, r_i_cj_b, r_i_ns, r_i_cv_cells,
+                                                                                I_eta_cj_a, I_eta_cj_b, I_eta_ns, I_eta_cv,
+                                                                                S_cj_a, S_cj_b, S_ns, S_gaba_cv)
+        #result[(x_a, x_b)].append([choice, mean_ov_b, r_i_cj_a, r_i_cj_b_tot, r_i_cv_cells_tot])
+        return choice, mean_ov_b, r_i_cj_a_tot, r_i_cj_b_tot, r_i_ns_tot, r_i_cv_cells_tot
 
-    return result
 
-
-print(session())
+#print(session())
 
 def result_firing_rate():
 
@@ -405,12 +402,19 @@ def result_firing_rate():
     return ovb_rate_low, ovb_rate_medium, ovb_rate_high
 
 #ovb_rate_low, ovb_rate_medium, ovb_rate_high = result_firing_rate()
-#X_axis = range(2000)
+X_axis = range(2000)
 
+choice, mean_ov_b, r_i_cj_a_tot, r_i_cj_b_tot, r_i_ns_tot, r_i_cv_cells_tot = session()
+bokeh.plotting.output_notebook()
+figure_4_A = bokeh.plotting.figure(title="Figure 4 A", plot_width=300, plot_height=300)
+figure_4_E = bokeh.plotting.figure(title="Figure 4 E", plot_width=300, plot_height=300)
+figure_4_I = bokeh.plotting.figure(title="Figure 4 I", plot_width=300, plot_height=300)
+figure_4_ns = bokeh.plotting.figure(title="Figure 4 ns", plot_width=300, plot_height=300)
+figure_4_A.line(X_axis , mean_ov_b, color ='red')
+figure_4_E.line(X_axis , r_i_cj_a_tot, color ='red')
+figure_4_I.line(X_axis , r_i_cj_b_tot, color ='red')
+figure_4_ns.line(X_axis,r_i_ns_tot, color = 'red')
 
-#bokeh.plotting.output_notebook()
-#figure_4 = bokeh.plotting.figure(title="Figure 4 A", plot_width=300, plot_height=300)
-#figure_4.multi_line([X_axis, X_axis, X_axis] , [ovb_rate_low, ovb_rate_medium, ovb_rate_high], color =['blue', 'green', 'red'] )
 
 
     ## Notes

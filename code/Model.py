@@ -9,9 +9,8 @@ import bokeh.plotting
 
 def firing_pyr_cells(r_i, phi, τ_ampa, dt): #1
     """Update the firing rate of pyramidale cells (eq. 1)"""
-    print(r_i, 1)
     r_i += ((- r_i + phi) / τ_ampa) * dt
-    print(r_i, 2)
+
     #assert 0 <= r_i <= 30, " r_i = {0}, phi = {1}".format(r_i, phi)
     return r_i
 
@@ -24,19 +23,25 @@ def firing_rate_I(r_I, phi, τ_gaba, dt): #2
 
 def channel_ampa(S_ampa, τ_ampa, r_i, dt): #3
     """Open AMPA channels (eq. 3)"""
+
     S_ampa += ((- S_ampa / τ_ampa) + r_i) * dt
+
     #assert 0 <= S_ampa <= 1, "S_ampa = {0}".format(S_ampa)
     return S_ampa
 
 def channel_nmda(S_nmda, τ_nmda, γ, r_i, dt): #4
     """Open NMDA channels (eq. 4)"""
+
     S_nmda += ((-S_nmda / τ_nmda) + (1 - S_nmda) * γ * r_i) * dt
+
     #assert 0 <= S_nmda <= 1, "S_nmda = {0}".format(S_nmda)
     return S_nmda
 
 def channel_gaba(S_gaba, τ_gaba, r_I, dt): #5
     """Open GABA channels (eq. 5)"""
+
     S_gaba += (-S_gaba / τ_gaba + r_I) * dt
+
     #assert 0 <= S_gaba <= 1, "S_gaba = {0}".format(S_gaba)
     return S_gaba
 
@@ -248,8 +253,8 @@ def cj_a_cells(t, r_i_cj_a, S_ampa_cj_a, S_nmda_cj_a, S_gaba_cj_a, I_eta_cj_a,
     phi_cj_a = Φ(I_syn_cj_a, c_E, g_E, I_E) #equation 6
 
     r_i_cj_a = firing_pyr_cells(r_i_cj_a, phi_cj_a, τ_gaba, dt) #equation 1
-    print("r_i_cj_a après", r_i_cj_a)
-    return r_i_cj_a, S_cj_a, I_eta_cj_a, I_syn_cj_a
+
+    return r_i_cj_a, S_cj_a, I_eta_cj_a, I_ampa_rec_cj_a, I_nmda_rec_cj_a, I_gaba_rec_cj_a, I_stim_cj_a
 
 
 def cj_b_cells(t, r_i_cj_b, S_ampa_cj_b, S_nmda_cj_b, S_gaba_cj_b, I_eta_cj_b,
@@ -340,15 +345,16 @@ def one_trial(x_a, x_b, xmin_list, x_max_list, t,
     mean_ov_b, r_i_cj_b_tot, r_i_cj_a_tot, r_i_ns_tot, r_i_cv_cells_tot = [], [], [], [], []
     s_ampa_cj_b_tot, s_nmda_b_tot, s_gaba_b_tot, I_eta_b_tot = [], [], [], []
     s_gaba_cv_tot, I_eta_cv_tot = [], []
-    i_syn_cj_a_tot, i_syn_cj_b_tot, i_syn_ns_tot, i_syn_cv_tot = [], [], [], []
-    r_i_cv_cells = 0
+    i_ampa_ext_cj_a_tot, i_syn_cj_b_tot, i_syn_ns_tot, i_syn_cv_tot = [], [], [], []
+    i_nmda_cj_a_tot, i_gaba_cj_a_tot, i_stim_cj_a_tot = [], [], []
+
     for t in np.arange(0, 1.5, 0.0005):
 
         r_ov_a = ov_a_cells(t, x_a, xmin_list[0], x_max_list[0])
 
         r_ov_b = ov_b_cells(t, x_b, xmin_list[1], x_max_list[1])
 
-        r_i_cj_a, S_cj_a, I_eta_cj_a, I_syn_cj_a = cj_a_cells(t, r_i_cj_a, S_cj_a[0], S_cj_a[1], S_cj_a[2],
+        r_i_cj_a, S_cj_a, I_eta_cj_a, I_ampa_rec_cj_a, I_nmda_rec_cj_a, I_gaba_rec_cj_a, I_stim_cj_a = cj_a_cells(t, r_i_cj_a, S_cj_a[0], S_cj_a[1], S_cj_a[2],
                                                  I_eta_cj_a, S_cj_b[0], S_ns[0], S_cj_b[1], S_ns[1], r_i_cv_cells, r_ov_a)
 
         r_i_cj_b, S_cj_b, I_eta_cj_b, I_syn_cj_b = cj_b_cells(t, r_i_cj_b, S_cj_b[0], S_cj_b[1], S_cj_b[2],
@@ -359,7 +365,7 @@ def one_trial(x_a, x_b, xmin_list, x_max_list, t,
 
         r_i_cv_cells, S_gaba_cv, I_eta_cv, I_syn_cv_cells = cv_cells(t, r_i_cv_cells, S_gaba_cv,
                                                     I_eta_cv, S_cj_a[0], S_cj_b[0], S_ns[0], S_cj_a[1], S_cj_b[1], S_ns[1])
-        
+
         #print( "r_i_cv_cells = {0}".format(r_i_cv_cells))
 
         #return (r_ov_a , r_ov_b, r_i_cj_a, S_cj_a, r_i_cj_b, S_cj_b, r_i_ns, S_ns, r_i_cv_cells, S_gaba_cv)
@@ -375,21 +381,26 @@ def one_trial(x_a, x_b, xmin_list, x_max_list, t,
         s_nmda_b_tot.append(S_cj_b[1])
         s_gaba_b_tot.append(S_cj_b[2])
         s_gaba_cv_tot.append(S_gaba_cv)
-        i_syn_cj_a_tot.append(I_syn_cj_a)
+        i_ampa_ext_cj_a_tot.append(I_ampa_rec_cj_a)
+        i_nmda_cj_a_tot.append(I_nmda_rec_cj_a)
+        i_gaba_cj_a_tot.append(I_gaba_rec_cj_a)
+        i_stim_cj_a_tot.append(I_stim_cj_a)
         i_syn_cj_b_tot.append(I_syn_cj_b)
         i_syn_ns_tot.append(I_syn_ns)
         i_syn_cv_tot.append(I_syn_cv_cells)
 
 
-    return (mean_ov_b, r_i_cj_a_tot, r_i_cj_b_tot, r_i_ns_tot, s_ampa_cj_b_tot, s_nmda_b_tot, r_i_cv_cells_tot, s_gaba_cv_tot,
-            i_syn_cj_a_tot, i_syn_cj_b_tot, i_syn_ns_tot, i_syn_cv_tot)
+    #return (mean_ov_b, r_i_cj_a_tot, r_i_cj_b_tot, r_i_ns_tot, s_ampa_cj_b_tot, s_nmda_b_tot, r_i_cv_cells_tot, s_gaba_cv_tot,
+    #        i_ampa_ext_cj_a_tot, i_nmda_cj_a_tot, i_gaba_cj_a_tot, i_stim_cj_a_tot, i_syn_cj_b_tot, i_syn_ns_tot, i_syn_cv_tot)
 
-    #if r_i_cj_a > r_i_cj_b :
-    #    choice = 'choice A'
-    #elif r_i_cj_a < r_i_cj_b:
-    #    choice = 'choice B'
-    #else :
-    #    choice ='no choice'
+    if r_i_cj_a > r_i_cj_b :
+        choice = 'choice A'
+    elif r_i_cj_a < r_i_cj_b:
+        choice = 'choice B'
+    else :
+        raise ValueError(choice ='no choice')
+
+    return (choice, mean_ov_b, r_i_cj_b_tot, r_i_cv_cells_tot)
     #print(choice, np.max(mean_ov_b), np.max(r_i_cj_a_tot), np.max(r_i_cj_b_tot), np.max(r_i_ns_tot), np.max(r_i_cv_cells_tot), np.max(s_ampa_cj_b_tot), np.max(s_nmda_b_tot), np.max(s_gaba_b_tot), np.max(s_gaba_cv_tot),
     #       np.min(mean_ov_b), np.min(r_i_cj_a_tot), np.min(r_i_cj_b_tot), np.min(r_i_ns_tot), np.min(r_i_cv_cells_tot),
     #       np.min(s_ampa_cj_b_tot), np.min(s_nmda_b_tot), np.min(s_gaba_b_tot), np.min(s_gaba_cv_tot))
@@ -398,52 +409,54 @@ def one_trial(x_a, x_b, xmin_list, x_max_list, t,
     #       np.min(s_ampa_cj_b_tot), np.min(s_nmda_b_tot), np.min(s_gaba_b_tot), np.min(s_gaba_cv_tot))
 
 
-(mean_ov_b, r_i_cj_a_tot, r_i_cj_b_tot, r_i_ns_tot, s_ampa_cj_b_tot, s_nmda_b_tot, r_i_cv_cells_tot, s_gaba_cv_tot,
- i_syn_cj_a_tot, i_syn_cj_b_tot, i_syn_ns_tot, i_syn_cv_tot) = one_trial(10, 20, [0, 0], [20, 20], 0, 0, 0, 0, 0,
-               0,0,0,0, [0, 0, 0], [ 0, 0, 0], [0, 0, 0], 0)
+#(mean_ov_b, r_i_cj_a_tot, r_i_cj_b_tot, r_i_ns_tot, s_ampa_cj_b_tot, s_nmda_b_tot, r_i_cv_cells_tot, s_gaba_cv_tot,
+# i_ampa_ext_cj_a_tot, i_nmda_cj_a_tot, i_gaba_cj_a_tot, i_stim_cj_a_tot, i_syn_cj_b_tot, i_syn_ns_tot, i_syn_cv_tot) = one_trial(20, 10, [0, 0], [20, 20], 0, 0, 0, 0, 0,
+#               0,0,0,0, [0, 0, 0], [ 0, 0, 0], [0, 0, 0], 0)
 
-bokeh.plotting.output_notebook()
-X_axis = range(len(r_i_cj_b_tot))
-X2_axis = range(len(mean_ov_b))
-figure_4_A = bokeh.plotting.figure(title="ovb", plot_width=300, plot_height=300)
-figure_4_E = bokeh.plotting.figure(title="r_i_cj_a", plot_width=300, plot_height=300)
-figure_4_I = bokeh.plotting.figure(title="r_i_b", plot_width=300, plot_height=300)
-figure_4_ns = bokeh.plotting.figure(title="ri_ns", plot_width=300, plot_height=300)
-figure_4_cv = bokeh.plotting.figure(title="ri_cv", plot_width=300, plot_height=300)
-fig_i_syn_a = bokeh.plotting.figure(title="i_syn_cj_a", plot_width=300, plot_height=300)
-fig_i_syn_b = bokeh.plotting.figure(title="i_syn_cj_b", plot_width=300, plot_height=300)
-fig_i_syn_ns = bokeh.plotting.figure(title="i_syn_ns", plot_width=300, plot_height=300)
-fig_i_syn_cv = bokeh.plotting.figure(title="i_syn_cv", plot_width=300, plot_height=300)
-figure_4_A.line(X2_axis , mean_ov_b, color ='red')
-figure_4_E.line(X_axis , r_i_cj_a_tot, color ='red')
-figure_4_I.line(X_axis , r_i_cj_b_tot, color ='red')
-figure_4_ns.line(X_axis, r_i_ns_tot, color = 'red')
-figure_4_cv.line(X_axis, r_i_cv_cells_tot, color = 'red')
-fig_i_syn_a.line(X_axis, i_syn_cj_a_tot, color = 'green')
-fig_i_syn_b.line(X_axis, i_syn_cj_b_tot, color = 'green')
-fig_i_syn_ns.line(X_axis, i_syn_ns_tot, color = 'green')
-fig_i_syn_cv.line(X_axis, i_syn_cv_tot, color = 'green')
-graph_ampa = bokeh.plotting.figure(title="ampa b", plot_width=300, plot_height=300)
-graph_nmda = bokeh.plotting.figure(title="nmda b", plot_width=300, plot_height=300)
+#print(r_i_cj_a_tot[0], r_i_cj_a_tot[1], r_i_cj_a_tot[2])
 
-graph_gaba_cv = bokeh.plotting.figure(title="gaba cv b", plot_width=300, plot_height=300)
-graph_ampa.line(X_axis , s_ampa_cj_b_tot, color ='blue')
-graph_nmda.line(X_axis , s_nmda_b_tot, color ='blue')
+#bokeh.plotting.output_notebook()
+#X_axis = range(len(r_i_cj_b_tot))
+#X2_axis = range(len(mean_ov_b))
+#figure_4_A = bokeh.plotting.figure(title="ovb", plot_width=300, plot_height=300)
+#figure_4_E = bokeh.plotting.figure(title="r_i_cj_a", plot_width=300, plot_height=300)
+#figure_4_I = bokeh.plotting.figure(title="r_i_b", plot_width=300, plot_height=300)
+#figure_4_ns = bokeh.plotting.figure(title="i_ampa_ext_cj_a_tot", plot_width=300, plot_height=300)
+#figure_4_cv = bokeh.plotting.figure(title="ri_cv", plot_width=300, plot_height=300)
+#fig_i_syn_a = bokeh.plotting.figure(title="i_nmda_cj_a_tot", plot_width=300, plot_height=300)
+#fig_i_syn_b = bokeh.plotting.figure(title="i_syn_cj_b", plot_width=300, plot_height=300)
+#fig_i_syn_ns = bokeh.plotting.figure(title="i_syn_ns", plot_width=300, plot_height=300)
+#fig_i_syn_cv = bokeh.plotting.figure(title="i_syn_cv", plot_width=300, plot_height=300)
+#figure_4_A.line(X2_axis , mean_ov_b, color ='red')
+#figure_4_E.line(X_axis , r_i_cj_a_tot, color ='red')
+#figure_4_I.line(X_axis , r_i_cj_b_tot, color ='red')
+#figure_4_ns.line(X_axis, i_ampa_ext_cj_a_tot, color = 'red')
+#figure_4_cv.line(X_axis, r_i_cv_cells_tot, color = 'red')
+#fig_i_syn_a.line(X_axis, i_nmda_cj_a_tot, color = 'green')
+#fig_i_syn_b.line(X_axis, i_syn_cj_b_tot, color = 'green')
+#fig_i_syn_ns.line(X_axis, i_syn_ns_tot, color = 'green')
+#fig_i_syn_cv.line(X_axis, i_syn_cv_tot, color = 'green')
+#graph_ampa = bokeh.plotting.figure(title="i_gaba_cj_a_tot", plot_width=300, plot_height=300)
+#graph_nmda = bokeh.plotting.figure(title="i_stim_cj_a_tot", plot_width=300, plot_height=300)
 
-graph_gaba_cv.line(X_axis , s_gaba_cv_tot, color ='blue')
+#graph_gaba_cv = bokeh.plotting.figure(title="gaba cv b", plot_width=300, plot_height=300)
+#graph_ampa.line(X_axis , i_gaba_cj_a_tot, color ='blue')
+#graph_nmda.line(X_axis , i_stim_cj_a_tot, color ='blue')
 
-bokeh.plotting.show(figure_4_A)
-bokeh.plotting.show(figure_4_E)
-bokeh.plotting.show(figure_4_I)
-bokeh.plotting.show(figure_4_ns)
-bokeh.plotting.show(graph_ampa)
-bokeh.plotting.show(graph_nmda)
-bokeh.plotting.show(figure_4_cv)
-bokeh.plotting.show(graph_gaba_cv)
-bokeh.plotting.show(fig_i_syn_a)
-bokeh.plotting.show(fig_i_syn_b)
-bokeh.plotting.show(fig_i_syn_ns)
-bokeh.plotting.show(fig_i_syn_cv)
+#graph_gaba_cv.line(X_axis , s_gaba_cv_tot, color ='blue')
+
+#bokeh.plotting.show(figure_4_A)
+#bokeh.plotting.show(figure_4_E)
+#bokeh.plotting.show(figure_4_I)
+#bokeh.plotting.show(figure_4_ns)
+#bokeh.plotting.show(graph_ampa)
+#bokeh.plotting.show(graph_nmda)
+#bokeh.plotting.show(figure_4_cv)
+#bokeh.plotting.show(graph_gaba_cv)
+#bokeh.plotting.show(fig_i_syn_a)
+#bokeh.plotting.show(fig_i_syn_b)
+#bokeh.plotting.show(fig_i_syn_ns)
+#bokeh.plotting.show(fig_i_syn_cv)
 
 
 def session():
@@ -464,7 +477,7 @@ def session():
         x_a, x_b = quantity_juice()
         quantity_a.append(x_a)
         quantity_b.append(x_b)
-    print('x_a, x_b', quantity_a[0],quantity_b[0] )
+
     xmin_a = np.min(quantity_a)
     xmin_b = np.min(quantity_b)
     x_max_a = np.max(quantity_a)
@@ -472,15 +485,14 @@ def session():
     xmin_list = [xmin_a, xmin_b]
     x_max_list = [x_max_a, x_max_b]
 
-    for i in range(1):
-        (choice, mean_ov_b, r_i_cj_a_tot, r_i_cj_b_tot, r_i_ns_tot, r_i_cv_cells_tot) = one_trial(quantity_a[i], quantity_b[i], xmin_list, x_max_list, t,
+    for i in range(100):
+        (choice, mean_ov_b, r_i_cj_b_tot, r_i_cv_cells_tot) = one_trial(quantity_a[i], quantity_b[i], xmin_list, x_max_list, t,
                                                                                 r_i_cj_a, r_i_cj_b, r_i_ns, r_i_cv_cells,
                                                                                 I_eta_cj_a, I_eta_cj_b, I_eta_ns, I_eta_cv,
                                                                                 S_cj_a, S_cj_b, S_ns, S_gaba_cv)
 
-        #result[(x_a, x_b)].append([choice, mean_ov_b, r_i_cj_a, r_i_cj_b_tot, r_i_cv_cells_tot])
-        return choice, mean_ov_b, r_i_cj_a_tot, r_i_cj_b_tot, r_i_ns_tot, r_i_cv_cells_tot
-
+        result[(x_a, x_b)].append([choice, mean_ov_b, r_i_cj_b_tot, r_i_cv_cells_tot])
+        return result
 
 #print(session())
 
@@ -492,32 +504,96 @@ def result_firing_rate():
     ovb_rate_low, ovb_rate_high, ovb_rate_medium = [], [], []
     low, medium, high = 0, 0, 0
     result = session()
-
+    mean_A_chosen_cj, mean_B_chosen_cj = [], []
+    A_nb, B_nb = 0, 0
+    mean_low_cv, mean_medium_cv, mean_high_cv = [], [], []
+    low_cv, medium_cv, high_cv = 0, 0, 0
     ''' le terme k représente le temps,
      le terme i représente la quantité de A,
       le j représente la quantité de B
       et le l représente la liste de l'essai l
       pour un temps donné, on ajoute les r_ov_b pour chaque (i,j) pour chaque essai l '''
 
-    for k in range(2000):
-        mean_low, mean_high, mean_medium = 0, 0, 0
-        for i in range(20):
+    for k in range(100):
+        mean_ov_low, mean_ov_high, mean_ov_medium = 0, 0, 0
+
+        for i in range(21):
             for j in range(6):
                     for l in range(len(result[(i,j)])):
-                        mean_low += result[(i,j)][l][1][k]
+                        mean_ov_low += result[(i,j)][l][1][k]
                         low += 1
             for j in range(7,13):
                     for l in range(len(result[(i,j)])):
-                        mean_medium += result[(i,j)][l][1][k]
+                        mean_ov_medium += result[(i,j)][l][1][k]
                         medium += 1
-            for j in range(14,20):
+            for j in range(14,21):
                     for l in range(len(result[(i,j)])):
-                        mean_high += result[(i,j)][l][1][k]
+                        mean_ov_high += result[(i,j)][l][1][k]
                         high += 1
-        ovb_rate_low.append(mean_low / low)
-        ovb_rate_medium.append(mean_medium / medium)
-        ovb_rate_high.append(mean_high / high)
-    return ovb_rate_low, ovb_rate_medium, ovb_rate_high
+        ovb_rate_low.append(mean_ov_low / low)
+        ovb_rate_medium.append(mean_ov_medium / medium)
+        ovb_rate_high.append(mean_ov_high / high)
+
+        for k in range (100):
+            A_chosen_cj, B_chosen_cj = 0, 0
+            chosen_value_low, chosen_value_medium, chosen_value_high = 0, 0, 0
+            for i in range(21):
+                for j in range(21):
+                    if result[(i, j)][0][0] == 'choice A':
+                        A_chosen_cj += result[(i, j)][0][2][k]
+                        A_nb +=1
+                        if i < 6 :
+                            chosen_value_low += result[(i, j)][0][3][k]
+                            low_cv +=1
+                        elif 6 < i < 13:
+                            chosen_value_medium += result[(i,j)][0][3][k]
+                            medium_cv += 1
+                        else :
+                            chosen_value_high += result[(i, j)][0][3][k]
+                            high_cv += 1
+                    else :
+                        B_chosen_cj += result[(i, j)][0][3][k]
+                        B_nb +=1
+                        if j < 6 :
+                            chosen_value_low += result[(i, j)][0][3][k]
+                            low_cv +=1
+                        elif 6 < j < 13:
+                            chosen_value_medium += result[(i, j)][0][3][k]
+                            medium_cv +=1
+                        else :
+                            chosen_value_high += result[(i, j)][0][3][k]
+                            high_cv +=1
+
+            mean_A_chosen_cj.append(A_chosen_cj / A_nb)
+            mean_B_chosen_cj.append(B_chosen_cj / B_nb)
+            mean_low_cv.append(chosen_value_low / low_cv)
+            mean_medium_cv.append(chosen_value_medium / medium_cv)
+            mean_high_cv.append(chosen_value_high / high_cv)
+
+    return (ovb_rate_low, ovb_rate_medium, ovb_rate_high, mean_A_chosen_cj, mean_B_chosen_cj, mean_low_cv, mean_medium_cv, mean_high_cv)
+
+
+
+def graph():
+    (ovb_rate_low, ovb_rate_medium, ovb_rate_high, mean_A_chosen_cj, mean_B_chosen_cj, mean_low_cv, mean_medium_cv,
+     mean_high_cv) = result_firing_rate()
+    X_axis = np.arange(0, 1.5, 0.0005)
+    bokeh.plotting.output_notebook()
+    figure_4_A = bokeh.plotting.figure(title="Figure 4 A", plot_width=300, plot_height=300)
+    figure_4_E = bokeh.plotting.figure(title="Figure 4 E", plot_width=300, plot_height=300)
+    figure_4_I = bokeh.plotting.figure(title="Figure 4 I", plot_width=300, plot_height=300)
+
+    figure_4_A.multi_line([X_axis, X_axis, X_axis], [ovb_rate_low, ovb_rate_medium, ovb_rate_high] , color =['red', "green", "blue"])
+    figure_4_E.mulit_line([X_axis, X_axis] , [mean_A_chosen_cj, mean_B_chosen_cj], color =['red', "blue"])
+    figure_4_I.multi_line([X_axis, X_axis, X_axis] , [mean_low_cv, mean_medium_cv, mean_high_cv], color =['red', "green", "blue"])
+
+    bokeh.plotting.show(figure_4_A)
+    bokeh.plotting.show(figure_4_E)
+    bokeh.plotting.show(figure_4_I)
+
+graph()
+
+
 
 #ovb_rate_low, ovb_rate_medium, ovb_rate_high = result_firing_rate()
 

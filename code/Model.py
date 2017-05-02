@@ -122,6 +122,14 @@ def firing_ov_cells(x, xmin, x_max, t, r_o, Δ_r): #20, 21, 22, 23
     return r_ov
 
 
+def logistic_model(a_0, a_1, a_2, a_3, a_4, a_5, quantity_a, quantity_b ): #25
+    """Computing the logistic model of figure 4 to examine departures from linearity"""
+    X = a_0 + a_1 * quantity_a + a_2 * quantity_b + a_3 * (quantity_a) ** 2 + a_4 * (quantity_b) ** 2 + a_5 * (quantity_a * quantity_b)
+    choice_B = 1 / (1 + np.exp(-X))
+    return choice_B
+
+
+
     ## Parameters used in simulation (Table 1)
 
 # Network parameters
@@ -157,7 +165,7 @@ c_I = 615
 # Parameters used to model OV cells
 r_o = 0 # spike/s (0 or 6)
 Δ_r = 8 # spike/s
-t_offer = 0.5 # s
+t_offer = 1.0 # s
 a = t_offer + 0.175 # s
 b = 0.030 # s
 c = t_offer + 0.400 # s
@@ -175,10 +183,9 @@ list_g = []
 t=0
 
 
-while t < 1.500:
+for t in np.arange(0, 2.0, dt):
     g = (1 / (1 + np.exp(- (t- a) / b))) * (1 / (1 + np.exp((t - c) / d)))
     list_g.append(g)
-    t+=dt
 g_max = np.max(list_g)
 
 
@@ -197,7 +204,6 @@ w_m = 1 - f * (w_p - 1) / (1 - f)
 δ_J_gaba_cj_a, δ_J_gaba_cj_b, δ_J_gaba_ns = 1, 1, 1
 δ_J_nmda_cj_a, δ_J_nmda_cj_b = 1, 1
 
-I_stim_cv, I_stim_ns = 0, 0
 
 
 def ov_a_cells(t, x_a, xmin, x_max):
@@ -210,7 +216,7 @@ def ov_b_cells(t, x_b, xmin, x_max):
     return r_ov_b
 
 
-def cj_a_cells(t, r_i_cj_a, S_ampa_cj_a, S_nmda_cj_a, S_gaba_cj_a, I_eta_cj_a,
+def cj_a_cells(r_i_cj_a, S_ampa_cj_a, S_nmda_cj_a, S_gaba_cj_a, I_eta_cj_a,
                S_ampa_cj_b, S_ampa_ns, S_nmda_cj_b, S_nmda_ns, r_i_cv_cells, r_ov_a):
 
     S_ampa_cj_a = channel_ampa(S_ampa_cj_a, τ_ampa, r_i_cj_a, dt) #equation 3
@@ -232,7 +238,7 @@ def cj_a_cells(t, r_i_cj_a, S_ampa_cj_a, S_nmda_cj_a, S_gaba_cj_a, I_eta_cj_a,
     return r_i_cj_a, S_cj_a, I_eta_cj_a, I_ampa_ext_cj_a, I_nmda_rec_cj_a, I_gaba_rec_cj_a, I_stim_cj_a
 
 
-def cj_b_cells(t, r_i_cj_b, S_ampa_cj_b, S_nmda_cj_b, S_gaba_cj_b, I_eta_cj_b,
+def cj_b_cells(r_i_cj_b, S_ampa_cj_b, S_nmda_cj_b, S_gaba_cj_b, I_eta_cj_b,
                S_ampa_cj_a, S_ampa_ns, S_nmda_cj_a, S_nmda_ns, r_i_cv_cells, r_ov_b):
 
     S_ampa_cj_b = channel_ampa(S_ampa_cj_b, τ_ampa, r_i_cj_b, dt) # equation 3
@@ -256,7 +262,7 @@ def cj_b_cells(t, r_i_cj_b, S_ampa_cj_b, S_nmda_cj_b, S_gaba_cj_b, I_eta_cj_b,
     return r_i_cj_b, S_cj_b, I_eta_cj_b, I_syn_cj_b, I_stim_cj_b, I_ampa_ext_cj_b
 
 
-def ns_cells(t, r_i_ns, S_ampa_ns, S_nmda_ns, S_gaba_ns, I_eta_ns,
+def ns_cells(r_i_ns, S_ampa_ns, S_nmda_ns, S_gaba_ns, I_eta_ns,
              S_ampa_cj_a, S_ampa_cj_b, S_nmda_cj_a, S_nmda_cj_b, r_i_cv_cells):
 
     S_ampa_ns = channel_ampa(S_ampa_ns, τ_ampa, r_i_ns, dt) #equation 3
@@ -278,7 +284,7 @@ def ns_cells(t, r_i_ns, S_ampa_ns, S_nmda_ns, S_gaba_ns, I_eta_ns,
 
 
 
-def cv_cells(t, r_i_cv_cells, S_gaba_cv, I_eta_cv,
+def cv_cells(r_i_cv_cells, S_gaba_cv, I_eta_cv,
              S_ampa_cj_a, S_ampa_cj_b, S_ampa_ns,
              S_nmda_cj_a, S_nmda_cj_b, S_nmda_ns):
 
@@ -289,6 +295,7 @@ def cv_cells(t, r_i_cv_cells, S_gaba_cv, I_eta_cv,
     I_ampa_rec_cv = I_ampa_rec_I(N_E, f, J_ampa_rec_in, S_ampa_cj_a, S_ampa_cj_b, S_ampa_ns) #equation 15
     I_nmda_rec_cv = I_nmda_rec_I(N_E, f, J_nmda_rec_in, S_nmda_cj_a, S_nmda_cj_b, S_nmda_ns) #equation 16
     I_gaba_rec_cv = I_gaba_rec_I(N_I, J_gaba_rec_in, S_gaba_cv) #equation 17
+    I_stim_cv = 0
     I_syn_cv_cells = I_syn(I_ampa_ext_cv, I_ampa_rec_cv, I_nmda_rec_cv, I_gaba_rec_cv, I_stim_cv) #equation 7
 
     phi_cv_cells = Φ(I_syn_cv_cells, c_I, g_I, I_I) #equation 6
@@ -322,28 +329,27 @@ def one_trial(x_a, x_b, xmin_list, x_max_list, t,
     i_ampa_ext_cj_b_tot, i_syn_cj_b_tot, i_ampa_rec_cj_b_tot, i_syn_cv_tot = [], [], [], []
     i_nmda_cj_b_tot, i_gaba_cj_b_tot, i_stim_cj_b_tot, i_eta_cj_b_tot = [], [], [], []
     i_ampa_ext_cj_a_tot = []
-    for t in np.arange(0, 1.5, 0.0005):
+    for t in np.arange(0, 2.0, 0.0005):
 
         r_ov_a = ov_a_cells(t, x_a, xmin_list[0], x_max_list[0])
 
         r_ov_b = ov_b_cells(t, x_b, xmin_list[1], x_max_list[1])
 
-        r_i_cj_a, S_cj_a, I_eta_cj_a, I_ampa_ext_cj_a, I_nmda_rec_cj_a, I_gaba_rec_cj_a, I_stim_cj_a = cj_a_cells(t, r_i_cj_a, S_cj_a[0], S_cj_a[1], S_cj_a[2],
+        r_i_cj_a, S_cj_a, I_eta_cj_a, I_ampa_ext_cj_a, I_nmda_rec_cj_a, I_gaba_rec_cj_a, I_stim_cj_a = cj_a_cells(r_i_cj_a, S_cj_a[0], S_cj_a[1], S_cj_a[2],
                                                  I_eta_cj_a, S_cj_b[0], S_ns[0], S_cj_b[1], S_ns[1], r_i_cv_cells, r_ov_a)
-        r_i_cj_b, S_cj_b, I_eta_cj_b, I_syn_cj_b, I_stim_cj_b, I_ampa_ext_cj_b= cj_b_cells(t, r_i_cj_b, S_cj_b[0], S_cj_b[1], S_cj_b[2],
+
+        r_i_cj_b, S_cj_b, I_eta_cj_b, I_syn_cj_b, I_stim_cj_b, I_ampa_ext_cj_b= cj_b_cells(r_i_cj_b, S_cj_b[0], S_cj_b[1], S_cj_b[2],
                                                  I_eta_cj_b, S_cj_a[0], S_ns[0], S_cj_a[1], S_ns[1], r_i_cv_cells, r_ov_b)
 
-        r_i_ns, S_ns, I_eta_ns, I_syn_ns = ns_cells(t, r_i_ns, S_ns[0], S_ns[1], S_ns[2],
+        r_i_ns, S_ns, I_eta_ns, I_syn_ns = ns_cells(r_i_ns, S_ns[0], S_ns[1], S_ns[2],
                                          I_eta_ns,S_cj_a[0], S_cj_b[0], S_cj_a[1], S_cj_b[1], r_i_cv_cells)
 
-        r_i_cv_cells, S_gaba_cv, I_eta_cv, I_syn_cv_cells = cv_cells(t, r_i_cv_cells, S_gaba_cv,
+        r_i_cv_cells, S_gaba_cv, I_eta_cv, I_syn_cv_cells = cv_cells(r_i_cv_cells, S_gaba_cv,
                                                     I_eta_cv, S_cj_a[0], S_cj_b[0], S_ns[0], S_cj_a[1], S_cj_b[1], S_ns[1])
 
         #print( "r_i_cv_cells = {0}".format(r_i_cv_cells))
 
         #return (r_ov_a , r_ov_b, r_i_cj_a, S_cj_a, r_i_cj_b, S_cj_b, r_i_ns, S_ns, r_i_cv_cells, S_gaba_cv)
-
-
 
         mean_ov_b.append(r_ov_b)
         r_i_cj_b_tot.append(r_i_cj_b)
@@ -358,11 +364,6 @@ def one_trial(x_a, x_b, xmin_list, x_max_list, t,
         i_ampa_ext_cj_b_tot.append(I_ampa_ext_cj_b)
         i_ampa_ext_cj_a_tot.append(I_ampa_ext_cj_a)
 
-
-
-    #return (mean_ov_b, r_i_cj_a_tot, r_i_cj_b_tot, r_i_ns_tot, s_ampa_cj_b_tot, s_nmda_b_tot, r_i_cv_cells_tot, s_gaba_cv_tot,
-    #        i_ampa_ext_cj_a_tot, i_nmda_cj_a_tot, i_gaba_cj_a_tot, i_stim_cj_a_tot, i_syn_cj_b_tot, i_syn_ns_tot, i_syn_cv_tot)
-
     if r_i_cj_a > r_i_cj_b :
         choice = 'choice A'
     elif r_i_cj_a < r_i_cj_b:
@@ -372,9 +373,6 @@ def one_trial(x_a, x_b, xmin_list, x_max_list, t,
 
     return (choice, mean_ov_b, r_i_cj_b_tot, r_i_cv_cells_tot, i_stim_cj_b_tot, i_ampa_ext_cj_b_tot, i_ampa_ext_cj_a_tot)
 
-    #print(choice, np.max(mean_ov_b), np.max(r_i_cj_a_tot), np.max(r_i_cj_b_tot), np.max(r_i_ns_tot), np.max(r_i_cv_cells_tot), np.max(s_ampa_cj_b_tot), np.max(s_nmda_b_tot), np.max(s_gaba_b_tot), np.max(s_gaba_cv_tot),
-    #       np.min(mean_ov_b), np.min(r_i_cj_a_tot), np.min(r_i_cj_b_tot), np.min(r_i_ns_tot), np.min(r_i_cv_cells_tot),
-    #       np.min(s_ampa_cj_b_tot), np.min(s_nmda_b_tot), np.min(s_gaba_b_tot), np.min(s_gaba_cv_tot))
     #return (choice, np.max(mean_ov_b), np.max(r_i_cj_a_tot), np.max(r_i_cj_b_tot), np.max(r_i_ns_tot), np.max(r_i_cv_cells_tot), np.max(s_ampa_cj_b_tot), np.max(s_nmda_b_tot), np.max(s_gaba_b_tot), np.max(s_gaba_cv_tot),
     #       np.min(mean_ov_b), np.min(r_i_cj_a_tot), np.min(r_i_cj_b_tot), np.min(r_i_ns_tot), np.min(r_i_cv_cells_tot),
     #       np.min(s_ampa_cj_b_tot), np.min(s_nmda_b_tot), np.min(s_gaba_b_tot), np.min(s_gaba_cv_tot))
@@ -435,16 +433,14 @@ def session():
     I_eta_cj_a, I_eta_cj_b, I_eta_ns, I_eta_cv = 0, 0, 0, 0
     S_cj_a, S_cj_b, S_ns = [0, 0, 0], [0, 0, 0], [0, 0, 0]
     S_gaba_cv = 0
-    t = 0
     quantity_a, quantity_b = [], []
-
     result = {}
 
     for j in range(0, 21):
         for k in range(0, 21):
                 result[(j, k)] = []
     result = collections.OrderedDict(sorted(result.items(), key = lambda t: t[0]))
-    for i in range(100):
+    for i in range(500):
         x_a, x_b = quantity_juice()
         quantity_a.append(x_a)
         quantity_b.append(x_b)
@@ -455,8 +451,7 @@ def session():
     x_max_b = np.max(quantity_b)
     xmin_list = [xmin_a, xmin_b]
     x_max_list = [x_max_a, x_max_b]
-
-    for i in range(100):
+    for i in range(500):
         (choice, mean_ov_b, r_i_cj_b_tot, r_i_cv_cells_tot, i_stim_cj_b_tot, i_ampa_ext_cj_b_tot, i_ampa_ext_cj_a_tot) = one_trial(quantity_a[i], quantity_b[i], xmin_list, x_max_list, t,
                                                         r_i_cj_a, r_i_cj_b, r_i_ns, r_i_cv_cells,
                                                         I_eta_cj_a, I_eta_cj_b, I_eta_ns, I_eta_cv,
@@ -477,18 +472,15 @@ def result_firing_rate():
 
     result = session()
     mean_A_chosen_cj, mean_B_chosen_cj = [], []
-    mean_i_stim_choice_a, mean_i_stim_choice_b = [], []
     mean_low_cv, mean_medium_cv, mean_high_cv = [], [], []
-    mean_i_ampa_ext_choice_a, mean_i_ampa_ext_choice_b, mean_i_ampa_rec_choice_a, mean_i_ampa_rec_choice_b = [], [], [], []
-    mean_i_ampa_ext_a_choice_a, mean_i_ampa_ext_a_choice_b, mean_i_gaba_choice_a, mean_i_gaba_choice_b = [], [], [], []
-    mean_i_eta_choice_a, mean_i_eta_choice_b = [], []
     ''' le terme k représente le temps,
      le terme i représente la quantité de A,
       le j représente la quantité de B
       et le l représente la liste de l'essai l
-      pour un temps donné, on ajoute les r_ov_b pour chaque (i,j) pour chaque essai l '''
+      pour un temps donné, on ajoute les r_ov_b pour chaque (i,j) pour chaque essai l
+      (figure 4A)'''
 
-    for k in range(3000):
+    for k in range(4000):
         mean_ov_low, mean_ov_high, mean_ov_medium = 0, 0, 0
         low, medium, high = 0, 0, 0
         for i in range(21):
@@ -508,24 +500,18 @@ def result_firing_rate():
         ovb_rate_medium.append(mean_ov_medium / medium)
         ovb_rate_high.append(mean_ov_high / high)
 
-    for k in range (3000):
+    '''mean depending on choice (figure 4E, 4I)'''
+    for k in range (4000):
         A_chosen_cj, B_chosen_cj = 0, 0
         chosen_value_low, chosen_value_medium, chosen_value_high = 0, 0, 0
         A_nb, B_nb = 0, 0
         low_cv, medium_cv, high_cv = 0, 0, 0
-        i_stim_choice_a, i_stim_choice_b = 0, 0
-        i_ampa_ext_choice_a, i_ampa_ext_a_choice_a, i_nmda_choice_a, i_gaba_choice_a = 0, 0, 0, 0
-        i_ampa_ext_choice_b, i_ampa_ext_a_choice_b, i_nmda_choice_b, i_gaba_choice_b = 0, 0, 0, 0
-        i_eta_choice_a, i_eta_choice_b = 0, 0
         for i in range(21):
             for j in range(21):
                 for l in range(len(result[(i,j)])):
                     if result[(i, j)][l][0] == 'choice A':
                         A_chosen_cj += result[(i, j)][l][2][k]
                         A_nb +=1
-                        i_stim_choice_a += result[(i, j)][l][4][k]
-                        i_ampa_ext_choice_a += result[(i, j)][l][5][k]
-                        i_ampa_ext_a_choice_a += result[(i, j)][l][6][k]
                         if i < 6 :
                             chosen_value_low += result[(i, j)][l][3][k]
                             low_cv +=1
@@ -538,9 +524,6 @@ def result_firing_rate():
                     else :
                         B_chosen_cj += result[(i, j)][l][2][k]
                         B_nb +=1
-                        i_stim_choice_b += result[(i, j)][l][4][k]
-                        i_ampa_ext_choice_b += result[(i, j)][l][5][k]
-                        i_ampa_ext_choice_b += result[(i, j)][l][6][k]
                         if j < 6 :
                             chosen_value_low += result[(i, j)][l][3][k]
                             low_cv +=1
@@ -556,43 +539,101 @@ def result_firing_rate():
         mean_low_cv.append(chosen_value_low / low_cv)
         mean_medium_cv.append(chosen_value_medium / medium_cv)
         mean_high_cv.append(chosen_value_high / high_cv)
-        mean_i_stim_choice_a.append(i_stim_choice_a / A_nb)
-        mean_i_stim_choice_b.append(i_stim_choice_b / B_nb)
-        mean_i_ampa_ext_choice_a.append(i_ampa_ext_choice_a / A_nb)
-        mean_i_ampa_ext_choice_b.append(i_ampa_ext_choice_b / B_nb)
-        mean_i_ampa_ext_a_choice_a.append(i_ampa_ext_a_choice_a / A_nb)
-        mean_i_ampa_ext_a_choice_b.append(i_ampa_ext_a_choice_b / B_nb)
+
+    """ pour les figures C, G, K"""
+    mean_ov_fig_C_A_ji, mean_ov_fig_C_A_ij, mean_ov_fig_C_B_ji, mean_ov_fig_C_B_ij =[], [], [], []
+    mean_cj_fig_G_A_ji, mean_cj_fig_G_A_ij, mean_cj_fig_G_B_ji, mean_cj_fig_G_B_ij = [], [], [], []
+    mean_cv_fig_K_A_ji, mean_cv_fig_K_A_ij, mean_cv_fig_K_B_ji, mean_cv_fig_K_B_ij = [], [], [], []
+    '''focus on the time window after the offer : 0 - 500 ms for OV and CJ cells and on 500 ms - 1000 ms for CV cells'''
+
+    for i in range(1,2):
+        for j in range(20, 3, -2):
+            ov_fig_C_A_ji, ov_fig_C_B_ji, cj_fig_G_A_ji, cj_fig_G_B_ji = 0, 0, 0, 0
+            cv_fig_K_A_ji, cv_fig_K_B_ji = 0, 0
+            ov_fig_C_A_ij, ov_fig_C_B_ij, cj_fig_G_A_ij, cj_fig_G_B_ij = 0, 0, 0, 0
+            cv_fig_K_A_ij, cv_fig_K_B_ij = 0, 0
+            A_number, A_number_ij, B_number, B_number_ij = 0, 0, 0, 0
+            for k in range(2000, 3000):
+
+                for l in range(len(result[(j,i)])):
+                    if result[(j, i)][l][0] == 'choice A':
+                        ov_fig_C_A_ji += result[(j, i)][l][1][k]
+                        cj_fig_G_A_ji += result[(j, i)][l][2][k]
+                        cv_fig_K_A_ji += result[(j, i)][l][3][k + 1000]
+                        A_number +=1
+
+                    else :
+                        ov_fig_C_B_ji += result[(j, i)][l][1][k]
+                        cj_fig_G_B_ji += result[(j, i)][l][2][k]
+                        cv_fig_K_B_ji += result[(j, i)][l][3][k + 1000]
+                        B_number +=1
+
+                for l in range(len(result[(i,j)])):
+                    if result[(i,j)][l][0] == 'choice A':
+                        ov_fig_C_A_ij += result[(i, j)][l][1][k]
+                        cj_fig_G_A_ij += result[(i, j)][l][2][k]
+                        cv_fig_K_A_ij += result[(i, j)][l][2][k + 1000]
+                        A_number_ij +=1
+                    else :
+                        ov_fig_C_B_ij += result[(i, j)][l][1][k]
+                        cj_fig_G_B_ij += result[(i, j)][l][2][k]
+                        cv_fig_K_B_ij += result[(i, j)][l][2][k + 1000]
+                        B_number_ij += 1
+    mean_ov_fig_C_A_ji.append(ov_fig_C_A_ji / A_number)
+    mean_ov_fig_C_B_ji.append(ov_fig_C_B_ji / B_number)
+    mean_cj_fig_G_A_ji.append(cj_fig_G_A_ji / A_number)
+    mean_cj_fig_G_B_ji.append(cj_fig_G_A_ji / B_number)
+    mean_cv_fig_K_A_ji.append(cv_fig_K_A_ji / A_number)
+    mean_cv_fig_K_B_ji.append(cv_fig_K_B_ji / B_number)
+    mean_ov_fig_C_A_ij.append(ov_fig_C_A_ij / A_number_ij)
+    mean_ov_fig_C_B_ij.append(ov_fig_C_B_ij / B_number_ij)
+    mean_cj_fig_G_A_ij.append(cj_fig_G_A_ij / A_number_ij)
+    mean_cj_fig_G_B_ij.append(cj_fig_G_B_ij / B_number_ij)
+    mean_cv_fig_K_A_ij.append(cv_fig_K_A_ij / A_number_ij)
+    mean_cv_fig_K_B_ij.append(cv_fig_K_B_ij / B_number_ij)
+    mean_ov_fig_C_A = mean_ov_fig_C_A_ji + mean_ov_fig_C_A_ij[::-1]
+    mean_ov_fig_C_B = mean_ov_fig_C_B_ji + mean_ov_fig_C_B_ij[::-1]
+    mean_cj_fig_G_A = mean_cj_fig_G_A_ji + mean_cj_fig_G_A_ij[::-1]
+    mean_cj_fig_G_B = mean_cj_fig_G_B_ji + mean_cj_fig_G_B_ij[::-1]
+    mean_cv_fig_K_A = mean_cv_fig_K_A_ji + mean_cv_fig_K_A_ij[::-1]
+    mean_cv_fig_K_B = mean_cv_fig_K_B_ji + mean_cv_fig_K_B_ij[::-1]
     return (ovb_rate_low, ovb_rate_medium, ovb_rate_high, mean_A_chosen_cj, mean_B_chosen_cj, mean_low_cv, mean_medium_cv, mean_high_cv,
-            mean_i_stim_choice_a, mean_i_stim_choice_b, mean_i_ampa_ext_choice_a, mean_i_ampa_ext_choice_b, mean_i_ampa_ext_a_choice_a, mean_i_ampa_ext_a_choice_b)
+            mean_ov_fig_C_A, mean_ov_fig_C_B, mean_cj_fig_G_A, mean_cj_fig_G_B, mean_cv_fig_K_A, mean_cv_fig_K_B)
 
 
 
 def graph():
     (ovb_rate_low, ovb_rate_medium, ovb_rate_high, mean_A_chosen_cj, mean_B_chosen_cj, mean_low_cv, mean_medium_cv,
-     mean_high_cv, mean_i_stim_choice_a, mean_i_stim_choice_b, mean_i_ampa_ext_choice_a, mean_i_ampa_ext_choice_b, mean_i_ampa_ext_a_choice_a, mean_i_ampa_ext_a_choice_b) = result_firing_rate()
-    X_axis = np.arange(0, 1.5, 0.0005)
+     mean_high_cv, mean_ov_fig_C_A, mean_ov_fig_C_B, mean_cj_fig_G_A, mean_cj_fig_G_B, mean_cv_fig_K_A, mean_cv_fig_K_B) = result_firing_rate()
+    X_axis = np.arange(0, 2.0, 0.0005)
+    X2_axis = ["1B: 20A", "1B: 16A", "1B: 12A", "1B: 8A", "1B: 4A", "4B: 1A", "8B: 1A", "12B: 1A", "16B: 1A", "20B: 1A"]
     bokeh.plotting.output_notebook()
-    figure_4_A = bokeh.plotting.figure(title="Figure 4 A", plot_width=300, plot_height=300)
-    figure_4_E = bokeh.plotting.figure(title="Figure 4 E", plot_width=300, plot_height=300)
-    figure_4_I = bokeh.plotting.figure(title="Figure 4 I", plot_width=300, plot_height=300)
-    figure_i_stim =  bokeh.plotting.figure(title="Figure I stim CJ B", plot_width=300, plot_height=300)
-    figure_i_ampa_ext = bokeh.plotting.figure(title="Figure I ampa ext CJ B", plot_width=300, plot_height=300)
-    figure_i_ampa_ext_a = bokeh.plotting.figure(title="Figure I ampa ext CJ A", plot_width=300, plot_height=300)
+    figure_4_A = bokeh.plotting.figure(title="Figure 4 A", plot_width=700, plot_height=700)
+    figure_4_E = bokeh.plotting.figure(title="Figure 4 E", plot_width=700, plot_height=700)
+    figure_4_I = bokeh.plotting.figure(title="Figure 4 I", plot_width=700, plot_height=700)
+    figure_4_C = bokeh.plotting.figure(title="Figure 4 C", plot_width=700, plot_height=700)
+    figure_4_G = bokeh.plotting.figure(title="Figure 4 G", plot_width=700, plot_height=700)
+    figure_4_K = bokeh.plotting.figure(title="Figure 4 K", plot_width=700, plot_height=700)
 
-    figure_4_A.multi_line([X_axis, X_axis, X_axis], [ovb_rate_low, ovb_rate_medium, ovb_rate_high] , color =['red', "green", "blue"])
-    figure_4_E.multi_line([X_axis, X_axis] , [mean_A_chosen_cj, mean_B_chosen_cj], color =['red', "blue"])
-    figure_4_I.multi_line([X_axis, X_axis, X_axis] , [mean_low_cv, mean_medium_cv, mean_high_cv], color =['red', "green", "blue"])
-    figure_i_stim.multi_line([X_axis, X_axis] , [mean_i_stim_choice_a, mean_i_stim_choice_b], color =['red', "blue"])
-    figure_i_ampa_ext.multi_line([X_axis, X_axis], [mean_i_ampa_ext_choice_a, mean_i_ampa_ext_choice_b], color=['red', "blue"])
-    figure_i_ampa_ext_a.multi_line([X_axis, X_axis], [mean_i_ampa_ext_a_choice_a, mean_i_ampa_ext_a_choice_b], color=['red', "blue"])
+
+    figure_4_A.multi_line([X_axis, X_axis, X_axis], [ovb_rate_low, ovb_rate_medium, ovb_rate_high] , color =['red', "green", "blue"], legends = ["low", "medium", "high"])
+    figure_4_E.multi_line([X_axis, X_axis] , [mean_A_chosen_cj, mean_B_chosen_cj], color =['red', "blue"], legends = ["A chosen", "B chosen"])
+    figure_4_I.multi_line([X_axis, X_axis, X_axis] , [mean_low_cv, mean_medium_cv, mean_high_cv], color =['red', "green", "blue"], legends = ["low", "medium", "high"])
+    figure_4_C.diamond([X2_axis], [mean_ov_fig_C_A], color ='red', size = 1)
+    figure_4_C.circle([X2_axis], [mean_ov_fig_C_B], color = "blue", size =1)
+    figure_4_G.diamond([X2_axis], [mean_cj_fig_G_A], color ='red', size = 1)
+    figure_4_G.circle([X2_axis], [mean_cj_fig_G_B], color="blue", size=1)
+    figure_4_K.diamond([X2_axis], [mean_cv_fig_K_A], color ='red', size = 1)
+    figure_4_K.circle([X2_axis], [mean_cv_fig_K_B], color="blue", size=1)
+
+
 
     bokeh.plotting.show(figure_4_A)
     bokeh.plotting.show(figure_4_E)
     bokeh.plotting.show(figure_4_I)
-    bokeh.plotting.show(figure_i_stim)
-    bokeh.plotting.show(figure_i_ampa_ext)
-    bokeh.plotting.show(figure_i_ampa_ext_a)
-
+    bokeh.plotting.show(figure_4_C)
+    bokeh.plotting.show(figure_4_G)
+    bokeh.plotting.show(figure_4_K)
 
 graph()
 

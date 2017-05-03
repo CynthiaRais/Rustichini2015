@@ -11,31 +11,26 @@ np.random.seed(100)
 def firing_pyr_cells(r_i, phi, τ_ampa, dt): #1
     """Update the firing rate of pyramidale cells (eq. 1)"""
     r_i += ((- r_i + phi) / τ_ampa) * dt
-    #assert 0 <= r_i <= 30, " r_i = {0}, phi = {1}".format(r_i, phi)
     return r_i
 
 def firing_rate_I(r_I, phi, τ_gaba, dt): #2
     """Update the firing rate of interneurons (eq. 2)"""
     r_I += ((-r_I + phi) / τ_gaba) * dt
-    #assert 10 <= r_I <= 20, "r_I = {0}".format(r_I)
     return r_I
 
 def channel_ampa(S_ampa, τ_ampa, r_i, dt): #3
     """Open AMPA channels (eq. 3)"""
     S_ampa += ((- S_ampa / τ_ampa) + r_i) * dt
-    #assert 0 <= S_ampa <= 1, "S_ampa = {0}".format(S_ampa)
     return S_ampa
 
 def channel_nmda(S_nmda, τ_nmda, γ, r_i, dt): #4
     """Open NMDA channels (eq. 4)"""
     S_nmda += ((-S_nmda / τ_nmda) + (1 - S_nmda) * γ * r_i) * dt
-    #assert 0 <= S_nmda <= 1, "S_nmda = {0}".format(S_nmda)
     return S_nmda
 
 def channel_gaba(S_gaba, τ_gaba, r_I, dt): #5
     """Open GABA channels (eq. 5)"""
     S_gaba += (-S_gaba / τ_gaba + r_I) * dt
-    #assert 0 <= S_gaba <= 1, "S_gaba = {0}".format(S_gaba)
     return S_gaba
 
 def Φ(I_syn, c, gain, i): # 6
@@ -114,11 +109,9 @@ def firing_ov_cells(x, xmin, x_max, t, r_o, Δ_r): #20, 21, 22, 23
     """Computing the activity profile of OV cells (eq. 20, 21, 22, 23)"""
     x_i = (x - xmin) / (x_max - xmin)
     g_t = (1 / (1 + np.exp(- (t - a) / b))) * (1 / (1 + np.exp((t - c) / d)))
-    assert 0 <= g_t <= 1, "g_t == {0}".format(g_t)
+
     f_t = g_t / g_max
     r_ov = r_o + Δ_r * f_t * x_i
-    assert 0 <= f_t <= 1, "f_t = {0}, g_t = {1}, g_max1 = {2}, t = {3}".format(f_t, g_t, g_max, t)
-    assert 0 <= r_ov <= 8, "r_ov = {0}".format(r_ov)
     return r_ov
 
 
@@ -177,10 +170,8 @@ dt = 0.0005 # s
 
     ##
 
-g_max = 0
+
 list_g = []
-
-
 for t in np.arange(0, 2.0, dt):
     g = (1 / (1 + np.exp(- (t- a) / b))) * (1 / (1 + np.exp((t - c) / d)))
     list_g.append(g)
@@ -301,7 +292,7 @@ def one_trial(x_a, x_b, xmin_list, x_max_list,
                                     I_eta_cj_b, S_cj_a[0], S_ns[0], S_cj_a[1], S_ns[1], r_i_cv_cells, r_ov_b)
 
         """Firing rate of NS cells"""
-        r_i_ns, S_ns= ns_cells(r_i_ns, S_ns[0], S_ns[1], S_ns[2],
+        r_i_ns, S_ns = ns_cells(r_i_ns, S_ns[0], S_ns[1], S_ns[2],
                                 I_eta_ns,S_cj_a[0], S_cj_b[0], S_cj_a[1], S_cj_b[1], r_i_cv_cells)
 
         """Firing rate of CV cells"""
@@ -324,21 +315,17 @@ def one_trial(x_a, x_b, xmin_list, x_max_list,
 
 
 def session():
-    r_i_cj_a, r_i_cj_b, r_i_ns, r_i_cv_cells = 0, 0, 0, 0
-    I_eta_cj_a, I_eta_cj_b, I_eta_ns, I_eta_cv = 0, 0, 0, 0
-    S_cj_a, S_cj_b, S_ns = [0, 0, 0], [0, 0, 0], [0, 0, 0]
-    S_gaba_cv = 0
-    quantity_a, quantity_b = [], []
+    n = 100  #number of trials for a session
+    """Create and order the dictionary result"""
     result = {}
-
-    """Order the dictionary result"""
     for j in range(0, 21):
         for k in range(0, 21):
                 result[(j, k)] = []
     result = collections.OrderedDict(sorted(result.items(), key = lambda t: t[0]))
 
     """Determine the quantity of each juice for all the trials in the session"""
-    for i in range(100):
+    quantity_a, quantity_b = [], []
+    for i in range(n):
         x_a, x_b = quantity_juice()
         quantity_a.append(x_a)
         quantity_b.append(x_b)
@@ -351,8 +338,12 @@ def session():
     xmin_list = [xmin_a, xmin_b]
     x_max_list = [x_max_a, x_max_b]
 
-
-    for i in range(100):
+    for i in range(n):
+        '''for graphs until figure 7, all parameters are reset to 0 at the beginning of each trial'''
+        r_i_cj_a, r_i_cj_b, r_i_ns, r_i_cv_cells = 0, 0, 0, 0
+        I_eta_cj_a, I_eta_cj_b, I_eta_ns, I_eta_cv = 0, 0, 0, 0
+        S_cj_a, S_cj_b, S_ns = [0, 0, 0], [0, 0, 0], [0, 0, 0]
+        S_gaba_cv = 0
         choice, ov_b_one_trial, r_i_cj_b_one_trial, r_i_cv_cells_one_trial = one_trial(quantity_a[i], quantity_b[i], xmin_list, x_max_list,
                                                         r_i_cj_a, r_i_cj_b, r_i_ns, r_i_cv_cells,
                                                         I_eta_cj_a, I_eta_cj_b, I_eta_ns, I_eta_cv,
@@ -510,6 +501,7 @@ def graph():
     X_axis = np.arange(0, 2.0, 0.0005)
     #X2_axis = ["1B: 20A", "1B: 16A", "1B: 12A", "1B: 8A", "1B: 4A", "4B: 1A", "8B: 1A", "12B: 1A", "16B: 1A", "20B: 1A"]
     bokeh.plotting.output_notebook()
+    #figure_3 = bokeh.plotting.figure(title="Figure 3", plot_width=700, plot_height=700)
     figure_4_A = bokeh.plotting.figure(title="Figure 4 A", plot_width=700, plot_height=700)
     figure_4_E = bokeh.plotting.figure(title="Figure 4 E", plot_width=700, plot_height=700)
     figure_4_I = bokeh.plotting.figure(title="Figure 4 I", plot_width=700, plot_height=700)
@@ -517,7 +509,7 @@ def graph():
     #figure_4_G = bokeh.plotting.figure(title="Figure 4 G", plot_width=700, plot_height=700)
     #figure_4_K = bokeh.plotting.figure(title="Figure 4 K", plot_width=700, plot_height=700)
 
-
+    #figure_3.circle(x=np.arange(0,20), y=np.arange(0,20), color='blue', size = 10)
     figure_4_A.multi_line([X_axis, X_axis, X_axis], [ovb_rate_low, ovb_rate_medium, ovb_rate_high] , color =['red', "green", "blue"])
     figure_4_E.multi_line([X_axis, X_axis] , [mean_A_chosen_cj, mean_B_chosen_cj], color =['red', "blue"])
     figure_4_I.multi_line([X_axis, X_axis, X_axis] , [mean_low_cv, mean_medium_cv, mean_high_cv], color =['red', "green", "blue"])
@@ -529,7 +521,7 @@ def graph():
     #figure_4_K.circle([X2_axis], [mean_cv_fig_K_B], color="blue", size=1)
 
 
-
+    #bokeh.plotting.show(figure_3)
     bokeh.plotting.show(figure_4_A)
     bokeh.plotting.show(figure_4_E)
     bokeh.plotting.show(figure_4_I)
@@ -541,43 +533,6 @@ graph()
 
 
 
-#ovb_rate_low, ovb_rate_medium, ovb_rate_high = result_firing_rate()
-
-
-#(r_ov_a , r_ov_b, r_i_cj_a, S_cj_a, r_i_cj_b, S_cj_b, r_i_ns, S_ns, r_i_cv_cells, S_gaba_cv) = one_trial(0, 20, [0, 0], [20, 20], 0, 0, 0, 0, 0,
-#                0,0,0,0, [0, 0, 0], [ 0, 0, 0], [0, 0, 0], 0)
-#X_axis = range(len(mean_ov_b))
-
-
-
-
-#s_ampa_cj_b_tot, s_nmda_b_tot, s_gaba_b_tot, s_gaba_cv_tot)
-#bokeh.plotting.output_notebook()
-#figure_4_A = bokeh.plotting.figure(title="Figure 4 A", plot_width=300, plot_height=300)
-#figure_4_E = bokeh.plotting.figure(title="Figure 4 E", plot_width=300, plot_height=300)
-#figure_4_I = bokeh.plotting.figure(title="Figure 4 I", plot_width=300, plot_height=300)
-#figure_4_ns = bokeh.plotting.figure(title="Figure 4 ns", plot_width=300, plot_height=300)
-#figure_4_A.line(X_axis , mean_ov_b, color ='red')
-#figure_4_E.line(X_axis , r_i_cj_a_tot, color ='red')
-#figure_4_I.line(X_axis , r_i_cj_b_tot, color ='red')
-#figure_4_ns.line(X_axis, r_i_ns_tot, color = 'red')
-#graph_ampa = bokeh.plotting.figure(title="ampa b", plot_width=300, plot_height=300)
-#graph_nmda = bokeh.plotting.figure(title="nmda b", plot_width=300, plot_height=300)
-#graph_gaba = bokeh.plotting.figure(title="gaba b", plot_width=300, plot_height=300)
-#graph_gaba_cv = bokeh.plotting.figure(title="gaba cv b", plot_width=300, plot_height=300)
-#graph_ampa.line(X_axis , s_ampa_cj_b_tot, color ='blue')
-#graph_nmda.line(X_axis , s_nmda_b_tot, color ='blue')
-#graph_gaba.line(X_axis , s_gaba_b_tot, color ='blue')
-#graph_gaba_cv.line(X_axis , s_gaba_cv_tot, color ='blue')
-
-#bokeh.plotting.show(figure_4_A)
-#bokeh.plotting.show(figure_4_E)
-#bokeh.plotting.show(figure_4_I)
-#bokeh.plotting.show(figure_4_ns)
-#bokeh.plotting.show(graph_ampa)
-#bokeh.plotting.show(graph_nmda)
-#bokeh.plotting.show(graph_gaba)
-#bokeh.plotting.show(graph_gaba_cv)
 
 
 

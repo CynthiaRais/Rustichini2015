@@ -2,7 +2,7 @@
 
 import numpy as np
 import math
-import collections # to order items in dictionary result
+import operator # to sort results
 import bokeh
 import bokeh.plotting
 
@@ -39,7 +39,7 @@ class Economic_Decisions_Model:
                         r_o     = 0,                    # spike/s (0 or 6)
                         Δ_r     = 8,                    # spike/s
                         t_offer = 1.0,                  # s
-                        t_exp = 2.0,                     # s
+                        t_exp = 2.0,                    # s
                         dt=0.0005,                      # s
                         n = 100,                        # number of trials
 
@@ -91,8 +91,10 @@ class Economic_Decisions_Model:
         self.t_exp = t_exp
         self.dt = dt
         self.n = n
-        self.result = {}                            # to save mean of firing rates for each (quantity A, quantity B, choice)
         self.list_choice = ['A', 'B']
+
+
+        #self.result = sorted(self.result.items(), key = operator.itemgetter(0))
 
         # self.gmax = np.max((1 / (1 + np.exp(- (t- self.a) / self.b))) * (1 / (1 + np.exp((t - self.c) / self.d)))
         #                   for t in np.arange(0, 2.0, self.dt))         #marche?
@@ -113,6 +115,7 @@ class Economic_Decisions_Model:
     def firing_rate_pyr_cells(self, r_i, phi): #1
         """Update the firing rate of pyramidale cells (eq. 1)"""
         r_i += ((- r_i + phi) / self.τ_ampa) * self.dt
+
         return r_i
 
     def firing_rate_I(self, r_I, phi):  # 2
@@ -139,6 +142,7 @@ class Economic_Decisions_Model:
     def Φ(self, I_syn, c, i, gain):  # 6
         """Input-ouput relation for leaky integrate-and-fire cell (Abbott and Chance, 2005) (eq. 6)"""
         phi = ((c * I_syn - i) / (1 - np.exp(-gain * (c * I_syn - i))))
+
         return phi
 
 
@@ -215,6 +219,7 @@ class Economic_Decisions_Model:
         g_t = (1 / (1 + np.exp(- (t - self.a) / self.b))) * (1 / (1 + np.exp((t - self.c) / self.d)))
 
         f_t = g_t / self.g_max
+        #assert f_t <= 1, 'firing ov trop haut'
         r_ov = self.r_o + self.Δ_r * f_t * x_i
         return r_ov
 
@@ -246,8 +251,10 @@ class Economic_Decisions_Model:
         I_stim_cj = self.I_stim(δ_J_hl, δ_J_stim, r_ov)  # equation 19
         I_syn_cj = self.I_syn(I_ampa_ext_cj, I_ampa_rec_cj, I_nmda_rec_cj, I_gaba_rec_cj, I_stim_cj)  # equation 7
 
-        phi_cj = self.Φ(I_syn_cj, self.c_E, self.g_E, self.I_E)  # equation 6
+        phi_cj = self.Φ(I_syn_cj, self.c_E, self.I_E, self.g_E)  # equation 6
         r_i_cj = self.firing_rate_pyr_cells(r_i_cj, phi_cj)  # equation 1
+
+        assert r_i_cj <=100
         return r_i_cj, S_cj
 
     def ns_cells(self, r_i_ns, S_ampa_ns, S_nmda_ns, S_gaba_ns, I_eta_ns,
@@ -268,8 +275,10 @@ class Economic_Decisions_Model:
         I_stim_ns = 0
         I_syn_ns = self.I_syn(I_ampa_ext_ns, I_ampa_rec_ns, I_nmda_rec_ns, I_gaba_rec_ns, I_stim_ns)  # equation 7
 
-        phi_ns = self.Φ(I_syn_ns, self.c_E, self.g_E, self.I_E)  # equation 6
+        phi_ns = self.Φ(I_syn_ns, self.c_E, self.I_E, self.g_E)  # equation 6
         r_i_ns = self.firing_rate_pyr_cells(r_i_ns, phi_ns)  # equation 1
+
+        assert r_i_ns <=100, 'r_i_ns = {}'.format(r_i_ns)
         return r_i_ns, S_ns
 
     def cv_cells(self,r_i_cv_cells, S_gaba_cv, I_eta_cv,
@@ -287,8 +296,9 @@ class Economic_Decisions_Model:
         I_stim_cv = 0
         I_syn_cv_cells = self.I_syn(I_ampa_ext_cv, I_ampa_rec_cv, I_nmda_rec_cv, I_gaba_rec_cv, I_stim_cv)  # equation 7
 
-        phi_cv_cells = self.Φ(I_syn_cv_cells, self.c_I, self.g_I, self.I_I)  # equation 6
+        phi_cv_cells = self.Φ(I_syn_cv_cells, self.c_I, self.I_I, self.g_I)  # equation 6
         r_i_cv_cells = self.firing_rate_I(r_i_cv_cells, phi_cv_cells)  # equation 2
+        assert r_i_cv_cells <= 80, 'r_i_cv = {}'.format(r_i_cv_cells)
         return r_i_cv_cells, S_gaba_cv
 
 
@@ -309,6 +319,7 @@ class Economic_Decisions_Model:
             self.quantity_b.append(self.x_b)
         self.x_min_list = [np.min(self.quantity_a)] + [np.min(self.quantity_b)]
         self.x_max_list = [np.max(self.quantity_a)] + [np.max(self.quantity_b)]
+        return self.quantity_a, self.quantity_b, self.x_min_list, self.x_max_list
 
 
     def one_trial(self, x_a, x_b,
@@ -320,19 +331,25 @@ class Economic_Decisions_Model:
         # Firing rate of OV B cell, CJ B cell and CV cell for one trial
         ov_b_one_trial, r_i_cj_b_one_trial, r_i_cv_cells_one_trial = [], [], []
 
-        for t in np.arange(0, self.t_exp, self.dt):
+        for t in np.arange(0, self.t_exp + self.dt, self.dt):
+
             """Firing rate of OV cells"""
             r_ov_a = self.firing_ov_cells(x_a, self.x_min_list[0], self.x_max_list[0], t)
             r_ov_b = self.firing_ov_cells(x_b, self.x_min_list[1], self.x_max_list[1], t)
+            assert r_ov_a <= 8, 'r_ov_a = {}'.format(r_ov_a)
+            assert r_ov_b <= 8, 'r_ov_b = {}'.format(r_ov_b)
 
             """Firing rate of CJA and CJB cells"""
             r_i_cj_a, S_cj_a = self.cj_cells(r_i_cj_a, S_cj_a[0], S_cj_a[1], S_cj_a[2],
                                         I_eta_cj_a, S_cj_b[0], S_ns[0], S_cj_b[1], S_ns[1], r_i_cv_cells, r_ov_a,
                                              self.δ_J_nmda_cj_a, self.δ_J_gaba_cj_a, self.δ_J_hl_cj_a, self.δ_J_stim_cj_a)
+            #assert r_i_cj_a <= 80, 'r_i_cj = {0}, t ={1}'.format(r_i_cj_a, t)
+
             r_i_cj_b, S_cj_b = self.cj_cells(r_i_cj_b, S_cj_b[0], S_cj_b[1], S_cj_b[2],
                                         I_eta_cj_b, S_cj_a[0], S_ns[0], S_cj_a[1], S_ns[1], r_i_cv_cells, r_ov_b,
                                              self.δ_J_nmda_cj_b, self.δ_J_gaba_cj_b, self.δ_J_hl_cj_b, self.δ_J_stim_cj_b)
 
+            #assert r_i_cj_b <= 80, 'r_i_cj = {}, t ={1}'.format(r_i_cj_b, t)
             """Firing rate of NS cells"""
             r_i_ns, S_ns = self.ns_cells(r_i_ns, S_ns[0], S_ns[1], S_ns[2],
                                          I_eta_ns, S_cj_a[0], S_cj_b[0], S_cj_a[1], S_cj_b[1], r_i_cv_cells,
@@ -358,14 +375,13 @@ class Economic_Decisions_Model:
 
 
     def session(self):
-        """Create and order the dictionary result"""
+        self.quantity_a, self.quantity_b, self.x_min_list, self.x_max_list = self.quantity_juice()
+        # Create and order the dictionary result
+        result = {}  # to save mean of firing rates for each (quantity A, quantity B, choice)
         for j in range(0, 21):
             for k in range(0, 21):
-                for l in range(0,1):
-                    self.result[(j, k, self.list_choice[l])] = []
-        self.result = collections.OrderedDict(sorted(self.result.items(), key = lambda t: t[0]))
-
-
+                for l in range(0, 2):
+                    result[(j, k, self.list_choice[l])] = []
         for i in range(self.n):
             '''for graphs until figure 7, all parameters are reset to 0 at the beginning of each trial'''
             """ Reset to zero of parameters before each trial"""
@@ -377,24 +393,30 @@ class Economic_Decisions_Model:
                                                                                                 r_i_cj_a, r_i_cj_b, r_i_ns, r_i_cv_cells,
                                                                                                 I_eta_cj_a, I_eta_cj_b, I_eta_ns, I_eta_cv,
                                                                                                 S_cj_a, S_cj_b, S_ns, S_gaba_cv)
+
             """keep results in a dictionary"""
-            if self.result[(self.quantity_a[i], self.quantity_b[i], choice)] == []:
-                self.result[(self.quantity_a[i], self.quantity_b[i], choice)].append([ov_b_one_trial, r_i_cj_b_one_trial, r_i_cv_cells_one_trial])
+            if result[(self.quantity_a[i], self.quantity_b[i], choice)] == []:
+                result[(self.quantity_a[i], self.quantity_b[i], choice)].append([ov_b_one_trial, r_i_cj_b_one_trial, r_i_cv_cells_one_trial])
+
             else :
-                for R_i in self.result[(self.quantity_a[i], self.quantity_b[i], choice)]:
-                    self.result[(self.quantity_a[i], self.quantity_b[i], choice)][0][0][R_i] = (self.result[(self.quantity_a[i], self.quantity_b[i], choice)][0][0][R_i] + ov_b_one_trial[R_i]) / 2
-                    self.result[(self.quantity_a[i], self.quantity_b[i], choice)][0][1][R_i] = (self.result[(self.quantity_a[i], self.quantity_b[i], choice)][0][1][R_i] + r_i_cj_b_one_trial[R_i]) / 2
-                    self.result[(self.quantity_a[i], self.quantity_b[i], choice)][0][2][R_i] = (self.result[(self.quantity_a[i], self.quantity_b[i], choice)][0][2][R_i] + r_i_cv_cells_one_trial[R_i]) / 2
-        return self.result
+                for j in range(len(result[(self.quantity_a[i], self.quantity_b[i], choice)][0][0])):
+                    result[(self.quantity_a[i], self.quantity_b[i], choice)][0][0][j] = (result[(self.quantity_a[i], self.quantity_b[i], choice)][0][0][j] + ov_b_one_trial[j]) / 2
+                    result[(self.quantity_a[i], self.quantity_b[i], choice)][0][1][j] = (result[(self.quantity_a[i], self.quantity_b[i], choice)][0][1][j] + r_i_cj_b_one_trial[j]) / 2
+                    result[(self.quantity_a[i], self.quantity_b[i], choice)][0][2][j] = (result[(self.quantity_a[i], self.quantity_b[i], choice)][0][2][j] + r_i_cv_cells_one_trial[j]) / 2
+
+        return result
 
     def result_firing_rate(self):
 
         """ on obtient la moyenne des ov_b rate en fonction du temps
         et si l'essai a eu une offre forte, moyenne, faible """
-
+        result = self.session()
         ovb_rate_low, ovb_rate_high, ovb_rate_medium = [], [], []
         mean_A_chosen_cj, mean_B_chosen_cj = [], []
         mean_low_cv, mean_medium_cv, mean_high_cv = [], [], []
+
+        mean_ov_ij, mean_cjb_ij, mean_cv_ij = 0, 0, 0
+        mean_ov_ji, mean_cjb_ji, mean_cv_ji = 0, 0, 0
 
         ''' le terme k représente le temps,
          le terme i représente la quantité de A,
@@ -402,57 +424,57 @@ class Economic_Decisions_Model:
           et le l représente la liste de l'essai l
           pour un temps donné, on ajoute les r_ov_b pour chaque (i,j) pour chaque essai l
           (figure 4A)'''
-
-        for k in range(4000):
+        
+        for k in range(4001):
             mean_ov_low, mean_ov_high, mean_ov_medium = 0, 0, 0
             low, medium, high = 0, 0, 0
-            for i in range(21):
-                for j in range(6):
+            for i in range(0, 21):
+                for j in range(0, 7):
                     for choice_i in self.list_choice :
-                        mean_ov_low += self.result[(i, j, choice_i)][0][0][k]
+                        mean_ov_low += result[(i, j, choice_i)][0][0][k]
                         low += 1
-                for j in range(7, 13):
+                for j in range(7, 14):
                     for choice_i in self.list_choice:
-                        mean_ov_medium += self.result[(i, j, choice_i)][0][0][k]
+                        mean_ov_medium += result[(i, j, choice_i)][0][0][k]
                         medium += 1
                 for j in range(14, 21):
                     for choice_i in self.list_choice:
-                        mean_ov_high += self.result[(i, j, choice_i)][0][0][k]
+                        mean_ov_high += result[(i, j, choice_i)][0][0][k]
                         high += 1
             ovb_rate_low.append(mean_ov_low / low)
             ovb_rate_medium.append(mean_ov_medium / medium)
             ovb_rate_high.append(mean_ov_high / high)
 
         '''mean depending on choice (figure 4E, 4I)'''
-        for k in range(4000):
+        for k in range(4002):
             A_chosen_cj, B_chosen_cj = 0, 0
             chosen_value_low, chosen_value_medium, chosen_value_high = 0, 0, 0
             A_nb, B_nb = 0, 0
             low_cv, medium_cv, high_cv = 0, 0, 0
             for i in range(21):
                 for j in range(21):
-                    A_chosen_cj += self.result[(i, j, self.list_choice[0])][0][1][k]
+                    A_chosen_cj += result[(i, j, self.list_choice[0])][0][1][k]
                     A_nb += 1
-                    if i < 6:
-                        chosen_value_low += self.result[(i, j, self.list_choice[0])][0][2][k]
+                    if i < 7:
+                        chosen_value_low += result[(i, j, self.list_choice[0])][0][2][k]
                         low_cv += 1
-                    elif 6 < i < 13:
-                        chosen_value_medium += self.result[(i, j, self.list_choice[0])][0][2][k]
+                    elif 7 < i < 14:
+                        chosen_value_medium += result[(i, j, self.list_choice[0])][0][2][k]
                         medium_cv += 1
                     else:
-                        chosen_value_high += self.result[(i, j, self.list_choice[0])][0][2][k]
+                        chosen_value_high += result[(i, j, self.list_choice[0])][0][2][k]
                         high_cv += 1
                 else:
-                    B_chosen_cj += self.result[(i, j, self.list_choice[1])][0][1][k]
+                    B_chosen_cj += result[(i, j, self.list_choice[1])][1][k]
                     B_nb += 1
                     if j < 6:
-                        chosen_value_low += self.result[(i, j, self.list_choice[1])][0][2][k]
+                        chosen_value_low += result[(i, j, self.list_choice[1])][0][2][k]
                         low_cv += 1
                     elif 6 < j < 13:
-                        chosen_value_medium += self.result[(i, j, self.list_choice[1])][1][2][k]
+                        chosen_value_medium += result[(i, j, self.list_choice[1])][0][2][k]
                         medium_cv += 1
                     else:
-                        chosen_value_high += self.result[(i, j, self.list_choice[1])][0][2][k]
+                        chosen_value_high += result[(i, j, self.list_choice[1])][0][2][k]
                         high_cv += 1
 
             mean_A_chosen_cj.append(A_chosen_cj / A_nb)
@@ -467,20 +489,20 @@ class Economic_Decisions_Model:
             for choice_i in self.list_choice:
                 self.ov[(1,j, choice_i)], self.cjb[(1, j, choice_i)], self.cv[(1, j, choice_i) ]= [], [], []
                 self.ov[(j,1, choice_i)], self.cjb[(j, 1, choice_i)], self.cv[(j, 1, choice_i)] = [], [], []
-        self.ov = collections.OrderedDict(sorted(self.result.items(), key=lambda t: t[1]))
-        self.cjb = collections.OrderedDict(sorted(self.result.items(), key = lambda t: t[1]))
-        self.cv = collections.OrderedDict(sorted(self.result.items(), key = lambda t: t[1]))
+        #self.ov = sorted(self.ov.items(), key=operator.itemgetter(1, 0), reverse = True)
+        #self.cjb = sorted(self.result.items(), key=operator.itemgetter(1, 0), reverse = True)
+        #self.cv = sorted(self.result.items(), key=operator.itemgetter(1, 0), reverse = True)
 
         for choice_i in self.list_choice:
             for i in range(1, 2):
                 for j in range(20, 3, -4):
-                    for k in range (4000):
-                        mean_ov_ij += self.result[(i, j, choice_i)][0][0][k]
-                        mean_cjb_ij += self.result[(i, j, choice_i)][0][1][k]
-                        mean_cv_ij += self.result[(i, j, choice_i)][0][2][k]
-                        mean_ov_ji += self.result[(j, i, choice_i)][0][0][k]
-                        mean_cjb_ji += self.result[(j, i, choice_i)][0][1][k]
-                        mean_cv_ji += self.result[(j, i, choice_i)][0][2][k]
+                    for k in range (4001):
+                        mean_ov_ij += result[(i, j, choice_i)][0][0][k]
+                        mean_cjb_ij += result[(i, j, choice_i)][0][1][k]
+                        mean_cv_ij += result[(i, j, choice_i)][0][2][k]
+                        mean_ov_ji += result[(j, i, choice_i)][0][0][k]
+                        mean_cjb_ji += result[(j, i, choice_i)][0][1][k]
+                        mean_cv_ji += result[(j, i, choice_i)][0][2][k]
 
                     self.ov[(i,j,choice_i)].append(mean_ov_ij / 4000)
                     self.ov[(j,i, choice_i)].append(mean_ov_ji / 4000)
@@ -529,3 +551,6 @@ class Economic_Decisions_Model:
         # bokeh.plotting.show(figure_4_G)
         # bokeh.plotting.show(figure_4_K)
 
+
+Class = Economic_Decisions_Model()
+Class.graph()

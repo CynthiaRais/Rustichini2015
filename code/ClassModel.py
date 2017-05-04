@@ -39,8 +39,21 @@ class Economic_Decisions_Model:
                         r_o     = 0,                    # spike/s (0 or 6)
                         Δ_r     = 8,                    # spike/s
                         t_offer = 1.0,                  # s
+                        t_exp = 2.0,                     # s
                         dt=0.0005,                      # s
-                        n = 100):                       # number of trials
+                        n = 100,                        # number of trials
+
+                        δ_J_hl = (1 ,1),
+                        δ_J_stim = (2 ,1),
+                        δ_J_gaba = (1 ,1 ,1),
+                        δ_J_nmda = (1 ,1),
+
+                        w_p=1.75,
+                        a = 0.175,
+                        b = 0.030,
+                        c = 0.400,
+                        d = 0.100):
+
 
         # Network parameters
         self.N_E, self.N_I = N_E, N_I
@@ -60,37 +73,40 @@ class Economic_Decisions_Model:
 
         # Parameters used to model OV cells
         self.r_o, self.Δ_r, self.t_offer = r_o, Δ_r, t_offer
-        self.a = t_offer + 0.175                    # s
-        self.b = 0.030                              # s
-        self.c = t_offer + 0.400                    # s
-        self.d = 0.100                              # s
+        self.a = a + t_offer                        # s
+        self.b = b                                  # s
+        self.c = t_offer + c                        # s
+        self.d = d                                  # s
         self.J_ampa_input = 30 * J_ampa_ext_pyr
 
-        self.w_p = 1.75
+        self.w_p = w_p
         self.w_m = 1 - f * (self.w_p - 1) / (1 - self.f)
 
         # Hebbian learning and synaptic imbalance
-        self.δ_j_hl_cj_a, self.δ_j_hl_cj_b = 1, 1
-        self.δ_j_stim_cj_a, self.δ_j_stim_cj_b = 2, 1
-        self.δ_J_gaba_cj_a, self.δ_J_gaba_cj_b, self.δ_J_gaba_ns = 1, 1, 1
-        self.δ_J_nmda_cj_a, self.δ_J_nmda_cj_b = 1, 1
+        self.δ_J_hl_cj_a, self.δ_J_hl_cj_b = δ_J_hl[0], δ_J_hl[1]
+        self.δ_J_stim_cj_a, self.δ_J_stim_cj_b = δ_J_stim[0], δ_J_stim[1]
+        self.δ_J_gaba_cj_a, self.δ_J_gaba_cj_b, self.δ_J_gaba_ns = δ_J_gaba[0], δ_J_gaba[1], δ_J_gaba[2]
+        self.δ_J_nmda_cj_a, self.δ_J_nmda_cj_b = δ_J_nmda[0], δ_J_nmda[1]
 
+        self.t_exp = t_exp
         self.dt = dt
         self.n = n
-        self.result = {}                            # to save firing rates at each trials
+        self.result = {}                            # to save mean of firing rates for each (quantity A, quantity B, choice)
+        self.list_choice = ['A', 'B']
 
         # self.gmax = np.max((1 / (1 + np.exp(- (t- self.a) / self.b))) * (1 / (1 + np.exp((t - self.c) / self.d)))
         #                   for t in np.arange(0, 2.0, self.dt))         #marche?
 
         # Determination of g maximum for OV cells firing rate
         self.list_g = []
-        for t in np.arange(0, 2.0, dt):
+        for t in np.arange(0, self.t_exp, dt):
             self.g = (1 / (1 + np.exp(- (t - self.a) / self.b))) * (1 / (1 + np.exp((t - self.c) / self.d)))
             self.list_g.append(self.g)
         self.g_max = np.max(self.list_g)
 
         self.quantity_a, self.quantity_b = [], [] # list of juice quantity A and B
-
+        self.x_min_list, self.x_max_list = [], [] # list of minimum and maximum of juice A and B in a session
+        self.ov, self.cjb, self.cv = {}, {}, {}
 
 
 
@@ -146,9 +162,9 @@ class Economic_Decisions_Model:
         return (-self.N_E * self.f * self.J_ampa_rec_pyr * (S_ampa_1 + S_ampa_2)
                 - self.N_E * (1 - 2 * self.f) * self.J_ampa_rec_pyr * S_ampa_3)
 
-    def I_nmda_rec(self, δ_j_ndma, S_nmda_1, S_nmda_2, S_nmda_3):  # 11
+    def I_nmda_rec(self, δ_J_ndma, S_nmda_1, S_nmda_2, S_nmda_3):  # 11
         """Compute the recurrent NMDA current for CJA and CJB cells (eq. 11)"""
-        return (-self.N_E * self.f * self.J_nmda_rec_pyr * δ_j_ndma * (self.w_p * S_nmda_1 + self.w_m * S_nmda_2)
+        return (-self.N_E * self.f * self.J_nmda_rec_pyr * δ_J_ndma * (self.w_p * S_nmda_1 + self.w_m * S_nmda_2)
                 - self.N_E * (1 - 2 * self.f) * self.J_nmda_rec_pyr * self.w_m * S_nmda_3)
 
     def I_nmda_rec_3(self, S_nmda_1, S_nmda_2, S_nmda_3):  # 12
@@ -213,7 +229,8 @@ class Economic_Decisions_Model:
     ##
 
     def cj_cells(self, r_i_cj, S_ampa_cj, S_nmda_cj, S_gaba_cj, I_eta_cj,
-                 S_ampa_cj_2, S_ampa_ns, S_nmda_cj_2, S_nmda_ns, r_i_cv_cells, r_ov):
+                 S_ampa_cj_2, S_ampa_ns, S_nmda_cj_2, S_nmda_ns, r_i_cv_cells, r_ov,
+                 δ_J_ndma, δ_J_gaba, δ_J_hl, δ_J_stim):
         """Compute firing rate of CJA and CJB cells"""
 
         S_ampa_cj = self.channel_ampa(S_ampa_cj, r_i_cj)  # equation 3
@@ -224,9 +241,9 @@ class Economic_Decisions_Model:
         I_eta_cj = self.white_noise(I_eta_cj)  # equation 18
         I_ampa_ext_cj = self.I_ampa_ext(I_eta_cj)  # equation 8
         I_ampa_rec_cj = self.I_ampa_rec(S_ampa_cj, S_ampa_cj_2, S_ampa_ns)  # equation 9
-        I_nmda_rec_cj = self.I_nmda_rec(δ_j_ndma, S_nmda_cj, S_nmda_cj_2, S_nmda_ns)  # equation 11
-        I_gaba_rec_cj = self.I_gaba_rec(δ_j_gaba, S_gaba_cj)  # equation 13
-        I_stim_cj = self.I_stim(δ_j_hl_cj_a, δ_j_stim_cj_a, r_ov)  # equation 19
+        I_nmda_rec_cj = self.I_nmda_rec(δ_J_ndma, S_nmda_cj, S_nmda_cj_2, S_nmda_ns)  # equation 11
+        I_gaba_rec_cj = self.I_gaba_rec(δ_J_gaba, S_gaba_cj)  # equation 13
+        I_stim_cj = self.I_stim(δ_J_hl, δ_J_stim, r_ov)  # equation 19
         I_syn_cj = self.I_syn(I_ampa_ext_cj, I_ampa_rec_cj, I_nmda_rec_cj, I_gaba_rec_cj, I_stim_cj)  # equation 7
 
         phi_cj = self.Φ(I_syn_cj, self.c_E, self.g_E, self.I_E)  # equation 6
@@ -234,7 +251,8 @@ class Economic_Decisions_Model:
         return r_i_cj, S_cj
 
     def ns_cells(self, r_i_ns, S_ampa_ns, S_nmda_ns, S_gaba_ns, I_eta_ns,
-                 S_ampa_cj_a, S_ampa_cj_b, S_nmda_cj_a, S_nmda_cj_b, r_i_cv_cells):
+                 S_ampa_cj_a, S_ampa_cj_b, S_nmda_cj_a, S_nmda_cj_b, r_i_cv_cells,
+                 δ_J_gaba):
         """Compute firing rate of NS cells"""
 
         S_ampa_ns = self.channel_ampa(S_ampa_ns, r_i_ns)  # equation 3
@@ -246,7 +264,7 @@ class Economic_Decisions_Model:
         I_ampa_ext_ns = self.I_ampa_ext(I_eta_ns)  # equation 8
         I_ampa_rec_ns = self.I_ampa_rec_3(S_ampa_cj_a, S_ampa_cj_b, S_ampa_ns)  # equation 10
         I_nmda_rec_ns = self.I_nmda_rec_3(S_nmda_cj_a, S_nmda_cj_b, S_nmda_ns)  # equation 12
-        I_gaba_rec_ns = self.I_gaba_rec(δ_J_gaba_ns, S_gaba_ns)  # equation 13
+        I_gaba_rec_ns = self.I_gaba_rec(δ_J_gaba, S_gaba_ns)  # equation 13
         I_stim_ns = 0
         I_syn_ns = self.I_syn(I_ampa_ext_ns, I_ampa_rec_ns, I_nmda_rec_ns, I_gaba_rec_ns, I_stim_ns)  # equation 7
 
@@ -274,7 +292,7 @@ class Economic_Decisions_Model:
         return r_i_cv_cells, S_gaba_cv
 
 
-
+    ##
 
     def quantity_juice(self):
         # random choice of juice quantity, ΔA = ΔB = [0, 20]
@@ -302,24 +320,27 @@ class Economic_Decisions_Model:
         # Firing rate of OV B cell, CJ B cell and CV cell for one trial
         ov_b_one_trial, r_i_cj_b_one_trial, r_i_cv_cells_one_trial = [], [], []
 
-        for t in np.arange(0, 2.0, self.dt):
+        for t in np.arange(0, self.t_exp, self.dt):
             """Firing rate of OV cells"""
             r_ov_a = self.firing_ov_cells(x_a, self.x_min_list[0], self.x_max_list[0], t)
             r_ov_b = self.firing_ov_cells(x_b, self.x_min_list[1], self.x_max_list[1], t)
 
             """Firing rate of CJA and CJB cells"""
             r_i_cj_a, S_cj_a = self.cj_cells(r_i_cj_a, S_cj_a[0], S_cj_a[1], S_cj_a[2],
-                                        I_eta_cj_a, S_cj_b[0], S_ns[0], S_cj_b[1], S_ns[1], r_i_cv_cells, r_ov_a)
+                                        I_eta_cj_a, S_cj_b[0], S_ns[0], S_cj_b[1], S_ns[1], r_i_cv_cells, r_ov_a,
+                                             self.δ_J_nmda_cj_a, self.δ_J_gaba_cj_a, self.δ_J_hl_cj_a, self.δ_J_stim_cj_a)
             r_i_cj_b, S_cj_b = self.cj_cells(r_i_cj_b, S_cj_b[0], S_cj_b[1], S_cj_b[2],
-                                        I_eta_cj_b, S_cj_a[0], S_ns[0], S_cj_a[1], S_ns[1], r_i_cv_cells, r_ov_b)
+                                        I_eta_cj_b, S_cj_a[0], S_ns[0], S_cj_a[1], S_ns[1], r_i_cv_cells, r_ov_b,
+                                             self.δ_J_nmda_cj_b, self.δ_J_gaba_cj_b, self.δ_J_hl_cj_b, self.δ_J_stim_cj_b)
 
             """Firing rate of NS cells"""
             r_i_ns, S_ns = self.ns_cells(r_i_ns, S_ns[0], S_ns[1], S_ns[2],
-                                    I_eta_ns, S_cj_a[0], S_cj_b[0], S_cj_a[1], S_cj_b[1], r_i_cv_cells)
+                                         I_eta_ns, S_cj_a[0], S_cj_b[0], S_cj_a[1], S_cj_b[1], r_i_cv_cells,
+                                         self.δ_J_gaba_ns)
 
             """Firing rate of CV cells"""
             r_i_cv_cells, S_gaba_cv = self.cv_cells(r_i_cv_cells, S_gaba_cv,
-                                               I_eta_cv, S_cj_a[0], S_cj_b[0], S_ns[0], S_cj_a[1], S_cj_b[1], S_ns[1])
+                                                    I_eta_cv, S_cj_a[0], S_cj_b[0], S_ns[0], S_cj_a[1], S_cj_b[1], S_ns[1])
 
             ov_b_one_trial.append(r_ov_b)
             r_i_cj_b_one_trial.append(r_i_cj_b)
@@ -327,11 +348,184 @@ class Economic_Decisions_Model:
 
         """Determine the final choice"""
         if r_i_cj_a > r_i_cj_b:
-            choice = 'choice A'
+            choice = 'A'
         elif r_i_cj_a < r_i_cj_b:
-            choice = 'choice B'
+            choice = 'B'
         else:
             raise ValueError(choice='no choice')
 
         return choice, ov_b_one_trial, r_i_cj_b_one_trial, r_i_cv_cells_one_trial
+
+
+    def session(self):
+        """Create and order the dictionary result"""
+        for j in range(0, 21):
+            for k in range(0, 21):
+                for l in range(0,1):
+                    self.result[(j, k, self.list_choice[l])] = []
+        self.result = collections.OrderedDict(sorted(self.result.items(), key = lambda t: t[0]))
+
+
+        for i in range(self.n):
+            '''for graphs until figure 7, all parameters are reset to 0 at the beginning of each trial'''
+            """ Reset to zero of parameters before each trial"""
+            r_i_cj_a, r_i_cj_b, r_i_ns, r_i_cv_cells = 0, 0, 0, 0
+            I_eta_cj_a, I_eta_cj_b, I_eta_ns, I_eta_cv = 0, 0, 0, 0
+            S_cj_a, S_cj_b, S_ns = [0, 0, 0], [0, 0, 0], [0, 0, 0]
+            S_gaba_cv = 0
+            choice, ov_b_one_trial, r_i_cj_b_one_trial, r_i_cv_cells_one_trial = self.one_trial(self.quantity_a[i], self.quantity_b[i],
+                                                                                                r_i_cj_a, r_i_cj_b, r_i_ns, r_i_cv_cells,
+                                                                                                I_eta_cj_a, I_eta_cj_b, I_eta_ns, I_eta_cv,
+                                                                                                S_cj_a, S_cj_b, S_ns, S_gaba_cv)
+            """keep results in a dictionary"""
+            if self.result[(self.quantity_a[i], self.quantity_b[i], choice)] == []:
+                self.result[(self.quantity_a[i], self.quantity_b[i], choice)].append([ov_b_one_trial, r_i_cj_b_one_trial, r_i_cv_cells_one_trial])
+            else :
+                for R_i in self.result[(self.quantity_a[i], self.quantity_b[i], choice)]:
+                    self.result[(self.quantity_a[i], self.quantity_b[i], choice)][0][0][R_i] = (self.result[(self.quantity_a[i], self.quantity_b[i], choice)][0][0][R_i] + ov_b_one_trial[R_i]) / 2
+                    self.result[(self.quantity_a[i], self.quantity_b[i], choice)][0][1][R_i] = (self.result[(self.quantity_a[i], self.quantity_b[i], choice)][0][1][R_i] + r_i_cj_b_one_trial[R_i]) / 2
+                    self.result[(self.quantity_a[i], self.quantity_b[i], choice)][0][2][R_i] = (self.result[(self.quantity_a[i], self.quantity_b[i], choice)][0][2][R_i] + r_i_cv_cells_one_trial[R_i]) / 2
+        return self.result
+
+    def result_firing_rate(self):
+
+        """ on obtient la moyenne des ov_b rate en fonction du temps
+        et si l'essai a eu une offre forte, moyenne, faible """
+
+        ovb_rate_low, ovb_rate_high, ovb_rate_medium = [], [], []
+        mean_A_chosen_cj, mean_B_chosen_cj = [], []
+        mean_low_cv, mean_medium_cv, mean_high_cv = [], [], []
+
+        ''' le terme k représente le temps,
+         le terme i représente la quantité de A,
+          le j représente la quantité de B
+          et le l représente la liste de l'essai l
+          pour un temps donné, on ajoute les r_ov_b pour chaque (i,j) pour chaque essai l
+          (figure 4A)'''
+
+        for k in range(4000):
+            mean_ov_low, mean_ov_high, mean_ov_medium = 0, 0, 0
+            low, medium, high = 0, 0, 0
+            for i in range(21):
+                for j in range(6):
+                    for choice_i in self.list_choice :
+                        mean_ov_low += self.result[(i, j, choice_i)][0][0][k]
+                        low += 1
+                for j in range(7, 13):
+                    for choice_i in self.list_choice:
+                        mean_ov_medium += self.result[(i, j, choice_i)][0][0][k]
+                        medium += 1
+                for j in range(14, 21):
+                    for choice_i in self.list_choice:
+                        mean_ov_high += self.result[(i, j, choice_i)][0][0][k]
+                        high += 1
+            ovb_rate_low.append(mean_ov_low / low)
+            ovb_rate_medium.append(mean_ov_medium / medium)
+            ovb_rate_high.append(mean_ov_high / high)
+
+        '''mean depending on choice (figure 4E, 4I)'''
+        for k in range(4000):
+            A_chosen_cj, B_chosen_cj = 0, 0
+            chosen_value_low, chosen_value_medium, chosen_value_high = 0, 0, 0
+            A_nb, B_nb = 0, 0
+            low_cv, medium_cv, high_cv = 0, 0, 0
+            for i in range(21):
+                for j in range(21):
+                    A_chosen_cj += self.result[(i, j, self.list_choice[0])][0][1][k]
+                    A_nb += 1
+                    if i < 6:
+                        chosen_value_low += self.result[(i, j, self.list_choice[0])][0][2][k]
+                        low_cv += 1
+                    elif 6 < i < 13:
+                        chosen_value_medium += self.result[(i, j, self.list_choice[0])][0][2][k]
+                        medium_cv += 1
+                    else:
+                        chosen_value_high += self.result[(i, j, self.list_choice[0])][0][2][k]
+                        high_cv += 1
+                else:
+                    B_chosen_cj += self.result[(i, j, self.list_choice[1])][0][1][k]
+                    B_nb += 1
+                    if j < 6:
+                        chosen_value_low += self.result[(i, j, self.list_choice[1])][0][2][k]
+                        low_cv += 1
+                    elif 6 < j < 13:
+                        chosen_value_medium += self.result[(i, j, self.list_choice[1])][1][2][k]
+                        medium_cv += 1
+                    else:
+                        chosen_value_high += self.result[(i, j, self.list_choice[1])][0][2][k]
+                        high_cv += 1
+
+            mean_A_chosen_cj.append(A_chosen_cj / A_nb)
+            mean_B_chosen_cj.append(B_chosen_cj / B_nb)
+            mean_low_cv.append(chosen_value_low / low_cv)
+            mean_medium_cv.append(chosen_value_medium / medium_cv)
+            mean_high_cv.append(chosen_value_high / high_cv)
+
+        """ordonner le dico avant utilisation"""
+
+        for j in range(20, 3, -4):
+            for choice_i in self.list_choice:
+                self.ov[(1,j, choice_i)], self.cjb[(1, j, choice_i)], self.cv[(1, j, choice_i) ]= [], [], []
+                self.ov[(j,1, choice_i)], self.cjb[(j, 1, choice_i)], self.cv[(j, 1, choice_i)] = [], [], []
+        self.ov = collections.OrderedDict(sorted(self.result.items(), key=lambda t: t[1]))
+        self.cjb = collections.OrderedDict(sorted(self.result.items(), key = lambda t: t[1]))
+        self.cv = collections.OrderedDict(sorted(self.result.items(), key = lambda t: t[1]))
+
+        for choice_i in self.list_choice:
+            for i in range(1, 2):
+                for j in range(20, 3, -4):
+                    for k in range (4000):
+                        mean_ov_ij += self.result[(i, j, choice_i)][0][0][k]
+                        mean_cjb_ij += self.result[(i, j, choice_i)][0][1][k]
+                        mean_cv_ij += self.result[(i, j, choice_i)][0][2][k]
+                        mean_ov_ji += self.result[(j, i, choice_i)][0][0][k]
+                        mean_cjb_ji += self.result[(j, i, choice_i)][0][1][k]
+                        mean_cv_ji += self.result[(j, i, choice_i)][0][2][k]
+
+                    self.ov[(i,j,choice_i)].append(mean_ov_ij / 4000)
+                    self.ov[(j,i, choice_i)].append(mean_ov_ji / 4000)
+                    self.cjb[(i,j,choice_i)].append(mean_cjb_ij / 4000)
+                    self.cjb[(j,i, choice_i)].append(mean_cjb_ji / 4000)
+                    self.cv[(i,j, choice_i)].append(mean_cv_ij / 4000)
+                    self.cv[(j,i, choice_i)].append(mean_cv_ji / 4000)
+        return (ovb_rate_low, ovb_rate_medium, ovb_rate_high, mean_A_chosen_cj, mean_B_chosen_cj,
+                mean_low_cv, mean_medium_cv,
+                mean_high_cv)
+
+    def graph(self):
+        (ovb_rate_low, ovb_rate_medium, ovb_rate_high, mean_A_chosen_cj, mean_B_chosen_cj, mean_low_cv, mean_medium_cv,
+         mean_high_cv) = self.result_firing_rate()
+        # mean_ov_fig_C_A, mean_ov_fig_C_B, mean_cj_fig_G_A, mean_cj_fig_G_B, mean_cv_fig_K_A, mean_cv_fig_K_B)
+        X_axis = np.arange(0, self.t_exp, self.dt)
+        # X2_axis = ["1B: 20A", "1B: 16A", "1B: 12A", "1B: 8A", "1B: 4A", "4B: 1A", "8B: 1A", "12B: 1A", "16B: 1A", "20B: 1A"]
+        bokeh.plotting.output_notebook()
+        # figure_3 = bokeh.plotting.figure(title="Figure 3", plot_width=700, plot_height=700)
+        figure_4_A = bokeh.plotting.figure(title="Figure 4 A", plot_width=700, plot_height=700)
+        figure_4_E = bokeh.plotting.figure(title="Figure 4 E", plot_width=700, plot_height=700)
+        figure_4_I = bokeh.plotting.figure(title="Figure 4 I", plot_width=700, plot_height=700)
+        # figure_4_C = bokeh.plotting.figure(title="Figure 4 C", plot_width=700, plot_height=700)
+        # figure_4_G = bokeh.plotting.figure(title="Figure 4 G", plot_width=700, plot_height=700)
+        # figure_4_K = bokeh.plotting.figure(title="Figure 4 K", plot_width=700, plot_height=700)
+
+        # figure_3.circle(x=np.arange(0,20), y=np.arange(0,20), color='blue', size = 10)
+        figure_4_A.multi_line([X_axis, X_axis, X_axis], [ovb_rate_low, ovb_rate_medium, ovb_rate_high],
+                              color=['red', "green", "blue"])
+        figure_4_E.multi_line([X_axis, X_axis], [mean_A_chosen_cj, mean_B_chosen_cj], color=['red', "blue"])
+        figure_4_I.multi_line([X_axis, X_axis, X_axis], [mean_low_cv, mean_medium_cv, mean_high_cv],
+                              color=['red', "green", "blue"])
+        # figure_4_C.diamond([X2_axis], [mean_ov_fig_C_A], color ='red', size = 1)
+        # figure_4_C.circle([X2_axis], [mean_ov_fig_C_B], color = "blue", size =1)
+        # figure_4_G.diamond([X2_axis], [mean_cj_fig_G_A], color ='red', size = 1)
+        # figure_4_G.circle([X2_axis], [mean_cj_fig_G_B], color="blue", size=1)
+        # figure_4_K.diamond([X2_axis], [mean_cv_fig_K_A], color ='red', size = 1)
+        # figure_4_K.circle([X2_axis], [mean_cv_fig_K_B], color="blue", size=1)
+
+
+        # bokeh.plotting.show(figure_3)
+        bokeh.plotting.show(figure_4_A)
+        bokeh.plotting.show(figure_4_E)
+        bokeh.plotting.show(figure_4_I)
+        # bokeh.plotting.show(figure_4_C)
+        # bokeh.plotting.show(figure_4_G)
+        # bokeh.plotting.show(figure_4_K)
 

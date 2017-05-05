@@ -382,6 +382,7 @@ class Economic_Decisions_Model:
             for k in range(0, 21):
                 for l in range(0, 2):
                     result[(j, k, self.list_choice[l])] = []
+        #print(len(result), len(result[(1, 1, 'A')]), len(result[(1, 14, 'B')]), "beginning")
         for i in range(self.n):
             '''for graphs until figure 7, all parameters are reset to 0 at the beginning of each trial'''
             """ Reset to zero of parameters before each trial"""
@@ -397,7 +398,6 @@ class Economic_Decisions_Model:
             """keep results in a dictionary"""
             if result[(self.quantity_a[i], self.quantity_b[i], choice)] == []:
                 result[(self.quantity_a[i], self.quantity_b[i], choice)].append([ov_b_one_trial, r_i_cj_b_one_trial, r_i_cv_cells_one_trial])
-
             else :
                 for j in range(len(result[(self.quantity_a[i], self.quantity_b[i], choice)][0][0])):
                     result[(self.quantity_a[i], self.quantity_b[i], choice)][0][0][j] = (result[(self.quantity_a[i], self.quantity_b[i], choice)][0][0][j] + ov_b_one_trial[j]) / 2
@@ -418,6 +418,9 @@ class Economic_Decisions_Model:
         mean_ov_ij, mean_cjb_ij, mean_cv_ij = 0, 0, 0
         mean_ov_ji, mean_cjb_ji, mean_cv_ji = 0, 0, 0
 
+        mean_ov_0B1A, mean_cj_0B1A, mean_cv_0B1A = 0, 0, 0
+        mean_ov_1B0A, mean_cj_1B0A, mean_cv_1B0A = 0, 0, 0
+
         ''' le terme k représente le temps,
          le terme i représente la quantité de A,
           le j représente la quantité de B
@@ -431,16 +434,25 @@ class Economic_Decisions_Model:
             for i in range(0, 21):
                 for j in range(0, 7):
                     for choice_i in self.list_choice :
-                        mean_ov_low += result[(i, j, choice_i)][0][0][k]
-                        low += 1
+                        if result[(i, j, choice_i)] == []:
+                            mean_ov_low += 0
+                        else :
+                            mean_ov_low += result[(i, j, choice_i)][0][0][k]
+                            low += 1
                 for j in range(7, 14):
                     for choice_i in self.list_choice:
-                        mean_ov_medium += result[(i, j, choice_i)][0][0][k]
-                        medium += 1
+                        if result[(i, j , choice_i)] == []:
+                            mean_ov_medium +=0
+                        else :
+                            mean_ov_medium += result[(i, j, choice_i)][0][0][k]
+                            medium += 1
                 for j in range(14, 21):
                     for choice_i in self.list_choice:
-                        mean_ov_high += result[(i, j, choice_i)][0][0][k]
-                        high += 1
+                        if result[(i,j, choice_i)] == []:
+                            mean_ov_high += 0
+                        else :
+                            mean_ov_high += result[(i, j, choice_i)][0][0][k]
+                            high += 1
             ovb_rate_low.append(mean_ov_low / low)
             ovb_rate_medium.append(mean_ov_medium / medium)
             ovb_rate_high.append(mean_ov_high / high)
@@ -453,30 +465,40 @@ class Economic_Decisions_Model:
             low_cv, medium_cv, high_cv = 0, 0, 0
             for i in range(21):
                 for j in range(21):
-                    A_chosen_cj += result[(i, j, self.list_choice[0])][0][1][k]
-                    A_nb += 1
-                    if i < 7:
-                        chosen_value_low += result[(i, j, self.list_choice[0])][0][2][k]
-                        low_cv += 1
-                    elif 7 < i < 14:
-                        chosen_value_medium += result[(i, j, self.list_choice[0])][0][2][k]
-                        medium_cv += 1
-                    else:
-                        chosen_value_high += result[(i, j, self.list_choice[0])][0][2][k]
-                        high_cv += 1
-                else:
-                    B_chosen_cj += result[(i, j, self.list_choice[1])][1][k]
-                    B_nb += 1
-                    if j < 6:
-                        chosen_value_low += result[(i, j, self.list_choice[1])][0][2][k]
-                        low_cv += 1
-                    elif 6 < j < 13:
-                        chosen_value_medium += result[(i, j, self.list_choice[1])][0][2][k]
-                        medium_cv += 1
-                    else:
-                        chosen_value_high += result[(i, j, self.list_choice[1])][0][2][k]
-                        high_cv += 1
-
+                    for choice_i in self.list_choice:
+                        if not len(result[(i, j, choice_i)]):
+                            A_chosen_cj += 0
+                            B_chosen_cj += 0
+                            chosen_value_low += 0
+                            chosen_value_medium += 0
+                            chosen_value_high += 0
+                        else :
+                            if choice_i == 'A':
+                                A_chosen_cj += result[(i, j, choice_i)][0][1][k]
+                                A_nb +=1
+                                if i < 7:
+                                    chosen_value_low += result[(i, j, choice_i)][0][2][k]
+                                    low_cv += 1
+                                elif 7 < i < 14:
+                                    chosen_value_medium += result[(i, j, choice_i)][0][2][k]
+                                    medium_cv += 1
+                                else:
+                                    chosen_value_high += result[(i, j, choice_i)][0][2][k]
+                                    high_cv += 1
+                            else :
+                                B_chosen_cj += result[(i, j, choice_i)][0][1][k]
+                                B_nb +=1
+                                if j < 7:
+                                    chosen_value_low += result[(i, j, choice_i)][0][2][k]
+                                    low_cv += 1
+                                elif 7 < j < 14:
+                                    chosen_value_medium += result[(i, j, choice_i)][0][2][k]
+                                    medium_cv += 1
+                                else:
+                                    chosen_value_high += result[(i, j, choice_i)][0][2][k]
+                                    high_cv += 1
+            if A_nb == 0 : A_nb =1
+            if B_nb == 0 : B_nb=1
             mean_A_chosen_cj.append(A_chosen_cj / A_nb)
             mean_B_chosen_cj.append(B_chosen_cj / B_nb)
             mean_low_cv.append(chosen_value_low / low_cv)
@@ -484,7 +506,7 @@ class Economic_Decisions_Model:
             mean_high_cv.append(chosen_value_high / high_cv)
 
         """ordonner le dico avant utilisation"""
-
+        """4C, 4G, 4K"""
         for j in range(20, 3, -4):
             for choice_i in self.list_choice:
                 self.ov[(1,j, choice_i)], self.cjb[(1, j, choice_i)], self.cv[(1, j, choice_i) ]= [], [], []
@@ -496,20 +518,42 @@ class Economic_Decisions_Model:
         for choice_i in self.list_choice:
             for i in range(1, 2):
                 for j in range(20, 3, -4):
-                    for k in range (4001):
-                        mean_ov_ij += result[(i, j, choice_i)][0][0][k]
-                        mean_cjb_ij += result[(i, j, choice_i)][0][1][k]
-                        mean_cv_ij += result[(i, j, choice_i)][0][2][k]
-                        mean_ov_ji += result[(j, i, choice_i)][0][0][k]
-                        mean_cjb_ji += result[(j, i, choice_i)][0][1][k]
-                        mean_cv_ji += result[(j, i, choice_i)][0][2][k]
+                    if not len(result[(i, j, choice_i)]):
+                        pass
+                    else :
+                        for k in range (4002):
+                            mean_ov_ij += result[(i, j, choice_i)][0][0][k]
+                            mean_cjb_ij += result[(i, j, choice_i)][0][1][k]
+                            mean_cv_ij += result[(i, j, choice_i)][0][2][k]
+                    if not len(result[(j, i, choice_i)]) :
+                        pass
+                    else :
+                        for k in range(4002):
+                            mean_ov_ji += result[(j, i, choice_i)][0][0][k]
+                            mean_cjb_ji += result[(j, i, choice_i)][0][1][k]
+                            mean_cv_ji += result[(j, i, choice_i)][0][2][k]
 
-                    self.ov[(i,j,choice_i)].append(mean_ov_ij / 4000)
-                    self.ov[(j,i, choice_i)].append(mean_ov_ji / 4000)
-                    self.cjb[(i,j,choice_i)].append(mean_cjb_ij / 4000)
-                    self.cjb[(j,i, choice_i)].append(mean_cjb_ji / 4000)
-                    self.cv[(i,j, choice_i)].append(mean_cv_ij / 4000)
-                    self.cv[(j,i, choice_i)].append(mean_cv_ji / 4000)
+                    self.ov[(i,j,choice_i)].append(mean_ov_ij / 4002)
+                    self.ov[(j,i, choice_i)].append(mean_ov_ji / 4002)
+                    self.cjb[(i,j,choice_i)].append(mean_cjb_ij / 4002)
+                    self.cjb[(j,i, choice_i)].append(mean_cjb_ji / 4002)
+                    self.cv[(i,j, choice_i)].append(mean_cv_ij / 4002)
+                    self.cv[(j,i, choice_i)].append(mean_cv_ji / 4002)
+
+            for k in range(4002):
+                mean_ov_0B1A += result[(1,0, choice_i)][0][0][k]
+                mean_ov_1B0A += result[(0,1, choice_i)][0][0][k]
+                mean_cj_0B1A += result[(1,0, choice_i)][0][1][k]
+                mean_cj_1B0A += result[(0,1, choice_i)][0][1][k]
+                mean_cv_0B1A += result[(1,0, choice_i)][0][2][k]
+                mean_cv_1B0A += result[(0,1, choice_i)][0][2][k]
+            self.ov[(1, 0, choice_i)].append(mean_ov_0B1A / 4002)
+            self.ov[(0, 1, choice_i)].append(mean_ov_1B0A / 4002)
+            self.cjb[(1, 0, choice_i)].append(mean_cj_0B1A / 4002)
+            self.cjb[(0, 1, choice_i)].append(mean_cj_1B0A / 4002)
+            self.cv[(1, 0, choice_i)].append(mean_cv_0B1A / 4002)
+            self.cv[(0, 1, choice_i)].append(mean_cv_1B0A / 4002)
+
         return (ovb_rate_low, ovb_rate_medium, ovb_rate_high, mean_A_chosen_cj, mean_B_chosen_cj,
                 mean_low_cv, mean_medium_cv,
                 mean_high_cv)
@@ -519,15 +563,15 @@ class Economic_Decisions_Model:
          mean_high_cv) = self.result_firing_rate()
         # mean_ov_fig_C_A, mean_ov_fig_C_B, mean_cj_fig_G_A, mean_cj_fig_G_B, mean_cv_fig_K_A, mean_cv_fig_K_B)
         X_axis = np.arange(0, self.t_exp, self.dt)
-        # X2_axis = ["1B: 20A", "1B: 16A", "1B: 12A", "1B: 8A", "1B: 4A", "4B: 1A", "8B: 1A", "12B: 1A", "16B: 1A", "20B: 1A"]
+        X2_axis = ["1B: 20A", "1B: 16A", "1B: 12A", "1B: 8A", "1B: 4A", "4B: 1A", "8B: 1A", "12B: 1A", "16B: 1A", "20B: 1A"]
         bokeh.plotting.output_notebook()
         # figure_3 = bokeh.plotting.figure(title="Figure 3", plot_width=700, plot_height=700)
         figure_4_A = bokeh.plotting.figure(title="Figure 4 A", plot_width=700, plot_height=700)
         figure_4_E = bokeh.plotting.figure(title="Figure 4 E", plot_width=700, plot_height=700)
         figure_4_I = bokeh.plotting.figure(title="Figure 4 I", plot_width=700, plot_height=700)
-        # figure_4_C = bokeh.plotting.figure(title="Figure 4 C", plot_width=700, plot_height=700)
-        # figure_4_G = bokeh.plotting.figure(title="Figure 4 G", plot_width=700, plot_height=700)
-        # figure_4_K = bokeh.plotting.figure(title="Figure 4 K", plot_width=700, plot_height=700)
+        figure_4_C = bokeh.plotting.figure(title="Figure 4 C", plot_width=700, plot_height=700)
+        figure_4_G = bokeh.plotting.figure(title="Figure 4 G", plot_width=700, plot_height=700)
+        figure_4_K = bokeh.plotting.figure(title="Figure 4 K", plot_width=700, plot_height=700)
 
         # figure_3.circle(x=np.arange(0,20), y=np.arange(0,20), color='blue', size = 10)
         figure_4_A.multi_line([X_axis, X_axis, X_axis], [ovb_rate_low, ovb_rate_medium, ovb_rate_high],
@@ -535,12 +579,12 @@ class Economic_Decisions_Model:
         figure_4_E.multi_line([X_axis, X_axis], [mean_A_chosen_cj, mean_B_chosen_cj], color=['red', "blue"])
         figure_4_I.multi_line([X_axis, X_axis, X_axis], [mean_low_cv, mean_medium_cv, mean_high_cv],
                               color=['red', "green", "blue"])
-        # figure_4_C.diamond([X2_axis], [mean_ov_fig_C_A], color ='red', size = 1)
-        # figure_4_C.circle([X2_axis], [mean_ov_fig_C_B], color = "blue", size =1)
-        # figure_4_G.diamond([X2_axis], [mean_cj_fig_G_A], color ='red', size = 1)
-        # figure_4_G.circle([X2_axis], [mean_cj_fig_G_B], color="blue", size=1)
-        # figure_4_K.diamond([X2_axis], [mean_cv_fig_K_A], color ='red', size = 1)
-        # figure_4_K.circle([X2_axis], [mean_cv_fig_K_B], color="blue", size=1)
+        figure_4_C.diamond([X2_axis], [self.ov[i][1] for i in range(1, len(self.ov), 2)], color ='red', size = 1)
+        figure_4_C.circle([X2_axis], [self.ov[i][1] for i in range(0, len(self.ov), 2)], color = "blue", size =1)
+        figure_4_G.diamond([X2_axis], [self.cjb[i][1] for i in range(1, len(self.ov), 2)], color ='red', size = 1)
+        figure_4_G.circle([X2_axis], [self.cjb[i][1] for i in range(0, len(self.ov), 2)], color="blue", size=1)
+        figure_4_K.diamond([X2_axis], [self.cv[i][1] for i in range(1, len(self.ov), 2)], color ='red', size = 1)
+        figure_4_K.circle([X2_axis], [self.cv[i][1] for i in range(0, len(self.ov), 2)], color="blue", size=1)
 
 
         # bokeh.plotting.show(figure_3)

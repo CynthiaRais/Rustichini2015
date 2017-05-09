@@ -41,7 +41,7 @@ class Economic_Decisions_Model:
                         t_offer = 1.0,                  # s
                         t_exp = 2.0,                    # s
                         dt=0.0005,                      # s
-                        n = 500,                        # number of trials
+                        n = 4000,                       # number of trials
 
                         δ_J_hl = (1 ,1),
                         δ_J_stim = (2 ,1),
@@ -638,14 +638,14 @@ class Economic_Decisions_Model:
                     mean_cj_1B0A += result[(0, 1, choice_i)][0][1][k]
                     mean_cv_1B0A += result[(0, 1, choice_i)][0][2][k + 1000]
             if choice_i == 'A' :
-                ov_choiceA = [mean_ov_0B1A /1000] +  ov_B_choiceA + ov_A_choiceA[::-1] + [mean_ov_1B0A/1000]
-                cjb_choiceA = [mean_cj_0B1A / 1000] + cjb_B_choiceA + cjb_A_choiceA[::-1] + [mean_cj_1B0A /1000]
-                cv_choiceA = [mean_cv_0B1A /1000] + cv_B_choiceA + cv_A_choiceA[::-1] + [mean_cv_1B0A /1000]
+                ov_choiceA = [mean_ov_0B1A /1000] +  ov_B_choiceA[::-1] + ov_A_choiceA + [mean_ov_1B0A/1000]
+                cjb_choiceA = [mean_cj_0B1A / 1000] + cjb_B_choiceA[::-1] + cjb_A_choiceA + [mean_cj_1B0A /1000]
+                cv_choiceA = [mean_cv_0B1A /1000] + cv_B_choiceA[::-1] + cv_A_choiceA + [mean_cv_1B0A /1000]
 
             else :
-                ov_choiceB = [mean_ov_0B1A / 1000] + ov_B_choiceB + ov_A_choiceB[::-1] + [mean_ov_1B0A/1000]
-                cjb_choiceB = [mean_cj_0B1A/1000] + cjb_B_choiceB + cjb_A_choiceB[::-1] + [mean_cj_1B0A /1000]
-                cv_choiceB = [mean_cv_0B1A/1000] + cv_B_choiceB + cv_A_choiceB[::-1] + [mean_cv_1B0A/1000]
+                ov_choiceB = [mean_ov_0B1A / 1000] + ov_B_choiceB[::-1] + ov_A_choiceB + [mean_ov_1B0A/1000]
+                cjb_choiceB = [mean_cj_0B1A/1000] + cjb_B_choiceB[::-1] + cjb_A_choiceB + [mean_cj_1B0A /1000]
+                cv_choiceB = [mean_cv_0B1A/1000] + cv_B_choiceB[::-1] + cv_A_choiceB + [mean_cv_1B0A/1000]
             """determination of pourcentage of choice B depending on quantity of each juice"""
             pourcentage_choice_B = [((choice_B[(1,0)]/ self.n) * 100)] + pourcentage_B_choice_B + pourcentage_A_choice_B[::-1] + [((choice_B[(0,1)]/self.n)*100)]
         print("ov", ov_choiceA, ov_choiceB)
@@ -704,7 +704,8 @@ class Economic_Decisions_Model:
         return (ovb_rate_low, ovb_rate_medium, ovb_rate_high, mean_A_chosen_cj, mean_B_chosen_cj,
                 mean_low_cv, mean_medium_cv, mean_high_cv,
                 ov_choiceA, cjb_choiceA, cv_choiceA, ov_choiceB, cjb_choiceB, cv_choiceB, pourcentage_choice_B,
-                X_A, X_B, Y_A, Y_B)
+                X_A, X_B, Y_A, Y_B,
+                firing_D, firing_H_A, firing_H_B)
 
 
 
@@ -712,7 +713,7 @@ class Economic_Decisions_Model:
     def graph(self):
         (ovb_rate_low, ovb_rate_medium, ovb_rate_high, mean_A_chosen_cj, mean_B_chosen_cj, mean_low_cv, mean_medium_cv,
          mean_high_cv, ov_choiceA, cjb_choiceA, cv_choiceA, ov_choiceB, cjb_choiceB, cv_choiceB, pourcentage_choice_B,
-         X_A, X_B, Y_A, Y_B) = self.result_firing_rate()
+         X_A, X_B, Y_A, Y_B, firing_D, firing_H_A, firing_H_B) = self.result_firing_rate()
         """order dictionary before use in graphs"""
         #sort_items = self.ov.keys()
         #self.ov = sorted(sort_items, key=self.compare)
@@ -737,19 +738,24 @@ class Economic_Decisions_Model:
         # figure_3.circle(x=np.arange(0,20), y=np.arange(0,20), color='blue', size = 10)
         figure_4_A.multi_line([X_axis, X_axis, X_axis], [ovb_rate_low, ovb_rate_medium, ovb_rate_high],
                               color=['red', "green", "blue"])
-        figure_4_E.multi_line([X_axis, X_axis], [mean_A_chosen_cj, mean_B_chosen_cj], color=['red', "blue"])
-        figure_4_I.multi_line([X_axis, X_axis, X_axis], [mean_low_cv, mean_medium_cv, mean_high_cv],
-                              color=['red', "green", "blue"])
 
         figure_4_C.diamond(x=range(12), y=ov_choiceA, color ='red', size =10)
         figure_4_C.circle(x=range(12), y=ov_choiceB, color = "blue", size =10)
         figure_4_C.circle(x=range(12), y=pourcentage_choice_B, color="black", size=10)
 
-        #figure_4_D.diamond(x=, y=)
+        figure_4_D.annulus(x=range(20), y=firing_D, color="purple", inner_radius=0.2, outer_radius=0.5)
+
+        figure_4_E.multi_line([X_axis, X_axis], [mean_A_chosen_cj, mean_B_chosen_cj], color=['red', "blue"])
 
         figure_4_G.diamond(x=range(12), y=cjb_choiceA, color ='red', size = 10)
         figure_4_G.circle(x=range(12), y=cjb_choiceB, color="blue", size=10)
         figure_4_G.circle(x=range(12), y=pourcentage_choice_B, color="black", size=10)
+
+        figure_4_H.diamond(x=[1 for i in range(len(firing_H_A))], y=firing_H_A, color ="red")
+        figure_4_H.circle(x= [2 for i in range(len(firing_H_B))], y=firing_H_B, color="blue")
+
+        figure_4_I.multi_line([X_axis, X_axis, X_axis], [mean_low_cv, mean_medium_cv, mean_high_cv],
+                              color=['red', "green", "blue"])
 
         figure_4_K.diamond(x=range(12), y=cv_choiceA, color ='red', size = 10)              #choiceA
         figure_4_K.circle(x=range(12), y=cv_choiceB, color="blue", size=10)                 #choiceB
@@ -762,11 +768,11 @@ class Economic_Decisions_Model:
         # bokeh.plotting.show(figure_3)
         bokeh.plotting.show(figure_4_A)
         bokeh.plotting.show(figure_4_C)
-        #bokeh.plotting.show(figure_4_D)
+        bokeh.plotting.show(figure_4_D)
 
         bokeh.plotting.show(figure_4_E)
         bokeh.plotting.show(figure_4_G)
-        #bokeh.plotting.show(figure_4_H)
+        bokeh.plotting.show(figure_4_H)
 
         bokeh.plotting.show(figure_4_I)
         bokeh.plotting.show(figure_4_K)

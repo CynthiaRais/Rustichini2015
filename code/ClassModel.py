@@ -41,7 +41,7 @@ class Economic_Decisions_Model:
                         t_offer = 1.0,                  # s
                         t_exp = 2.0,                    # s
                         dt=0.0005,                      # s
-                        n = 4000,                        # number of trials
+                        n = 500,                        # number of trials
 
                         δ_J_hl = (1 ,1),
                         δ_J_stim = (2 ,1),
@@ -582,38 +582,42 @@ class Economic_Decisions_Model:
         cv_A_choiceA, cv_A_choiceB, cv_B_choiceA, cv_B_choiceB = [], [], [], []
         ov_choiceA, cjb_choiceA, cv_choiceA = [], [], []
         ov_choiceB, cjb_choiceB, cv_choiceB = [], [], []
+        pourcentage_A_choice_B, pourcentage_B_choice_B = [], []
+        pourcentage_choice_B =[]
         for choice_i in self.list_choice:
-            for i in range(1, 2):
-                for j in range(20, 3, -4):
-                    if not len(result[(1, j, choice_i)]):
-                        pass
-                    else:
-                        for k in range(2000, 3001):
-                            mean_ov_ij += result[(1, j, choice_i)][0][0][k]
-                            mean_cjb_ij += result[(1, j, choice_i)][0][1][k]
-                            mean_cv_ij += result[(1, j, choice_i)][0][2][k + 1000]
-                    if not len(result[(j, 1, choice_i)]):
-                        pass
-                    else:
-                        for k in range(2000, 3001):
-                            mean_ov_ji += result[(j, 1, choice_i)][0][0][k]
-                            mean_cjb_ji += result[(j, 1, choice_i)][0][1][k]
-                            mean_cv_ji += result[(j, 1, choice_i)][0][2][k + 1000]
-                    if choice_i == 'A':
-                        ov_A_choiceA.append(mean_ov_ij / 1000)
-                        ov_B_choiceA.append(mean_ov_ji / 1000)
-                        cjb_A_choiceA.append(mean_cjb_ij / 1000)
-                        cjb_B_choiceA.append(mean_cjb_ji / 1000)
-                        cv_A_choiceA.append(mean_cv_ij / 1000)
-                        cv_B_choiceA.append(mean_cv_ji / 1000)
-                    elif choice_i == 'B':
-                        ov_A_choiceB.append(mean_ov_ij / 1000)
-                        ov_B_choiceB.append(mean_ov_ji / 1000)
-                        cjb_A_choiceB.append(mean_cjb_ij / 1000)
-                        cjb_B_choiceB.append(mean_cjb_ji / 1000)
-                        cv_A_choiceB.append(mean_cv_ij / 1000)
-                        cv_B_choiceB.append(mean_cv_ji / 1000)
-
+            for j in range(20, 3, -4):
+                if not len(result[(1, j, choice_i)]):
+                    pass
+                else:
+                    for k in range(2000, 3001):
+                        mean_ov_ij += result[(1, j, choice_i)][0][0][k]
+                        mean_cjb_ij += result[(1, j, choice_i)][0][1][k]
+                        mean_cv_ij += result[(1, j, choice_i)][0][2][k + 1000]
+                if not len(result[(j, 1, choice_i)]):
+                    pass
+                else:
+                    for k in range(2000, 3001):
+                        mean_ov_ji += result[(j, 1, choice_i)][0][0][k]
+                        mean_cjb_ji += result[(j, 1, choice_i)][0][1][k]
+                        mean_cv_ji += result[(j, 1, choice_i)][0][2][k + 1000]
+                if choice_i == 'A':
+                    ov_A_choiceA.append(mean_ov_ij / 1000)
+                    ov_B_choiceA.append(mean_ov_ji / 1000)
+                    cjb_A_choiceA.append(mean_cjb_ij / 1000)
+                    cjb_B_choiceA.append(mean_cjb_ji / 1000)
+                    cv_A_choiceA.append(mean_cv_ij / 1000)
+                    cv_B_choiceA.append(mean_cv_ji / 1000)
+                elif choice_i == 'B':
+                    ov_A_choiceB.append(mean_ov_ij / 1000)
+                    ov_B_choiceB.append(mean_ov_ji / 1000)
+                    cjb_A_choiceB.append(mean_cjb_ij / 1000)
+                    cjb_B_choiceB.append(mean_cjb_ji / 1000)
+                    cv_A_choiceB.append(mean_cv_ij / 1000)
+                    cv_B_choiceB.append(mean_cv_ji / 1000)
+                if choice_B[(1,j)] !=0:
+                    pourcentage_A_choice_B.append((choice_B[(1, j)] / self.n) * 100)
+                if choice_B[(j,1)] !=0:
+                    pourcentage_B_choice_B.append((choice_B[(1, j)] / self.n) * 100)
             if not len(result[(1, 0, choice_i)]):
                 mean_ov_0B1A = 0
                 mean_cj_0B1A = 0
@@ -642,47 +646,73 @@ class Economic_Decisions_Model:
                 ov_choiceB = [mean_ov_0B1A / 1000] + ov_B_choiceB + ov_A_choiceB[::-1] + [mean_ov_1B0A/1000]
                 cjb_choiceB = [mean_cj_0B1A/1000] + cjb_B_choiceB + cjb_A_choiceB[::-1] + [mean_cj_1B0A /1000]
                 cv_choiceB = [mean_cv_0B1A/1000] + cv_B_choiceB + cv_A_choiceB[::-1] + [mean_cv_1B0A/1000]
+            """determination of pourcentage of choice B depending on quantity of each juice"""
+            pourcentage_choice_B = [((choice_B[(1,0)]/ self.n) * 100)] + pourcentage_B_choice_B + pourcentage_A_choice_B[::-1] + [((choice_B[(0,1)]/self.n)*100)]
         print("ov", ov_choiceA, ov_choiceB)
         print("cjb", cjb_choiceA, cjb_choiceB)
         print("cv", cv_choiceA, cv_choiceB)
 
-        """determination of pourcentage of choice B depending on quantity of each juice"""
-        pourcentage_choice_B = []
-        for i in range(21):
-            for j in range(21):
-                pourcentage_choice_B.append((choice_B[(i,j)] / self.n) * 100)
-
         """graphe 4D, H and L"""
-        
+
         nb_4D, nb_4H_A, nb_4H_B=0, 0, 0
         firing_4D, firing_4H_A, firing_4H_B = 0,0,0
         firing_D, firing_H_A, firing_H_B = [], [], []
         for j in range(21):
             for i in range(21):
                 for choice_i in self.list_choice:
-                    for k in range(2000, 3001):
-                        firing_4D += result[(i,j, choice_i)]
-                        nb_4D+=1
-                    if choice_i =='A':
-                        firing_4H_A += result[(i,j, choice_i)]
-                        nb_4H_A += 1
-                    else :
-                        firing_4H_B += result[(i,j, choice_i)]
-                        nb_4H_B += 1
-                firing_H_A.append(firing_4H_A / nb_4H_A)
-                firing_H_B.append(firing_4H_B / nb_4H_B)
-            firing_D.append(firing_4D/nb_4D)
+                    if len(result[i, j, choice_i]):
+                        for k in range(2000, 3001):
+                            firing_4D += result[(i,j, choice_i)][0][0][k]
+                            nb_4D+=1
+                            if choice_i =='A':
+                                firing_4H_A += result[(i,j, choice_i)][0][1][k]
+                                nb_4H_A += 1
+                            else :
+                                firing_4H_B += result[(i,j, choice_i)][0][1][k]
+                                nb_4H_B += 1
+                        if nb_4H_A !=0 :
+                            firing_H_A.append(firing_4H_A / nb_4H_A)
+                        else :
+                            firing_H_A.append(firing_4H_A)
+                        if nb_4H_B !=0:
+                            firing_H_B.append(firing_4H_B / nb_4H_B)
+                        else :
+                            firing_H_B.append(firing_4H_B)
+            if nb_4D != 0 :
+                firing_D.append(firing_4D/nb_4D)
+            else :
+                print("nb 4D = 0")
 
+        """Get firing rate in function of chosen value"""
+        y_a, y_b = 0,0
+        X_A, X_B, Y_A, Y_B = [], [], [], []
+        nb_Y_A, nb_Y_B = 0, 0
+        for i in range(21):
+            for j in range(21):
+                if len(result[(i,j,'A')]):
+                    X_A.append(i*2)
+                    for k in range(3000, 4001):
+                        y_a += result[(i,j,'A')][0][2][k]
+                        nb_Y_A = 0
+                    Y_A.append(y_a / nb_Y_A)
+                elif len(result[(i,j,'B')]) :
+                    X_B.append(j)
+                    for k in range(3000, 4001):
+                        y_b += result[(i,j,'B')][0][2][k]
+                        nb_Y_B +=1
+                    Y_B.append(y_b / nb_Y_B)
         return (ovb_rate_low, ovb_rate_medium, ovb_rate_high, mean_A_chosen_cj, mean_B_chosen_cj,
                 mean_low_cv, mean_medium_cv, mean_high_cv,
-                ov_choiceA, cjb_choiceA, cv_choiceA, ov_choiceB, cjb_choiceB, cv_choiceB, pourcentage_choice_B)
+                ov_choiceA, cjb_choiceA, cv_choiceA, ov_choiceB, cjb_choiceB, cv_choiceB, pourcentage_choice_B,
+                X_A, X_B, Y_A, Y_B)
 
 
 
 
     def graph(self):
         (ovb_rate_low, ovb_rate_medium, ovb_rate_high, mean_A_chosen_cj, mean_B_chosen_cj, mean_low_cv, mean_medium_cv,
-         mean_high_cv, ov_choiceA, cjb_choiceA, cv_choiceA, ov_choiceB, cjb_choiceB, cv_choiceB, pourcentage_choice_B) = self.result_firing_rate()
+         mean_high_cv, ov_choiceA, cjb_choiceA, cv_choiceA, ov_choiceB, cjb_choiceB, cv_choiceB, pourcentage_choice_B,
+         X_A, X_B, Y_A, Y_B) = self.result_firing_rate()
         """order dictionary before use in graphs"""
         #sort_items = self.ov.keys()
         #self.ov = sorted(sort_items, key=self.compare)
@@ -700,6 +730,9 @@ class Economic_Decisions_Model:
         figure_4_C = bokeh.plotting.figure(title="Figure 4 C", plot_width=700, plot_height=700)
         figure_4_G = bokeh.plotting.figure(title="Figure 4 G", plot_width=700, plot_height=700)
         figure_4_K = bokeh.plotting.figure(title="Figure 4 K", plot_width=700, plot_height=700)
+        figure_4_L = bokeh.plotting.figure(title="Figure 4 L", plot_width=700, plot_height=700)
+        figure_4_D = bokeh.plotting.figure(title="Figure 4 D", plot_width=700, plot_height=700)
+        figure_4_H = bokeh.plotting.figure(title="Figure 4 H", plot_width=700, plot_height=700)
 
         # figure_3.circle(x=np.arange(0,20), y=np.arange(0,20), color='blue', size = 10)
         figure_4_A.multi_line([X_axis, X_axis, X_axis], [ovb_rate_low, ovb_rate_medium, ovb_rate_high],
@@ -707,27 +740,37 @@ class Economic_Decisions_Model:
         figure_4_E.multi_line([X_axis, X_axis], [mean_A_chosen_cj, mean_B_chosen_cj], color=['red', "blue"])
         figure_4_I.multi_line([X_axis, X_axis, X_axis], [mean_low_cv, mean_medium_cv, mean_high_cv],
                               color=['red', "green", "blue"])
-        print("ov", ov_choiceA, ov_choiceB )
-        print("cjb", cjb_choiceA, cjb_choiceB)
-        print("cv", cv_choiceA, cv_choiceB)
+
         figure_4_C.diamond(x=range(12), y=ov_choiceA, color ='red', size =10)
         figure_4_C.circle(x=range(12), y=ov_choiceB, color = "blue", size =10)
         figure_4_C.circle(x=range(12), y=pourcentage_choice_B, color="black", size=10)
+
+        #figure_4_D.diamond(x=, y=)
+
         figure_4_G.diamond(x=range(12), y=cjb_choiceA, color ='red', size = 10)
         figure_4_G.circle(x=range(12), y=cjb_choiceB, color="blue", size=10)
         figure_4_G.circle(x=range(12), y=pourcentage_choice_B, color="black", size=10)
-        figure_4_K.diamond(x=range(12), y=cv_choiceA, color ='red', size = 10)
-        figure_4_K.circle(x=range(12), y=cv_choiceB, color="blue", size=10)
-        figure_4_K.circle(x=range(12), y=pourcentage_choice_B, color="black", size=10)
+
+        figure_4_K.diamond(x=range(12), y=cv_choiceA, color ='red', size = 10)              #choiceA
+        figure_4_K.circle(x=range(12), y=cv_choiceB, color="blue", size=10)                 #choiceB
+        figure_4_K.circle(x=range(12), y=pourcentage_choice_B, color="black", size=10)      #%choiceB
+
+        figure_4_L.diamond(x=X_A, y=Y_A, color="red", size=10)
+        figure_4_L.circle(x=X_B, y=Y_B, color = "blue", size=10)
 
 
         # bokeh.plotting.show(figure_3)
         bokeh.plotting.show(figure_4_A)
-        bokeh.plotting.show(figure_4_E)
-        bokeh.plotting.show(figure_4_I)
         bokeh.plotting.show(figure_4_C)
+        #bokeh.plotting.show(figure_4_D)
+
+        bokeh.plotting.show(figure_4_E)
         bokeh.plotting.show(figure_4_G)
+        #bokeh.plotting.show(figure_4_H)
+
+        bokeh.plotting.show(figure_4_I)
         bokeh.plotting.show(figure_4_K)
+        bokeh.plotting.show(figure_4_L)
 
 
 Class = Economic_Decisions_Model()

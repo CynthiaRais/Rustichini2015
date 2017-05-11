@@ -381,7 +381,7 @@ class Economic_Decisions_Model:
         print("choix final", x_a, x_b, choice, np.max(r_i_cj_a_one_trial), np.max(r_i_cj_b_one_trial), np.max(r_i_cv_cells_one_trial))
         return choice, ov_b_one_trial, r_i_cj_a_one_trial, r_i_cj_b_one_trial, r_i_ns_one_trial, r_i_cv_cells_one_trial
 
-
+####### doit etre dans graphs######
     def session(self):
         self.quantity_a, self.quantity_b, self.x_min_list, self.x_max_list = self.quantity_juice()
         # Create and order the dictionary result
@@ -408,8 +408,9 @@ class Economic_Decisions_Model:
                                                                                                 S_cj_a, S_cj_b, S_ns, S_gaba_cv)
             if choice == 'B':
                 choice_B[(self.quantity_a[i], self.quantity_b[i])] += 1
-            elif choice =='A':
+            elif choice == 'A':
                 choice_A[(self.quantity_a[i], self.quantity_b[i])] += 1
+                print((self.quantity_a[i], self.quantity_b[i]), choice)
             else :
                 print("error no choice")
 
@@ -627,12 +628,15 @@ class Economic_Decisions_Model:
                     cjb_B_choiceB.append(mean_cjb_ji / 1000)
                     cv_A_choiceB.append(mean_cv_ij / 1000)
                     cv_B_choiceB.append(mean_cv_ji / 1000)
-                if choice_B[(1,j)] !=0:
-                    total_choice = choice_B[(1,j)] + choice_A[(1,j)]
-                    pourcentage_A_choice_B.append((choice_B[(1, j)] / (total_choice)) * 100)
-                if choice_B[(j,1)] !=0:
-                    total_choice = choice_A[(j,1)] + choice_B[(j,1)]
-                    pourcentage_B_choice_B.append((choice_B[(j, 1)] / (total_choice)) * 100)
+                """pourcentage of choice B"""
+                total_choice_1 = choice_B[(1,j)] + choice_A[(1,j)]
+                pourcentage_A_choice_B.append((choice_B[(1, j)] / (total_choice_1)) * 100)
+                print("total choice 1j", total_choice_1, choice_B[(1, j)])
+
+                total_choice = choice_A[(j,1)] + choice_B[(j,1)]
+                pourcentage_B_choice_B.append((choice_B[(j, 1)] / (total_choice)) * 100)
+                print("total choice j1", total_choice, choice_B[(j, 1)])
+
             if not len(result[(1, 0, choice_i)]):
                 mean_ov_0B1A = 0
                 mean_cj_0B1A = 0
@@ -664,7 +668,7 @@ class Economic_Decisions_Model:
             """determination of pourcentage of choice B depending on quantity of each juice"""
             total_choice_1 = choice_B[(1,0)]+choice_A[(1,0)]
             total_choice_2 = choice_B[(0,1)]+choice_A[(0,1)]
-            print("total choice", total_choice_1, total_choice_2)
+
             pourcentage_choice_B = [(choice_B[(1,0)]/ (total_choice_1)) * 100] + pourcentage_B_choice_B + pourcentage_A_choice_B[::-1] + [(choice_B[(0,1)] / (total_choice_2))*100]
         print(pourcentage_choice_B)
 
@@ -736,18 +740,13 @@ class Economic_Decisions_Model:
                 tuning_ov, tuning_cj, tuning_cv,
                 test_cj_a, test_cj_b, test_ns, test_cv)
 
-
-
-
+#### ça dans notebook ####
     def graph(self):
         (ovb_rate_low, ovb_rate_medium, ovb_rate_high, mean_A_chosen_cj, mean_B_chosen_cj, mean_low_cv, mean_medium_cv,
          mean_high_cv, ov_choiceA, cjb_choiceA, cv_choiceA, ov_choiceB, cjb_choiceB, cv_choiceB, pourcentage_choice_B,
          X_A, X_B, Y_A, Y_B, firing_D, firing_H_A, firing_H_B,
          tuning_ov, tuning_cj, tuning_cv, test_cj_a, test_cj_b, test_ns, test_cv) = self.result_firing_rate()
-        """order dictionary before use in graphs"""
-        #sort_items = self.ov.keys()
-        #self.ov = sorted(sort_items, key=self.compare)
-        #sorted les autres !!!!
+
 
         X_axis = np.arange(0, self.t_exp, self.dt)
 
@@ -772,27 +771,28 @@ class Economic_Decisions_Model:
         figure_4_A.multi_line([X_axis, X_axis, X_axis], [ovb_rate_low, ovb_rate_medium, ovb_rate_high],
                               color=['red', "green", "blue"])
 
-        figure_4_C.diamond(x=range(12), y=ov_choiceA, color ='red', size =10)
-        figure_4_C.circle(x=range(12), y=ov_choiceB, color = "blue", size =10)
+        figure_4_C.diamond(x=range(0,6), y=ov_choiceA, color ='red', size =10)
+        figure_4_C.circle(x=range(6,12), y=ov_choiceB, color = "blue", size =10)
         figure_4_C.circle(x=range(12), y=pourcentage_choice_B, color="black", size=10)
 
         figure_4_D.annulus(x=range(20), y=firing_D, color="purple", inner_radius=0.2, outer_radius=0.5)
 
         figure_4_E.multi_line([X_axis, X_axis], [mean_A_chosen_cj, mean_B_chosen_cj], color=['red', "blue"])
 
-        figure_4_G.diamond(x=range(12), y=cjb_choiceA, color ='red', size = 10)
-        figure_4_G.circle(x=range(12), y=cjb_choiceB, color="blue", size=10)
+        figure_4_G.diamond(x=range(0,6), y=cjb_choiceA, color ='red', size = 10)
+        figure_4_G.circle(x=range(6,12), y=cjb_choiceB, color="blue", size=10)
         figure_4_G.circle(x=range(12), y=pourcentage_choice_B, color="black", size=10)
 
+        print("for H", len(firing_H_A), len(firing_H_B), len([1 for i in range(len(firing_H_A))]), len([2 for i in range(len(firing_H_B))]))
         figure_4_H.diamond(x=[1 for i in range(len(firing_H_A))], y=firing_H_A, color ="red")
-        figure_4_H.circle(x= [2 for i in range(len(firing_H_B))], y=firing_H_B, color="blue")
+        figure_4_H.circle(x=[2 for i in range(len(firing_H_B))], y=firing_H_B, color="blue")
 
         figure_4_I.multi_line([X_axis, X_axis, X_axis], [mean_low_cv, mean_medium_cv, mean_high_cv],
                               color=['red', "green", "blue"])
 
-        figure_4_K.diamond(x=range(12), y=cv_choiceA, color ='red', size = 10)              #choiceA
-        figure_4_K.circle(x=range(12), y=cv_choiceB, color="blue", size=10)                 #choiceB
-        figure_4_K.circle(x=range(12), y=pourcentage_choice_B, color="black", size=10)      #%choiceB
+        figure_4_K.diamond(x = range(0,6), y=cv_choiceA, color ='red', size = 10)              #choiceA
+        figure_4_K.circle(x = range(6, 12), y=cv_choiceB, color="blue", size=10)                 #choiceB
+        figure_4_K.circle(x = range(12), y=pourcentage_choice_B, color="black", size=10)      #%choiceB
         print("X_A", len(X_A))
         print("Y_A", len(Y_A))
         print("X_B", len(X_B))
@@ -805,15 +805,15 @@ class Economic_Decisions_Model:
         figure_test_ns.multi_line([X_axis, X_axis, X_axis], test_ns, color=["red", "blue", "green"])
         figure_test_cv.multi_line([X_axis, X_axis, X_axis], test_cv, color=["red", "blue", "green"])
 
-        bokeh.plotting.save(figure_4_A, title="figure 4 A 4000_4")
-        bokeh.plotting.save(figure_4_C, title="figure 4 C 4000_4")
-        bokeh.plotting.save(figure_4_D, title="figure 4 D 4000_4")
-        bokeh.plotting.save(figure_4_E, title="figure 4 E 4000_4")
-        bokeh.plotting.save(figure_4_G, title="figure 4 G 4000_4")
-        bokeh.plotting.save(figure_4_H, title="figure 4 H 4000_4")
-        bokeh.plotting.save(figure_4_I, title="figure 4 I 4000_4")
-        bokeh.plotting.save(figure_4_K, title="figure 4 K 4000_4")
-        bokeh.plotting.save(figure_4_L, title="figure 4 L 4000_4")
+        bokeh.plotting.save(figure_4_A, title="figure 4 A 4000_5")
+        bokeh.plotting.save(figure_4_C, title="figure 4 C 4000_5")
+        bokeh.plotting.save(figure_4_D, title="figure 4 D 4000_5")
+        bokeh.plotting.save(figure_4_E, title="figure 4 E 4000_5")
+        bokeh.plotting.save(figure_4_G, title="figure 4 G 4000_5")
+        bokeh.plotting.save(figure_4_H, title="figure 4 H 4000_5")
+        bokeh.plotting.save(figure_4_I, title="figure 4 I 4000_5")
+        bokeh.plotting.save(figure_4_K, title="figure 4 K 4000_5")
+        bokeh.plotting.save(figure_4_L, title="figure 4 L 4000_5")
 
         # bokeh.plotting.show(figure_3)
         bokeh.plotting.show(figure_4_A)
@@ -834,10 +834,12 @@ class Economic_Decisions_Model:
         bokeh.plotting.show(figure_test_cv)
 
         """tuning curve (2nde column)"""
-        #graphs.tuningcurve(tuning_ov, x_label='offer A', y_label='offer B', title='tuning ov')
+        graphs.tuningcurve(tuning_ov, x_label='offer A', y_label='offer B', title='tuning ov')
         graphs.tuningcurve(tuning_cj, x_label='offer A', y_label='offer B', title='tuning cj')
-        #graphs.tuningcurve(tuning_cv, x_label='offer A', y_label='offer B', title='tuning cv')
+        graphs.tuningcurve(tuning_cv, x_label='offer A', y_label='offer B', title='tuning cv')
 
+######garder ça dans model#####
 
-Class = Economic_Decisions_Model()
-Class.graph()
+if __name__ == "__main__":
+    Class = Economic_Decisions_Model()
+    Class.graph()

@@ -53,7 +53,10 @@ class Economic_Decisions_Model:
                         a = 0.175,
                         b = 0.030,
                         c = 0.400,
-                        d = 0.100):
+                        d = 0.100,
+
+                        ΔA = 20,
+                        ΔB = 20):
 
 
         # Network parameters
@@ -89,11 +92,20 @@ class Economic_Decisions_Model:
         self.δ_J_gaba_cj_a, self.δ_J_gaba_cj_b, self.δ_J_gaba_ns = δ_J_gaba[0], δ_J_gaba[1], δ_J_gaba[2]
         self.δ_J_nmda_cj_a, self.δ_J_nmda_cj_b = δ_J_nmda[0], δ_J_nmda[1]
 
+        # Parameters of the experience
         self.t_exp = t_exp
         self.dt = dt
         self.n = n
+        self.ΔA = ΔA
+        self.ΔB = ΔB
         self.list_choice = ['A', 'B']
 
+        # Values at the beginning of each trial (before figure 7)
+        self.r_i_cj_a, self.r_i_cj_b, self.r_i_ns, self.r_i_cv_cells = 0, 0, 0, 0
+        self.I_eta_cj_a, self.I_eta_cj_b, self.I_eta_ns, self.I_eta_cv = 0, 0, 0, 0
+        self.S_cj_a, self.S_cj_b, self.S_ns = [0, 0, 0], [0, 0, 0], [0, 0, 0]
+        self.S_gaba_cv = 0
+        self.choice = 0
 
         #self.result = sorted(self.result.items(), key = operator.itemgetter(0))
 
@@ -109,7 +121,16 @@ class Economic_Decisions_Model:
 
         self.quantity_a, self.quantity_b = [], [] # list of juice quantity A and B
         self.x_min_list, self.x_max_list = [], [] # list of minimum and maximum of juice A and B in a session
+
         self.ov, self.cjb, self.cv = {}, {}, {}
+
+        # to keep firing rate of one trial
+        self.result_one_trial = {}
+        for i in range(self.ΔA + 1):
+            for j in range(self.ΔB + 1):
+                self.result_one_trial[(i, j)] = []
+        self.ov_b_one_trial, self.r_i_cj_a_one_trial, self.r_i_cj_b_one_trial = [], [], []
+        self.r_i_ns_one_trial, self.r_i_cv_cells_one_trial = [], []
 
 
 
@@ -287,9 +308,9 @@ class Economic_Decisions_Model:
                  S_nmda_cj_a, S_nmda_cj_b, S_nmda_ns):
         """Compute firing rate of CV cells"""
 
-        S_gaba_cv = self.channel_gaba(S_gaba_cv, r_i_cv_cells)  # equation 5
+        self.S_gaba_cv = self.channel_gaba(S_gaba_cv, r_i_cv_cells)  # equation 5
 
-        I_eta_cv = self.white_noise(I_eta_cv)  # equation 18
+        self.I_eta_cv = self.white_noise(self.I_eta_cv)  # equation 18
         I_ampa_ext_cv = self.I_ampa_ext_I(I_eta_cv)  # equation 14
         I_ampa_rec_cv = self.I_ampa_rec_I(S_ampa_cj_a, S_ampa_cj_b, S_ampa_ns)  # equation 15
         I_nmda_rec_cv = self.I_nmda_rec_I(S_nmda_cj_a, S_nmda_cj_b, S_nmda_ns)  # equation 16
@@ -298,7 +319,7 @@ class Economic_Decisions_Model:
         I_syn_cv_cells = self.I_syn(I_ampa_ext_cv, I_ampa_rec_cv, I_nmda_rec_cv, I_gaba_rec_cv, I_stim_cv)  # equation 7
 
         phi_cv_cells = self.Φ(I_syn_cv_cells, self.c_I, self.I_I, self.g_I)  # equation 6
-        r_i_cv_cells = self.firing_rate_I(r_i_cv_cells, phi_cv_cells)  # equation 2
+        self.r_i_cv_cells = self.firing_rate_I(r_i_cv_cells, phi_cv_cells)  # equation 2
         #assert r_i_cv_cells <= 80, 'r_i_cv = {}'.format(r_i_cv_cells)
         return r_i_cv_cells, S_gaba_cv
 
@@ -308,14 +329,14 @@ class Economic_Decisions_Model:
     def quantity_juice(self):
         # random choice of juice quantity, ΔA = ΔB = [0, 20]
         for i in range(self.n):
-            self.x_a = np.random.randint(0, 21)
-            self.x_b = np.random.randint(0, 21)
+            self.x_a = np.random.randint(0, self.ΔA +1)
+            self.x_b = np.random.randint(0, self.ΔB +1)
             while self.x_a == 0 and self.x_b == 0:
                 p = np.random.random()
                 if p < 0.5:
-                    self.x_a = np.random.randint(0, 21)
+                    self.x_a = np.random.randint(0, self.ΔA +1)
                 else:
-                    self.x_b = np.random.randint(0, 21)
+                    self.x_b = np.random.randint(0, self.ΔB +1)
             self.quantity_a.append(self.x_a)
             self.quantity_b.append(self.x_b)
         self.x_min_list = [np.min(self.quantity_a)] + [np.min(self.quantity_b)]
@@ -323,15 +344,11 @@ class Economic_Decisions_Model:
         return self.quantity_a, self.quantity_b, self.x_min_list, self.x_max_list
 
 
-    def one_trial(self, x_a, x_b,
-                  r_i_cj_a, r_i_cj_b, r_i_ns, r_i_cv_cells,
-                  I_eta_cj_a, I_eta_cj_b, I_eta_ns, I_eta_cv,
-                  S_cj_a, S_cj_b, S_ns, S_gaba_cv):
+    def one_trial(self, x_a, x_b):
         """Compute one trial"""
 
         # Firing rate of OV B cell, CJ B cell and CV cell for one trial
-        ov_b_one_trial, r_i_cj_a_one_trial, r_i_cj_b_one_trial, r_i_ns_one_trial, r_i_cv_cells_one_trial = [], [], [], [], []
-        choice = 0
+
         for t in np.arange(0, self.t_exp + self.dt, self.dt):
 
             """Firing rate of OV cells"""
@@ -341,45 +358,50 @@ class Economic_Decisions_Model:
             assert r_ov_b <= 8, 'r_ov_b = {}'.format(r_ov_b)
 
             """Firing rate of CJA and CJB cells"""
-            r_i_cj_a, S_cj_a = self.cj_cells(r_i_cj_a, S_cj_a[0], S_cj_a[1], S_cj_a[2],
-                                        I_eta_cj_a, S_cj_b[0], S_ns[0], S_cj_b[1], S_ns[1], r_i_cv_cells, r_ov_a,
+            self.r_i_cj_a, self.S_cj_a = self.cj_cells(self.r_i_cj_a, self.S_cj_a[0], self.S_cj_a[1], self.S_cj_a[2],
+                                        self.I_eta_cj_a, self.S_cj_b[0], self.S_ns[0], self.S_cj_b[1], self.S_ns[1], self.r_i_cv_cells, r_ov_a,
                                              self.δ_J_nmda_cj_a, self.δ_J_gaba_cj_a, self.δ_J_hl_cj_a, self.δ_J_stim_cj_a)
             #assert r_i_cj_a <= 80, 'r_i_cj = {0}, t ={1}'.format(r_i_cj_a, t)
 
-            r_i_cj_b, S_cj_b = self.cj_cells(r_i_cj_b, S_cj_b[0], S_cj_b[1], S_cj_b[2],
-                                        I_eta_cj_b, S_cj_a[0], S_ns[0], S_cj_a[1], S_ns[1], r_i_cv_cells, r_ov_b,
+            self.r_i_cj_b, self.S_cj_b = self.cj_cells(self.r_i_cj_b, self.S_cj_b[0], self.S_cj_b[1], self.S_cj_b[2],
+                                        self.I_eta_cj_b, self.S_cj_a[0], self.S_ns[0], self.S_cj_a[1], self.S_ns[1], self.r_i_cv_cells, r_ov_b,
                                              self.δ_J_nmda_cj_b, self.δ_J_gaba_cj_b, self.δ_J_hl_cj_b, self.δ_J_stim_cj_b)
-
             #assert r_i_cj_b <= 80, 'r_i_cj = {}, t ={1}'.format(r_i_cj_b, t)
+
             """Firing rate of NS cells"""
-            r_i_ns, S_ns = self.ns_cells(r_i_ns, S_ns[0], S_ns[1], S_ns[2],
-                                         I_eta_ns, S_cj_a[0], S_cj_b[0], S_cj_a[1], S_cj_b[1], r_i_cv_cells,
+            self.r_i_ns, self.S_ns = self.ns_cells(self.r_i_ns, self.S_ns[0], self.S_ns[1], self.S_ns[2],
+                                         self.I_eta_ns, self.S_cj_a[0], self.S_cj_b[0], self.S_cj_a[1], self.S_cj_b[1], self.r_i_cv_cells,
                                          self.δ_J_gaba_ns)
 
             """Firing rate of CV cells"""
-            r_i_cv_cells, S_gaba_cv = self.cv_cells(r_i_cv_cells, S_gaba_cv,
-                                                    I_eta_cv, S_cj_a[0], S_cj_b[0], S_ns[0], S_cj_a[1], S_cj_b[1], S_ns[1])
+            self.r_i_cv_cells, self.S_gaba_cv = self.cv_cells(self.r_i_cv_cells, self.S_gaba_cv,
+                                                            self.I_eta_cv, self.S_cj_a[0], self.S_cj_b[0], self.S_ns[0],
+                                                              self.S_cj_a[1], self.S_cj_b[1], self.S_ns[1])
 
-            ov_b_one_trial.append(r_ov_b)
-            r_i_cj_a_one_trial.append(r_i_cj_a)
-            r_i_cj_b_one_trial.append(r_i_cj_b)
-            r_i_ns_one_trial.append(r_i_ns)
-            r_i_cv_cells_one_trial.append(r_i_cv_cells)
+            self.ov_b_one_trial.append(r_ov_b)
+            self.r_i_cj_a_one_trial.append(self.r_i_cj_a)
+            self.r_i_cj_b_one_trial.append(self.r_i_cj_b)
+            self.r_i_ns_one_trial.append(self.r_i_ns)
+            self.r_i_cv_cells_one_trial.append(self.r_i_cv_cells)
 
         """Determine the final choice in the time window 400-600ms after the offer"""
-        ria, rib =0,0
+        ria, rib = 0, 0
         for i in range(2800, 3201):
-            ria += r_i_cj_a_one_trial[i]
-            rib += r_i_cj_b_one_trial[i]
+            ria += self.r_i_cj_a_one_trial[i]
+            rib += self.r_i_cj_b_one_trial[i]
             if (ria/400) < (rib/400):
-                choice = 'B'
+                self.choice = 'B'
             else:
-                choice = 'A'
+                self.choice = 'A'
 
-        if choice != 'A' and choice != 'B':
+        if self.choice != 'A' and self.choice != 'B':
             raise ValueError('no choice')
-        print("choix final", x_a, x_b, choice, np.max(r_i_cj_a_one_trial), np.max(r_i_cj_b_one_trial), np.max(r_i_cv_cells_one_trial))
-        return choice, ov_b_one_trial, r_i_cj_a_one_trial, r_i_cj_b_one_trial, r_i_ns_one_trial, r_i_cv_cells_one_trial
+        self.result_one_trial[(x_a, x_b)].append([self.choice, self.ov_b_one_trial, self.r_i_cj_a_one_trial,
+                                                  self.r_i_cj_b_one_trial, self.r_i_ns_one_trial, self.r_i_cv_cells_one_trial])
+
+        print("choix final", x_a, x_b, self.choice, np.max(self.r_i_cj_a_one_trial), np.max(self.r_i_cj_b_one_trial), np.max(self.r_i_cv_cells_one_trial))
+
+        return self.result_one_trial
 
 ####### doit etre dans graphs######
     def session(self):
@@ -388,8 +410,8 @@ class Economic_Decisions_Model:
         result = {}  # to save mean of firing rates for each (quantity A, quantity B, choice)
         choice_A, choice_B = {}, {} # to determine % of choice B
         test_cj_a, test_cj_b, test_ns, test_cv = [], [], [], []
-        for j in range(0, 21):
-            for k in range(0, 21):
+        for j in range(0, self.ΔA +1):
+            for k in range(0, self.ΔB +1):
                 for l in range(0, 2):
                     result[(j, k, self.list_choice[l])] = []
                     choice_B[(j,k)] = 0
@@ -398,14 +420,11 @@ class Economic_Decisions_Model:
         for i in range(self.n):
             '''for graphs until figure 7, all parameters are reset to 0 at the beginning of each trial'''
             """ Reset to zero of parameters before each trial"""
-            r_i_cj_a, r_i_cj_b, r_i_ns, r_i_cv_cells = 0, 0, 0, 0
-            I_eta_cj_a, I_eta_cj_b, I_eta_ns, I_eta_cv = 0, 0, 0, 0
-            S_cj_a, S_cj_b, S_ns = [0, 0, 0], [0, 0, 0], [0, 0, 0]
-            S_gaba_cv = 0
-            choice, ov_b_one_trial, r_i_cj_a_one_trial, r_i_cj_b_one_trial, r_i_ns_one_trial, r_i_cv_cells_one_trial = self.one_trial(self.quantity_a[i], self.quantity_b[i],
-                                                                                                r_i_cj_a, r_i_cj_b, r_i_ns, r_i_cv_cells,
-                                                                                                I_eta_cj_a, I_eta_cj_b, I_eta_ns, I_eta_cv,
-                                                                                                S_cj_a, S_cj_b, S_ns, S_gaba_cv)
+
+            #choice, ov_b_one_trial, r_i_cj_a_one_trial, r_i_cj_b_one_trial, r_i_ns_one_trial, r_i_cv_cells_one_trial = self.one_trial(self.quantity_a[i], self.quantity_b[i],
+            #                                                                                    r_i_cj_a, r_i_cj_b, r_i_ns, r_i_cv_cells,
+            #                                                                                    I_eta_cj_a, I_eta_cj_b, I_eta_ns, I_eta_cv,
+            #                                                                                    S_cj_a, S_cj_b, S_ns, S_gaba_cv)
             if choice == 'B':
                 choice_B[(self.quantity_a[i], self.quantity_b[i])] += 1
             elif choice == 'A':
@@ -455,22 +474,22 @@ class Economic_Decisions_Model:
         for k in range(4001):
             mean_ov_low, mean_ov_high, mean_ov_medium = 0, 0, 0
             low, medium, high = 0, 0, 0
-            for i in range(0, 21):
-                for j in range(0, 7):
+            for i in range(0, self.ΔA +1):
+                for j in range(0, round(self.ΔB / 3)):
                     for choice_i in self.list_choice :
                         if result[(i, j, choice_i)] == []:
                             mean_ov_low += 0
                         else :
                             mean_ov_low += result[(i, j, choice_i)][0][0][k]
                             low += 1
-                for j in range(7, 14):
+                for j in range(round(self.ΔB / 3), round(self.ΔB * 2/3)):
                     for choice_i in self.list_choice:
                         if result[(i, j , choice_i)] == []:
                             mean_ov_medium +=0
                         else :
                             mean_ov_medium += result[(i, j, choice_i)][0][0][k]
                             medium += 1
-                for j in range(14, 21):
+                for j in range(round(self.ΔB * 2/3), self.ΔB +1):
                     for choice_i in self.list_choice:
                         if result[(i,j, choice_i)] == []:
                             mean_ov_high += 0

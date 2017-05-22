@@ -27,6 +27,7 @@ class Model:
                         J_ampa_rec_in  = -0.0022,
                         J_nmda_rec_in  = -0.00083446,
                         J_gaba_rec_in  = 0.0180,
+                        ΔJ             = 30,
                         γ              = 0.641,
                         σ_eta          = 0.020,
 
@@ -44,12 +45,12 @@ class Model:
                         dt=0.0005,                      # s
                         n = 4000,                       # number of trials
 
-                        δ_J_hl = (1 ,1),
+                        δ_J_hl   = (1 ,1),
                         δ_J_stim = (2 ,1),
                         δ_J_gaba = (1 ,1 ,1),
                         δ_J_nmda = (1 ,1),
 
-                        w_p=1.75,
+                        w_p = 1.75,
                         a = 0.175,
                         b = 0.030,
                         c = 0.400,
@@ -84,7 +85,7 @@ class Model:
         self.b = b                                  # s
         self.c = t_offer + c                        # s
         self.d = d                                  # s
-        self.J_ampa_input = 30 * J_ampa_ext_pyr
+        self.J_ampa_input = ΔJ * J_ampa_ext_pyr
 
         self.w_p = w_p
         self.w_m = 1 - f * (self.w_p - 1) / (1 - self.f)
@@ -309,9 +310,9 @@ class Model:
                  S_nmda_cj_a, S_nmda_cj_b, S_nmda_ns):
         """Compute firing rate of CV cells"""
 
-        self.S_gaba_cv = self.channel_gaba(S_gaba_cv, r_i_cv_cells)  # equation 5
+        S_gaba_cv = self.channel_gaba(S_gaba_cv, r_i_cv_cells)  # equation 5
 
-        self.I_eta_cv = self.white_noise(self.I_eta_cv)  # equation 18
+        I_eta_cv = self.white_noise(self.I_eta_cv)  # equation 18
         I_ampa_ext_cv = self.I_ampa_ext_I(I_eta_cv)  # equation 14
         I_ampa_rec_cv = self.I_ampa_rec_I(S_ampa_cj_a, S_ampa_cj_b, S_ampa_ns)  # equation 15
         I_nmda_rec_cv = self.I_nmda_rec_I(S_nmda_cj_a, S_nmda_cj_b, S_nmda_ns)  # equation 16
@@ -334,6 +335,9 @@ class Model:
         self.S_cj_a, self.S_cj_b, self.S_ns = [0, 0, 0], [0, 0, 0], [0, 0, 0]
         self.S_gaba_cv = 0
         self.choice = 0
+        self.ov_b_one_trial, self.r_i_cj_a_one_trial, self.r_i_cj_b_one_trial = [], [], []
+        self.r_i_ns_one_trial, self.r_i_cv_cells_one_trial = [], []
+
         for t in np.arange(0, self.t_exp + self.dt, self.dt):
 
             """Firing rate of OV cells"""
@@ -386,10 +390,13 @@ class Model:
         self.result_one_trial[(x_a, x_b, self.choice)].append([self.ov_b_one_trial, self.r_i_cj_a_one_trial,
                                                   self.r_i_cj_b_one_trial, self.r_i_ns_one_trial, self.r_i_cv_cells_one_trial])
 
-        print("choix final", x_a, x_b, self.choice, np.max(self.r_i_cj_a_one_trial), np.max(self.r_i_cj_b_one_trial), np.max(self.r_i_cv_cells_one_trial))
+        print("choix final", x_a, x_b, self.choice, np.max(self.r_i_cj_a_one_trial[200:]),
+              np.max(self.r_i_cj_b_one_trial[200:]), np.max(self.r_i_cv_cells_one_trial[200:]))
 
         return self.result_one_trial
 
+    def save_history(self, data):
+        np.save(data, self.result_one_trial)
 
 
 if __name__ == "__main__":

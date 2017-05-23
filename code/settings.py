@@ -8,6 +8,7 @@ class Presetting:
         self.ΔA, self.ΔB = ΔA, ΔB
         self.quantity_a, self.quantity_b = [], []  # list of juice quantity A and B
         self.x_min_list, self.x_max_list = [], []  # list of minimum and maximum of juice A and B in a session
+        self.result_one_trial = {}
 
     def quantity_juice(self):
         # random choice of juice quantity, ΔA = ΔB = [0, 20]
@@ -25,3 +26,9 @@ class Presetting:
         self.x_min_list = [np.min(self.quantity_a)] + [np.min(self.quantity_b)]
         self.x_max_list = [np.max(self.quantity_a)] + [np.max(self.quantity_b)]
         return self.quantity_a, self.quantity_b, self.x_min_list, self.x_max_list
+
+    def result_trials(self):
+        for i in range(self.ΔA + 1):
+            for j in range(self.ΔB + 1):
+                    self.result_one_trial[(i, j)] = []
+        return self.result_one_trial

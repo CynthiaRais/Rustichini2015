@@ -135,6 +135,7 @@ class Model:
                     self.result_one_trial[(i, j, choice_i)] = []
         self.ov_b_one_trial, self.r_i_cj_a_one_trial, self.r_i_cj_b_one_trial = [], [], []
         self.r_i_ns_one_trial, self.r_i_cv_cells_one_trial = [], []
+        print("j'ai init le model")
 
 
 
@@ -387,16 +388,14 @@ class Model:
 
         if self.choice != 'A' and self.choice != 'B':
             raise ValueError('no choice')
-        self.result_one_trial[(x_a, x_b, self.choice)].append([self.ov_b_one_trial, self.r_i_cj_a_one_trial,
-                                                  self.r_i_cj_b_one_trial, self.r_i_ns_one_trial, self.r_i_cv_cells_one_trial])
 
-        print("choix final", x_a, x_b, self.choice, np.max(self.r_i_cj_a_one_trial[200:]),
-              np.max(self.r_i_cj_b_one_trial[200:]), np.max(self.r_i_cv_cells_one_trial[200:]))
-
-        return self.result_one_trial
+        return [self.ov_b_one_trial, self.r_i_cj_a_one_trial,
+                self.r_i_cj_b_one_trial, self.r_i_ns_one_trial, self.r_i_cv_cells_one_trial, self.choice]
 
     def save_history(self, data):
+        print("je suis dans la fonction sauvegarde")
         np.save(data, self.result_one_trial)
+        print("j'ai sauvegardé")
 
 
 if __name__ == "__main__":

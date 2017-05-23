@@ -89,6 +89,7 @@ class Graph:
         print("X_A", len(X_A))
         print("Y_A", len(Y_A))
         print("X_B", len(X_B))
+        print("X_B", len(X_B))
         print("Y_B", len(Y_B))
         figure_4_L.diamond(x=X_A, y=Y_A, color="red", size=10)
         figure_4_L.circle(x=X_B, y=Y_B, color="blue", size=10)

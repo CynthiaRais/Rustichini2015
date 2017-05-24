@@ -381,14 +381,15 @@ class Model:
         for i in range(2800, 3201):
             ria += self.r_i_cj_a_one_trial[i]
             rib += self.r_i_cj_b_one_trial[i]
-            if (ria/400) < (rib/400):
+            if (ria) < (rib):
                 self.choice = 'B'
             else:
                 self.choice = 'A'
 
         if self.choice != 'A' and self.choice != 'B':
             raise ValueError('no choice')
-
+        if (x_a ==0 and x_b == 1 ) or (x_a == 20 and x_b == 1) or (x_a == 8 and x_b == 1) or (x_a == 1 and x_b == 16):
+            print("final choice", x_a, x_b, self.choice)
         return [self.ov_b_one_trial, self.r_i_cj_a_one_trial,
                 self.r_i_cj_b_one_trial, self.r_i_ns_one_trial, self.r_i_cv_cells_one_trial, self.choice]
 

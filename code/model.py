@@ -6,7 +6,7 @@ import math
 import bokeh
 import bokeh.plotting
 import graphs
-np.random.seed(100)
+np.random.seed(10)
 
 class Model:
 
@@ -137,6 +137,12 @@ class Model:
         self.r_i_ns_one_trial, self.r_i_cv_cells_one_trial = [], []
         print("j'ai init le model")
 
+        # Control of noise
+        self.I_eta_cj_a_list = []
+        self.I_eta_cj_b_list = []
+        self.I_eta_cj_ns_list = []
+        self.I_eta_cj_cv_list = []
+
 
 
     def firing_rate_pyr_cells(self, r_i, phi): #1
@@ -231,7 +237,7 @@ class Model:
 
     def white_noise(self, I_eta):  # 18
         """Update I_eta, the noise term (eq. 18)"""
-        I_eta += ((-I_eta + self.eta() * math.sqrt(self.τ_ampa * (self.σ_eta ** 2))) / self.τ_ampa) * self.dt
+        I_eta += -I_eta * (self.dt / self.τ_ampa) + self.eta() * math.sqrt(self.dt/self.τ_ampa) * self.σ_eta
         return I_eta
 
     def I_stim(self, δ_j_hl, δ_j_stim, r_ov):  # 19
@@ -331,9 +337,9 @@ class Model:
         """Compute one trial"""
 
         # Firing rate of OV B cell, CJ B cell and CV cell for one trial
-        self.r_i_cj_a, self.r_i_cj_b, self.r_i_ns, self.r_i_cv_cells = 0, 0, 0, 0
+        self.r_i_cj_a, self.r_i_cj_b, self.r_i_ns, self.r_i_cv_cells = 3, 3, 3, 8
         self.I_eta_cj_a, self.I_eta_cj_b, self.I_eta_ns, self.I_eta_cv = 0, 0, 0, 0
-        self.S_cj_a, self.S_cj_b, self.S_ns = [0, 0, 0], [0, 0, 0], [0, 0, 0]
+        self.S_cj_a, self.S_cj_b, self.S_ns = [0, 0.1, 0], [0, 0.1, 0], [0, 0.1, 0]
         self.S_gaba_cv = 0
         self.choice = 0
         self.ov_b_one_trial, self.r_i_cj_a_one_trial, self.r_i_cj_b_one_trial = [], [], []
@@ -375,7 +381,11 @@ class Model:
             self.r_i_cj_b_one_trial.append(self.r_i_cj_b)
             self.r_i_ns_one_trial.append(self.r_i_ns)
             self.r_i_cv_cells_one_trial.append(self.r_i_cv_cells)
-
+            #le bruit
+            self.I_eta_cj_a_list.append(self.I_eta_cj_a)
+            self.I_eta_cj_b_list.append(self.I_eta_cj_b)
+            self.I_eta_cj_ns_list.append(self.I_eta_ns)
+            self.I_eta_cj_cv_list.append(self.I_eta_cv)
         """Determine the final choice in the time window 400-600ms after the offer"""
         ria, rib = 0, 0
         for i in range(2800, 3201):
@@ -388,10 +398,11 @@ class Model:
 
         if self.choice != 'A' and self.choice != 'B':
             raise ValueError('no choice')
-        if (x_a ==0 and x_b == 1 ) or (x_a == 20 and x_b == 1) or (x_a == 8 and x_b == 1) or (x_a == 1 and x_b == 16):
+        if (x_a ==3 and x_b == 16):
             print("final choice", x_a, x_b, self.choice)
         return [self.ov_b_one_trial, self.r_i_cj_a_one_trial,
-                self.r_i_cj_b_one_trial, self.r_i_ns_one_trial, self.r_i_cv_cells_one_trial, self.choice]
+                self.r_i_cj_b_one_trial, self.r_i_ns_one_trial, self.r_i_cv_cells_one_trial, self.choice,
+                self.I_eta_cj_a_list, self.I_eta_cj_b_list, self.I_eta_cj_ns_list, self.I_eta_cj_cv_list]
 
     def save_history(self, data):
         print("je suis dans la fonction sauvegarde")

@@ -33,16 +33,15 @@ class Graph:
 
 
     def firing_specific_set_ov(self, ov_choice, pourcentage_choice_B):
-        Y = ov_choice
-        print(Y[0])
         figure_4_C = bokeh.plotting.figure(title="Figure 4 C", plot_width=700, plot_height=700)
-        figure_4_C.diamond(x=range(0, 6), y=Y[0], color='red', size=10)
-        figure_4_C.circle(x=range(6, 12), y=Y[3], color="blue", size=10)
+        figure_4_C.diamond(x=range(0, 6), y=ov_choice[0][:6], color='red', size=10)
+        figure_4_C.circle(x=range(6, 12), y=ov_choice[1][6:], color="blue", size=10)
         figure_4_C.circle(x=range(12), y=pourcentage_choice_B, color="black", size=10)
         bokeh.plotting.show(figure_4_C)
 
 
     def firing_offer_B(self, firing_D):
+        print("firing_D", len(firing_D))
         figure_4_D = bokeh.plotting.figure(title="Figure 4 D", plot_width=700, plot_height=700)
         figure_4_D.annulus(x=range(20), y=firing_D, color="purple", inner_radius=0.2, outer_radius=0.5)
         bokeh.plotting.show(figure_4_D)
@@ -60,12 +59,9 @@ class Graph:
 
 
     def firing_specific_set_cjb(self, cj_choice, pourcentage_choice_B):
-        Y = cj_choice
-        print(len(Y[1]))
-        print(len(Y[4]))
         figure_4_G = bokeh.plotting.figure(title="Figure 4 G", plot_width=700, plot_height=700)
-        figure_4_G.diamond(x=range(0, 6), y=Y[1], color='red', size=10)
-        figure_4_G.circle(x=range(6, 12), y=Y[4], color="blue", size=10)
+        figure_4_G.diamond(x=range(0, 6), y=cj_choice[0][:6], color='red', size=10)
+        figure_4_G.circle(x=range(6, 12), y=cj_choice[1][6:], color="blue", size=10)
         figure_4_G.circle(x=range(12), y=pourcentage_choice_B, color="black", size=10)
         bokeh.plotting.show(figure_4_G)
 
@@ -91,18 +87,18 @@ class Graph:
 
 
     def firing_specific_set_cv(self, cv_choice, pourcentage_choice_B):
-        Y = cv_choice
         figure_4_K = bokeh.plotting.figure(title="Figure 4 K", plot_width=700, plot_height=700)
-        figure_4_K.diamond(x=range(0, 6), y=Y[2], color='red', size=10)
-        figure_4_K.circle(x=range(6, 12), y=Y[5], color="blue", size=10)
+        figure_4_K.diamond(x=range(0, 6), y=cv_choice[0][:6], color='red', size=10)
+        figure_4_K.circle(x=range(6, 12), y=cv_choice[1][6:], color="blue", size=10)
         figure_4_K.circle(x=range(12), y=pourcentage_choice_B, color="black", size=10)
         bokeh.plotting.show(figure_4_K)
 
     def firing_chosen_value(self, Y):
         figure_4_L = bokeh.plotting.figure(title="Figure 4 L", plot_width=700, plot_height=700)
         figure_4_L.diamond(x=Y[0], y=Y[1], color="red", size=10)
-        figure_4_L.circle(x=[2], y=[3], color="blue", size=10)
+        figure_4_L.circle(x=Y[2], y=[3], color="blue", size=10)
         bokeh.plotting.show(figure_4_L)
+
 
     def cja_cjb(self):
         figure_9A = bokeh.plotting.figure(title="Figure 9 A", plot_width=700, plot_height=700)

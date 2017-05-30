@@ -350,8 +350,8 @@ class Model:
             """Firing rate of OV cells"""
             r_ov_a = self.firing_ov_cells(x_a, self.x_min_list[0], self.x_max_list[0], t)
             r_ov_b = self.firing_ov_cells(x_b, self.x_min_list[1], self.x_max_list[1], t)
-            assert r_ov_a <= 8, 'r_ov_a = {}'.format(r_ov_a)
-            assert r_ov_b <= 8, 'r_ov_b = {}'.format(r_ov_b)
+            #assert r_ov_a <= 8, 'r_ov_a = {}'.format(r_ov_a)
+            #assert r_ov_b <= 8, 'r_ov_b = {}'.format(r_ov_b)
 
             """Firing rate of CJA and CJB cells"""
             self.r_i_cj_a, self.S_cj_a = self.cj_cells(self.r_i_cj_a, self.S_cj_a[0], self.S_cj_a[1], self.S_cj_a[2],
@@ -398,8 +398,7 @@ class Model:
 
         if self.choice != 'A' and self.choice != 'B':
             raise ValueError('no choice')
-        if (x_a ==3 and x_b == 16):
-            print("final choice", x_a, x_b, self.choice)
+
         return [self.ov_b_one_trial, self.r_i_cj_a_one_trial,
                 self.r_i_cj_b_one_trial, self.r_i_ns_one_trial, self.r_i_cv_cells_one_trial, self.choice,
                 self.I_eta_cj_a_list, self.I_eta_cj_b_list, self.I_eta_cj_ns_list, self.I_eta_cj_cv_list]

@@ -1,6 +1,8 @@
 import unittest
 import numpy as np
-import Model
+
+import dotdot
+from code import Model
 
 class ModelTest(unittest.TestCase):
 

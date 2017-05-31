@@ -386,12 +386,14 @@ class Model:
             self.I_eta_cj_b_list.append(self.I_eta_cj_b)
             self.I_eta_cj_ns_list.append(self.I_eta_ns)
             self.I_eta_cj_cv_list.append(self.I_eta_cv)
-        """Determine the final choice in the time window 400-600ms after the offer"""
+
+
+        # Determine the final choice in the time window 400-600ms after the offer
         ria, rib = 0, 0
         for i in range(2800, 3201):
             ria += self.r_i_cj_a_one_trial[i]
             rib += self.r_i_cj_b_one_trial[i]
-            if (ria) < (rib):
+            if ria < rib:
                 self.choice = 'B'
             else:
                 self.choice = 'A'

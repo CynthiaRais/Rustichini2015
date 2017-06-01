@@ -1,12 +1,7 @@
 #-*- coding: utf-8 -*-
 
 import numpy as np
-import math
 
-import bokeh
-import bokeh.plotting
-import graphs
-np.random.seed(10)
 
 class Model:
 
@@ -60,8 +55,13 @@ class Model:
                         ΔB = 20,
 
                         x_max_list = None,
-                        x_min_list = None):
+                        x_min_list = None,
 
+                        random_seed = 0,
+                        verbose     = False):
+
+        np.random.seed(random_seed) # FIXME: per model Random instance
+        self.verbose = verbose
 
         # Network parameters
         self.N_E, self.N_I = N_E, N_I
@@ -135,7 +135,6 @@ class Model:
                     self.result_one_trial[(i, j, choice_i)] = []
         self.ov_b_one_trial, self.r_i_cj_a_one_trial, self.r_i_cj_b_one_trial = [], [], []
         self.r_i_ns_one_trial, self.r_i_cv_cells_one_trial = [], []
-        print("j'ai init le model")
 
         # Control of noise
         self.I_eta_cj_a_list = []
@@ -143,6 +142,8 @@ class Model:
         self.I_eta_cj_ns_list = []
         self.I_eta_cj_cv_list = []
 
+        if self.verbose:
+            print("Finished model initialization.")
 
 
     def firing_rate_pyr_cells(self, r_i, phi): #1
@@ -237,7 +238,7 @@ class Model:
 
     def white_noise(self, I_eta):  # 18
         """Update I_eta, the noise term (eq. 18)"""
-        I_eta += -I_eta * (self.dt / self.τ_ampa) + self.eta() * math.sqrt(self.dt/self.τ_ampa) * self.σ_eta
+        I_eta += -I_eta * (self.dt / self.τ_ampa) + self.eta() * np.sqrt(self.dt/self.τ_ampa) * self.σ_eta
         return I_eta
 
     def I_stim(self, δ_j_hl, δ_j_stim, r_ov):  # 19
@@ -406,9 +407,9 @@ class Model:
                 self.I_eta_cj_a_list, self.I_eta_cj_b_list, self.I_eta_cj_ns_list, self.I_eta_cj_cv_list]
 
     def save_history(self, data):
-        print("je suis dans la fonction sauvegarde")
+        print("Saving history...")
         np.save(data, self.result_one_trial)
-        print("j'ai sauvegardé")
+        print("done.")
 
 
 if __name__ == "__main__":

@@ -95,31 +95,31 @@ class ModelTest(unittest.TestCase):
     #
     #     m = Model()
     #     for i in range(10):
-    #         (choice, np.max(mean_ov_b), np.max(r_i_cj_a_tot), np.max(r_i_cj_b_tot), np.max(r_i_ns_tot),
-    #          np.max(r_i_cv_cells_tot), np.max(s_ampa_cj_b_tot), np.max(s_nmda_b_tot), np.max(s_gaba_b_tot),
+    #         (choice, np.max(mean_ovb), np.max(r_cja_tot), np.max(r_cjb_tot), np.max(r_ns_tot),
+    #          np.max(r_cv_tot), np.max(s_ampa_cjb_tot), np.max(s_nmda_b_tot), np.max(s_gaba_b_tot),
     #          np.max(s_gaba_cv_tot),
-    #          np.min(mean_ov_b), np.min(r_i_cj_a_tot), np.min(r_i_cj_b_tot), np.min(r_i_ns_tot),
-    #          np.min(r_i_cv_cells_tot),
-    #          np.min(s_ampa_cj_b_tot), np.min(s_nmda_b_tot), np.min(s_gaba_b_tot), np.min(s_gaba_cv_tot)) = m.one_trial(0, 1, [0, 1], [20, 20], 0,
+    #          np.min(mean_ovb), np.min(r_cja_tot), np.min(r_cjb_tot), np.min(r_ns_tot),
+    #          np.min(r_cv_tot),
+    #          np.min(s_ampa_cjb_tot), np.min(s_nmda_b_tot), np.min(s_gaba_b_tot), np.min(s_gaba_cv_tot)) = m.one_trial(0, 1, [0, 1], [20, 20], 0,
     #                                                                                                             0, 0, 0, 0,
     #                                                                                                              0,0,0,0,
     #                                                                                                                 [0, 0, 0], [ 0, 0, 0], [0, 0, 0], 0)
     #         self.assertEqual(choice, 'no choice')
-    #         self.assertEqual(np.max(mean_ov_b), 0.4000000000000003 )
-    #         self.assertEqual(np.max(r_i_cj_a_tot), nan)
-    #         self.assertEqual(np.max(r_i_cj_b_tot), nan)
-    #         self.assertEqual(np.max(r_i_ns_tot), nan)
-    #         self.assertEqual(np.max(r_i_cv_cells_tot), nan)
-    #         self.assertEqual(np.max(s_ampa_cj_b_tot), nan)
+    #         self.assertEqual(np.max(mean_ovb), 0.4000000000000003 )
+    #         self.assertEqual(np.max(r_cja_tot), nan)
+    #         self.assertEqual(np.max(r_cjb_tot), nan)
+    #         self.assertEqual(np.max(r_ns_tot), nan)
+    #         self.assertEqual(np.max(r_cv_tot), nan)
+    #         self.assertEqual(np.max(s_ampa_cjb_tot), nan)
     #         self.assertEqual(np.max(s_nmda_b_tot), nan)
     #         self.assertEqual(np.max(s_gaba_b_tot), nan)
     #         self.assertEqual(np.max(s_gaba_cv_tot), nan)
-    #         self.assertEqual(np.min(mean_ov_b), 8.9306182607322952e-11)
-    #         self.assertEqual(np.max(r_i_cv_cells_tot), nan)
-    #         self.assertEqual(np.min(r_i_cj_a_tot), nan)
-    #         self.assertEqual(np.min(r_i_cj_b_tot), nan)
-    #         self.assertEqual(np.min(r_i_ns_tot), nan)
-    #         self.assertEqual(np.min(s_ampa_cj_b_tot), nan)
+    #         self.assertEqual(np.min(mean_ovb), 8.9306182607322952e-11)
+    #         self.assertEqual(np.max(r_cv_tot), nan)
+    #         self.assertEqual(np.min(r_cja_tot), nan)
+    #         self.assertEqual(np.min(r_cjb_tot), nan)
+    #         self.assertEqual(np.min(r_ns_tot), nan)
+    #         self.assertEqual(np.min(s_ampa_cjb_tot), nan)
     #         self.assertEqual(np.min(s_nmda_b_tot), nan)
     #         self.assertEqual(np.min(s_gaba_b_tot), nan)
     #         self.assertEqual(np.min(s_gaba_cv_tot), nan)

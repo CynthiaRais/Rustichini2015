@@ -11,11 +11,11 @@ import dotdot
 from code import Model, settings
 from update_testdata import generate_testdata
 
-class RepeatableTests(unittest.TestCase):
-    """Test repeatability"""
+class ReproducibleTests(unittest.TestCase):
+    """Test reproducibility"""
 
     def test_repeatable(self):
-        """Test that two 50-steps runs yield the same history"""
+        """Test that data generated with previous version of the code match the current one"""
 
         testdata = generate_testdata()
         with open('testdata.pickle', 'rb') as f:

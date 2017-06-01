@@ -39,8 +39,9 @@ class RepeatableTests(unittest.TestCase):
             """Return the history of a run"""
             model = Model(x_min_list=[0, 0], x_max_list=[20, 20], random_seed=seed)
             return model.one_trial(1, 10)
-            
+
         self.assertEqual(run(0), run(0))
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -21,7 +21,6 @@ class ReplicableTests(unittest.TestCase):
 
     def test_replicable(self):
         """Test that the matlab code remains """
-
         K = 10
 
         datamat_ref = scipy.io.loadmat('testdata_ref.mat')

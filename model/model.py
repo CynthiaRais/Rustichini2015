@@ -92,20 +92,22 @@ class Model:
         # Determination of g maximum for OV cells firing rate
         self.g_max = max(self.g_t(t) for t in np.arange(self.dt, self.t_exp + self.dt, self.dt))
 
-        # to keep firing rate of one trial
-        self.result_one_trial = {}
-        for i in range(self.ΔA + 1):
-            for j in range(self.ΔB + 1):
-                for choice_i in self.list_choice:
-                    self.result_one_trial[(i, j, choice_i)] = []
-        self.ovb_one_trial, self.r_cja_one_trial, self.r_cjb_one_trial = [], [], []
-        self.r_ns_one_trial, self.r_cv_one_trial = [], []
+        self.history = history.History(self)
 
-        # Control of noise
-        self.I_eta_cja_list = []
-        self.I_eta_cjb_list = []
-        self.I_eta_ns_list  = []
-        self.I_eta_cv_list  = []
+        # # to keep firing rate of one trial
+        # self.result_one_trial = {}
+        # for i in range(self.ΔA + 1):
+        #     for j in range(self.ΔB + 1):
+        #         for choice_i in self.list_choice:
+        #             self.result_one_trial[(i, j, choice_i)] = []
+        # self.ovb_one_trial, self.r_cja_one_trial, self.r_cjb_one_trial = [], [], []
+        # self.r_ns_one_trial, self.r_cv_one_trial = [], []
+        #
+        # # Control of noise
+        # self.I_eta_cja_list = []
+        # self.I_eta_cjb_list = []
+        # self.I_eta_ns_list  = []
+        # self.I_eta_cv_list  = []
 
         if self.verbose:
             print("Finished model initialization.")
@@ -136,10 +138,7 @@ class Model:
 
     def Φ(self, I_syn, c, i, gain):  # 6
         """Input-ouput relation for leaky integrate-and-fire cell (Abbott and Chance, 2005) (eq. 6)"""
-        phi = ((c * I_syn - i) / (1 - np.exp(-gain * (c * I_syn - i))))
-
-        return phi
-
+        return ((c * I_syn - i) / (1 - np.exp(-gain * (c * I_syn - i))))
 
         ## Currents and parameters
 
@@ -248,7 +247,7 @@ class Model:
         # self.ovb_one_trial, self.r_cja_one_trial, self.r_cjb_one_trial = [], [], []
         # self.r_ns_one_trial, self.r_cv_one_trial = [], []
 
-        self.trial_history = history.TrialHistory(self)
+        self.trial_history = history.TrialHistory(self, x_a, x_b)
 
         for t in np.arange(self.dt, self.t_exp + self.dt, self.dt):
             self.one_step(t, x_a, x_b)
@@ -257,6 +256,8 @@ class Model:
         ria, rib = sum(self.trial_history.r_1[2800:3201]), sum(self.trial_history.r_2[2800:3201])
         self.choice = 'B' if ria < rib else 'A'
 
+        self.trial_history.choice = self.choice
+        self.history.add_trial(self.trial_history)
         # return [self.ovb_one_trial, self.r_cja_one_trial,
         #         self.r_cjb_one_trial, self.r_ns_one_trial, self.r_cv_one_trial, self.choice,
         #         self.I_eta_cja_list, self.I_eta_cjb_list, self.I_eta_ns_list, self.I_eta_cv_list]
@@ -334,8 +335,8 @@ class Model:
         # self.I_eta_cjb_list.append(self.I_eta_cjb)
         # self.I_eta_ns_list.append(self.I_eta_ns)
         # self.I_eta_cv_list.append(self.I_eta_cv)
-
-        def save_history(self, data):
-            print("Saving history...")
-            np.save(data, self.result_one_trial)
-            print("done.")
+        #
+        # def save_history(self, data):
+        #     print("Saving history...")
+        #     np.save(data, self.result_one_trial)
+        #     print("done.")

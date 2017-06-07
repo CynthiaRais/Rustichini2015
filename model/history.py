@@ -3,9 +3,12 @@
 
 class TrialHistory:
 
-    def __init__(self, model):
+    def __init__(self, model, x_a, x_b):
+        self.x_a = x_a
+        self.x_b = x_b
 
         self.data = {name: [] for name in ['r_1', 'r_2', 'r_3', 'r_I',
+                                           'r_ova', 'r_ovb',
                                            'S_ampa_1', 'S_ampa_2', 'S_ampa_3',
                                            'S_nmda_1', 'S_nmda_2', 'S_nmda_3',
                                            'S_gaba',
@@ -42,3 +45,24 @@ class TrialHistory:
             getattr(self, 'S_nmda_{}'.format(i)).append(model.S_nmda[i])
 
         self.S_gaba[0] = model.S_gaba
+
+        self.r_ova.append(model.r_ov['1'])
+        self.r_ovb.append(model.r_ov['2'])
+
+    def export(self, keys=('r_1', 'r_2', 'r_3', 'r_I', 'r_ova', 'r_ovb')):
+        """Export a trial history, filtering the desired keys"""
+        return {key: getattr(self, key) for key in keys}
+
+
+class History:
+    """Hold the history of multiple trials"""
+
+    def __init__(self, model):
+        self.model = model # keeping all the parameters
+        self.trials = {(x_A, x_B, choice): [] for x_A in range(self.model.ΔA + 1)
+                                              for x_B in range(self.model.ΔB + 1)
+                                              for choice in ['A', 'B']}
+
+    def add_trial(self, trial_history):
+        key = (trial_history.x_a, trial_history.x_b, trial_history.choice)
+        self.trials[key].append(trial_history.export())

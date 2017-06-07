@@ -116,12 +116,12 @@ class Graph:
 
     def figure_4(self):
 
-        figure_test_cj_b = bokeh.plotting.figure(title="Figure test cj b", plot_width=300, plot_height=300)
+        figure_test_cjb = bokeh.plotting.figure(title="Figure test cj b", plot_width=300, plot_height=300)
         figure_test_ns = bokeh.plotting.figure(title="Figure test ns", plot_width=300, plot_height=300)
         figure_test_cv = bokeh.plotting.figure(title="Figure test cv", plot_width=300, plot_height=300)
 
-        #figure_test_cj_a.multi_line([self.X_axis, self.X_axis, self.X_axis], self.analysis.test_cj_a, color=["red", "blue", "green"])
-        figure_test_cj_b.multi_line([self.X_axis, self.X_axis, self.X_axis], self.analysis.test_cj_b, color=["red", "blue", "green"])
+        #figure_test_cja.multi_line([self.X_axis, self.X_axis, self.X_axis], self.analysis.test_cja, color=["red", "blue", "green"])
+        figure_test_cjb.multi_line([self.X_axis, self.X_axis, self.X_axis], self.analysis.test_cjb, color=["red", "blue", "green"])
         figure_test_ns.multi_line([self.X_axis, self.X_axis,self. X_axis], self.analysis.test_ns, color=["red", "blue", "green"])
         figure_test_cv.multi_line([self.X_axis, self.X_axis, self.X_axis], self.analysis.test_cv, color=["red", "blue", "green"])
 
@@ -138,8 +138,8 @@ class Graph:
         #bokeh.plotting.show(figure_4_K)
         #bokeh.plotting.show(figure_4_L)
 
-        #bokeh.plotting.show(figure_test_cj_a)
-        bokeh.plotting.show(figure_test_cj_b)
+        #bokeh.plotting.show(figure_test_cja)
+        bokeh.plotting.show(figure_test_cjb)
         bokeh.plotting.show(figure_test_ns)
         bokeh.plotting.show(figure_test_cv)
 

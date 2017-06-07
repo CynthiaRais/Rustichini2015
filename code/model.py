@@ -71,13 +71,13 @@ class Model:
                         Δ_r     = 8,                    # spike/s
                         t_offer = 1.0,                  # s
                         t_exp = 2.0,                    # s
-                        dt=0.0005,                      # s
-                        n = 4000,                       # number of trials
+                        dt = 0.0005,                      # s
+                        n  = 4000,                       # number of trials
 
-                        δ_J_hl   = (1 ,1),
-                        δ_J_stim = (2 ,1),
-                        δ_J_gaba = (1 ,1 ,1),
-                        δ_J_nmda = (1 ,1),
+                        δ_J_hl   = (1, 1),
+                        δ_J_stim = (2, 1),
+                        δ_J_gaba = (1, 1, 1),
+                        δ_J_nmda = (1, 1),
 
                         w_p = 1.75,
                         a = 0.175,
@@ -115,20 +115,20 @@ class Model:
 
         # # Parameters used to model OV cells
         # self.r_o, self.Δ_r, self.t_offer = r_o, Δ_r, t_offer
-        self.a = a + t_offer                        # s
-        # self.b = b                                  # s
-        self.c = t_offer + c                        # s
-        # self.d = d                                  # s
+        self.a = (a + t_offer)                    # s
+        self.b = b                                # s
+        self.c = (t_offer + c)                    # s
+        self.d = d                                # s
         self.J_ampa_input = ΔJ * J_ampa_ext_pyr
 
         # self.w_p = w_p
         self.w_m = 1 - f * (self.w_p - 1) / (1 - self.f)
 
         # Hebbian learning and synaptic imbalance
-        self.δ_J_hl_cja, self.δ_J_hl_cjb = δ_J_hl[0], δ_J_hl[1]
-        self.δ_J_stim_cja, self.δ_J_stim_cjb = δ_J_stim[0], δ_J_stim[1]
-        self.δ_J_gaba_cja, self.δ_J_gaba_cjb, self.δ_J_gaba_ns = δ_J_gaba[0], δ_J_gaba[1], δ_J_gaba[2]
-        self.δ_J_nmda_cja, self.δ_J_nmda_cjb = δ_J_nmda[0], δ_J_nmda[1]
+        self.δ_J_hl   = {'1': δ_J_hl[0], '2': δ_J_hl[1]}
+        self.δ_J_stim = {'1': δ_J_stim[0], '2': δ_J_stim[1]}
+        self.δ_J_nmda = {'1': δ_J_nmda[0], '2': δ_J_nmda[1]}
+        self.δ_J_gaba = {'1': δ_J_gaba[0], '2': δ_J_gaba[1], '3': δ_J_gaba[2]}
 
         # # Parameters of the experience
         # self.t_exp = t_exp
@@ -139,10 +139,15 @@ class Model:
         self.list_choice = ['A', 'B']
 
         # Values at the beginning of each trial (before figure 7)
-        self.r_cja, self.r_cjb, self.r_ns, self.r_cv = 0, 0, 0, 0
-        self.I_eta_cja, self.I_eta_cjb, self.I_eta_ns, self.I_eta_cv = 0, 0, 0, 0
-        self.S_cja, self.S_cjb, self.S_ns = [0, 0, 0], [0, 0, 0], [0, 0, 0]
-        self.S_gaba_cv = 0
+#        self.r_cja, self.r_cjb, self.r_ns, self.r_cv = 0, 0, 0, 0
+        self.r      = {'1': 0, '2': 0, '3': 0, 'I': 0}
+#        self.I_eta_cja, self.I_eta_cjb, self.I_eta_ns, self.I_eta_cv = 0, 0, 0, 0
+        self.I_eta  = {'1': 0, '2': 0, '3': 0, 'I': 0}
+        self.S_ampa = {'1': 0, '2': 0, '3': 0}
+        self.S_nmda = {'1': 0, '2': 0, '3': 0}
+        self.S_gaba = 0
+        # self.S_cja, self.S_cjb, self.S_ns = [0, 0, 0], [0, 0, 0], [0, 0, 0]
+        # self.S_gaba_cv = 0
         self.choice = 0
 
         #self.result = sorted(self.result.items(), key = operator.itemgetter(0))
@@ -151,11 +156,10 @@ class Model:
         #                   for t in np.arange(0, 2.0, self.dt))         #marche?
 
         # Determination of g maximum for OV cells firing rate
-        self.list_g = []
-        for t in np.arange(0, self.t_exp, dt):
-            self.g = (1 / (1 + np.exp(- (t - self.a) / self.b))) * (1 / (1 + np.exp((t - self.c) / self.d)))
-            self.list_g.append(self.g)
-        self.g_max = np.max(self.list_g)
+        self.g_max = float('-inf')
+        for t in np.arange(self.dt, self.t_exp + self.dt, self.dt):
+            g = (1 / (1 + np.exp(- (t - self.a) / self.b))) * (1 / (1 + np.exp((t - self.c) / self.d)))
+            self.g_max = max(self.g_max, g)
 
         # self.x_min_list = x_min_list
         # self.x_max_list = x_max_list
@@ -180,31 +184,28 @@ class Model:
             print("Finished model initialization.")
 
 
-    def firing_rate_pyr_cells(self, r_i, phi): #1
-        """Update the firing rate of pyramidale cells (eq. 1)"""
-        r_i += ((- r_i + phi) / self.τ_ampa) * self.dt
-        return r_i
+    def firing_rate_pyr(self, i, phi_i): #1
+        """Compute the update of the firing rate of pyramidale cells (eq. 1)"""
+        return ((- self.r[i] + phi_i) / self.τ_ampa) * self.dt
 
-    def firing_rate_I(self, r_I, phi):  # 2
-        """Update the firing rate of interneurons (eq. 2)"""
-        r_I += ((-r_I + phi) / self.τ_ampa) * self.dt
-        return r_I
+    def firing_rate_I(self, phi_I):  # 2
+        """Compute the update of  the firing rate of interneurons (eq. 2)"""
+        return ((-self.r['I'] + phi_I) / self.τ_ampa) * self.dt
 
 
-    def channel_ampa(self, S_ampa, r_i):  # 3
-        """Open AMPA channels (eq. 3)"""
-        S_ampa += ((- S_ampa / self.τ_ampa) + r_i) * self.dt
-        return S_ampa
+    def channel_ampa(self, i):  # 3
+        """Compute the update to the AMPA gating variable (eq. 3)"""
+        return self.dt * ((-self.S_ampa[i] / self.τ_ampa) + self.r[i])
 
-    def channel_nmda(self, S_nmda, r_i):  # 4
-        """Open NMDA channels (eq. 4)"""
-        S_nmda += ((-S_nmda / self.τ_nmda) + (1 - S_nmda) * self.γ * r_i) * self.dt
-        return S_nmda
+    def channel_nmda(self, i):  # 4
+        """Compute the update to the NMDA gating variable (eq. 4)"""
+        return self.dt * ((-self.S_nmda[i] / self.τ_nmda) + (1 - self.S_nmda[i]) * self.γ * self.r[i])
 
-    def channel_gaba(self, S_gaba, r_I):  # 5
-        """Open GABA channels (eq. 5)"""
-        S_gaba += (-S_gaba / self.τ_gaba + r_I) * self.dt
-        return S_gaba
+    def channel_gaba(self, i):  # 5
+        """Compute the update to the GABA gating variable (eq. 5)"""
+        assert i == 'I'
+        return self.dt * (-self.S_gaba / self.τ_gaba + self.r[i])
+
 
     def Φ(self, I_syn, c, i, gain):  # 6
         """Input-ouput relation for leaky integrate-and-fire cell (Abbott and Chance, 2005) (eq. 6)"""
@@ -219,70 +220,74 @@ class Model:
         """Compute the input current for pyramidal cells (eq. 7)"""
         return I_ampa_ext + I_ampa_rec + I_nmda_rec + I_gaba_rec + I_stim
 
-    def I_ampa_ext(self, I_eta):  # 8
+    def I_ampa_ext(self, i):  # 8
         """Compute the external AMPA current for pyramidal cells (eq. 8)"""
-        return -self.J_ampa_ext_pyr * self.τ_ampa * self.C_ext * self.r_ext + I_eta
+        return -self.J_ampa_ext_pyr * self.τ_ampa * self.C_ext * self.r_ext + self.I_eta[i]
 
-    def I_ampa_rec(self, S_ampa_1, S_ampa_2, S_ampa_3):  # 9
+    def I_ampa_rec(self, i, j):  # 9
         """Compute the recurrent AMPA current for CJA and CJB cells (eq. 9)"""
-        return (-self.N_E * self.f * self.J_ampa_rec_pyr * (self.w_p * S_ampa_1 + self.w_m * S_ampa_2)
-                - self.N_E * (1 - 2 * self.f) * self.J_ampa_rec_pyr * self.w_m * S_ampa_3)
+        return (-self.N_E * self.f * self.J_ampa_rec_pyr * (self.w_p * self.S_ampa[i] + self.w_m * self.S_ampa[j])
+                - self.N_E * (1 - 2 * self.f) * self.J_ampa_rec_pyr * self.w_m * self.S_ampa['3'])
 
-    def I_ampa_rec_3(self, S_ampa_1, S_ampa_2, S_ampa_3):  # 10
+    def I_ampa_rec_3(self):  # 10
         """Compute the recurrent AMPA current for NS cells (eq. 10)"""
-        return (-self.N_E * self.f * self.J_ampa_rec_pyr * (S_ampa_1 + S_ampa_2)
-                - self.N_E * (1 - 2 * self.f) * self.J_ampa_rec_pyr * S_ampa_3)
+        return (-self.N_E * self.f * self.J_ampa_rec_pyr * (self.S_ampa['1'] + self.S_ampa['2'])
+                - self.N_E * (1 - 2 * self.f) * self.J_ampa_rec_pyr * self.S_ampa['3'])
 
-    def I_nmda_rec(self, δ_J_ndma, S_nmda_1, S_nmda_2, S_nmda_3):  # 11
+    def I_nmda_rec(self, i, j):  # 11
         """Compute the recurrent NMDA current for CJA and CJB cells (eq. 11)"""
-        return (-self.N_E * self.f * self.J_nmda_rec_pyr * δ_J_ndma * (self.w_p * S_nmda_1 + self.w_m * S_nmda_2)
-                - self.N_E * (1 - 2 * self.f) * self.J_nmda_rec_pyr * self.w_m * S_nmda_3)
+        return (-self.N_E * self.f * self.J_nmda_rec_pyr * self.δ_J_nmda[i] * (self.w_p * self.S_nmda[i] + self.w_m * self.S_nmda[j])
+                - self.N_E * (1 - 2 * self.f) * self.J_nmda_rec_pyr * self.w_m * self.S_nmda['3'])
 
-    def I_nmda_rec_3(self, S_nmda_1, S_nmda_2, S_nmda_3):  # 12
+    def I_nmda_rec_3(self):  # 12
         """Compute the recurrent NMDA current for NS cells (eq. 12)"""
-        return (-self.N_E * self.f * self.J_nmda_rec_pyr * (S_nmda_1 + S_nmda_2)
-                - self.N_E * (1 - 2 * self.f) * self.J_nmda_rec_pyr * S_nmda_3)
+        return (-self.N_E * self.f * self.J_nmda_rec_pyr * (self.S_nmda['1'] + self.S_nmda['2'])
+                - self.N_E * (1 - 2 * self.f) * self.J_nmda_rec_pyr * self.S_nmda['3'])
 
-    def I_gaba_rec(self, δ_J_gaba, S_gaba):  # 13
+    def I_gaba_rec(self, i):  # 13
         """Compute the recurrent NMDA current for pyramidal cells (eq. 13)"""
-        return -self.N_I * self.J_gaba_rec_pyr * δ_J_gaba * S_gaba
+        return -self.N_I * self.J_gaba_rec_pyr * self.δ_J_gaba[i] * self.S_gaba
 
 
-    def I_ampa_ext_I(self, I_eta):  # 14
+    def I_ampa_ext_I(self):  # 14
         """Compute the external AMPA current for interneurons (eq. 14)"""
-        return -self.J_ampa_ext_in * self.τ_ampa * self.C_ext * self.r_ext + I_eta
+        return -self.J_ampa_ext_in * self.τ_ampa * self.C_ext * self.r_ext + self.I_eta['I']
 
-    def I_ampa_rec_I(self, S_ampa_1, S_ampa_2, S_ampa_3):  # 15
+    def I_ampa_rec_I(self):  # 15
         """Compute the recurrent AMPA current for interneurons (eq. 15)"""
-        return (-self.N_E * self.f * self.J_ampa_rec_in * (S_ampa_1 + S_ampa_2)
-                - self.N_E * (1 - 2 * self.f) * self.J_ampa_rec_in * S_ampa_3)
+        return (-self.N_E * self.f * self.J_ampa_rec_in * (self.S_ampa['1'] + self.S_ampa['2'])
+                - self.N_E * (1 - 2 * self.f) * self.J_ampa_rec_in * self.S_ampa['3'])
 
-    def I_nmda_rec_I(self, S_nmda_1, S_nmda_2, S_nmda_3):  # 16
+    def I_nmda_rec_I(self):  # 16
         """Compute the recurrent NMDA current for interneurons (eq. 16)"""
-        return (-self.N_E * self.f * self.J_nmda_rec_in * (S_nmda_1 + S_nmda_2)
-                - self.N_E * (1 - 2 * self.f) * self.J_nmda_rec_in * S_nmda_3)
+        return (-self.N_E * self.f * self.J_nmda_rec_in * (self.S_nmda['1'] + self.S_nmda['2'])
+                - self.N_E * (1 - 2 * self.f) * self.J_nmda_rec_in * self.S_nmda['3'])
 
-    def I_gaba_rec_I(self, S_gaba):  # 17
+    def I_gaba_rec_I(self):  # 17
         """Compute the recurrent GABA current for interneurons (eq. 17)"""
-        return -self.N_I * self.J_gaba_rec_in * S_gaba
+        return -self.N_I * self.J_gaba_rec_in * self.S_gaba
 
     def eta(self):
         """Ornstein-Uhlenbeck process (here just Gaussian random noise)"""
         return np.random.normal(0, 1)
 
-    def white_noise(self, I_eta):  # 18
-        """Update I_eta, the noise term (eq. 18)"""
-        I_eta += -I_eta * (self.dt / self.τ_ampa) + self.eta() * np.sqrt(self.dt/self.τ_ampa) * self.σ_eta
-        return I_eta
+    def white_noise(self, j):  # 18
+        """Compute the update to I_eta, the noise term (eq. 18)"""
+        return (-self.I_eta[j] * (self.dt / self.τ_ampa) +
+                self.eta() * np.sqrt(self.dt/self.τ_ampa) * self.σ_eta)
 
-    def I_stim(self, δ_j_hl, δ_j_stim, r_ov):  # 19
+
+    def I_stim(self, i):  # 19
         """Computing the primary input (eq. 19)"""
-        return -self.J_ampa_input * δ_j_hl * δ_j_stim * self.τ_ampa * r_ov
+        assert i in ('1', '2')
+        return -self.J_ampa_input * self.δ_J_hl[i] * self.δ_J_stim[i] * self.τ_ampa * self.r_ov[i]
 
 
-    def firing_ov_cells(self, x, xmin, x_max, t):  # 20, 21, 22, 23
+    def firing_ov_cells(self, x, x_min, x_max, t):  # 20, 21, 22, 23
         """Computing the activity profile of OV cells (eq. 20, 21, 22, 23)"""
-        x_i = (x - xmin) / (x_max - xmin)
+        x_i = x / x_max # MATLAB code
+        # x_i = (x - xmin) / (x_max - xmin) # ARTICLE (eq. 20)
+        assert(0 <= x_i <= 1)
         g_t = (1 / (1 + np.exp(- (t - self.a) / self.b))) * (1 / (1 + np.exp((t - self.c) / self.d)))
 
         f_t = g_t / self.g_max
@@ -298,156 +303,107 @@ class Model:
         choice_B = 1 / (1 + np.exp(-X))
         return choice_B
 
-    ##
-
-    def cj_cells(self, r_cj, S_ampa_cj, S_nmda_cj, S_gaba_cj, I_eta_cj,
-                 S_ampa_cj_2, S_ampa_ns, S_nmda_cj_2, S_nmda_ns, r_cv, r_ov,
-                 δ_J_ndma, δ_J_gaba, δ_J_hl, δ_J_stim):
-        """Compute firing rate of CJA and CJB cells"""
-
-        S_ampa_cj = self.channel_ampa(S_ampa_cj, r_cj)  # equation 3
-        S_nmda_cj = self.channel_nmda(S_nmda_cj, r_cj)  # equation 4
-        S_gaba_cj = self.channel_gaba(S_gaba_cj, r_cv)  # equation 5
-        S_cj = [S_ampa_cj, S_nmda_cj, S_gaba_cj]
-
-        I_eta_cj = self.white_noise(I_eta_cj)  # equation 18
-        I_ampa_ext_cj = self.I_ampa_ext(I_eta_cj)  # equation 8
-        I_ampa_rec_cj = self.I_ampa_rec(S_ampa_cj, S_ampa_cj_2, S_ampa_ns)  # equation 9
-        I_nmda_rec_cj = self.I_nmda_rec(δ_J_ndma, S_nmda_cj, S_nmda_cj_2, S_nmda_ns)  # equation 11
-        I_gaba_rec_cj = self.I_gaba_rec(δ_J_gaba, S_gaba_cj)  # equation 13
-        I_stim_cj = self.I_stim(δ_J_hl, δ_J_stim, r_ov)  # equation 19
-        I_syn_cj = self.I_syn(I_ampa_ext_cj, I_ampa_rec_cj, I_nmda_rec_cj, I_gaba_rec_cj, I_stim_cj)  # equation 7
-
-        phi_cj = self.Φ(I_syn_cj, self.c_E, self.I_E, self.g_E)  # equation 6
-        r_cj = self.firing_rate_pyr_cells(r_cj, phi_cj)  # equation 1
-
-        #assert r_cj <=100
-        return r_cj, S_cj
-
-    def ns_cells(self, r_ns, S_ampa_ns, S_nmda_ns, S_gaba_ns, I_eta_ns,
-                 S_ampa_cja, S_ampa_cjb, S_nmda_cja, S_nmda_cjb, r_cv,
-                 δ_J_gaba):
-        """Compute firing rate of NS cells"""
-
-        S_ampa_ns = self.channel_ampa(S_ampa_ns, r_ns)  # equation 3
-        S_nmda_ns = self.channel_nmda(S_nmda_ns, r_ns)  # equation 4
-        S_gaba_ns = self.channel_gaba(S_gaba_ns, r_cv)  # equation 5
-        S_ns = [S_ampa_ns, S_nmda_ns, S_gaba_ns]
-
-        I_eta_ns = self.white_noise(I_eta_ns)  # equation 18
-        I_ampa_ext_ns = self.I_ampa_ext(I_eta_ns)  # equation 8
-        I_ampa_rec_ns = self.I_ampa_rec_3(S_ampa_cja, S_ampa_cjb, S_ampa_ns)  # equation 10
-        I_nmda_rec_ns = self.I_nmda_rec_3(S_nmda_cja, S_nmda_cjb, S_nmda_ns)  # equation 12
-        I_gaba_rec_ns = self.I_gaba_rec(δ_J_gaba, S_gaba_ns)  # equation 13
-        I_stim_ns = 0
-        I_syn_ns = self.I_syn(I_ampa_ext_ns, I_ampa_rec_ns, I_nmda_rec_ns, I_gaba_rec_ns, I_stim_ns)  # equation 7
-
-        phi_ns = self.Φ(I_syn_ns, self.c_E, self.I_E, self.g_E)  # equation 6
-        r_ns = self.firing_rate_pyr_cells(r_ns, phi_ns)  # equation 1
-
-        return r_ns, S_ns
-
-    def cv_cells(self,r_cv, S_gaba_cv, I_eta_cv,
-                 S_ampa_cja, S_ampa_cjb, S_ampa_ns,
-                 S_nmda_cja, S_nmda_cjb, S_nmda_ns):
-        """Compute firing rate of CV cells"""
-
-        S_gaba_cv = self.channel_gaba(S_gaba_cv, r_cv)  # equation 5
-
-        I_eta_cv = self.white_noise(self.I_eta_cv)  # equation 18
-        I_ampa_ext_cv = self.I_ampa_ext_I(I_eta_cv)  # equation 14
-        I_ampa_rec_cv = self.I_ampa_rec_I(S_ampa_cja, S_ampa_cjb, S_ampa_ns)  # equation 15
-        I_nmda_rec_cv = self.I_nmda_rec_I(S_nmda_cja, S_nmda_cjb, S_nmda_ns)  # equation 16
-        I_gaba_rec_cv = self.I_gaba_rec_I(S_gaba_cv)  # equation 17
-        I_stim_cv = 0
-        I_syn_cv = self.I_syn(I_ampa_ext_cv, I_ampa_rec_cv, I_nmda_rec_cv, I_gaba_rec_cv, I_stim_cv)  # equation 7
-
-        phi_cv = self.Φ(I_syn_cv, self.c_I, self.I_I, self.g_I)  # equation 6
-        r_cv = self.firing_rate_I(r_cv, phi_cv)  # equation 2
-        #assert r_cv <= 80, 'r_cv = {}'.format(r_cv)
-        return r_cv, S_gaba_cv
-
 
     def one_trial(self, x_a, x_b):
         """Compute one trial"""
 
         # Firing rate of OV B cell, CJ B cell and CV cell for one trial
-        self.r_cja, self.r_cjb, self.r_ns, self.r_cv = 3, 3, 3, 8
-        self.I_eta_cja, self.I_eta_cjb, self.I_eta_ns, self.I_eta_cv = 0, 0, 0, 0
-        self.S_cja, self.S_cjb, self.S_ns = [0, 0.1, 0], [0, 0.1, 0], [0, 0.1, 0]
-        self.S_gaba_cv = 0
+        self.r      = {'1': 3, '2': 3, '3': 3, 'I': 8}
+        self.I_eta  = {'1': 0, '2': 0, '3': 0, 'I': 0}
+        self.S_ampa = {'1': 0, '2': 0, '3': 0}
+        self.S_nmda = {'1': 0.1, '2': 0.1, '3': 0.1}
+        self.S_gaba = 0
+
         self.choice = 0
-        self.ovb_one_trial, self.r_cja_one_trial, self.r_cjb_one_trial = [], [], []
-        self.r_ns_one_trial, self.r_cv_one_trial = [], []
+        # self.ovb_one_trial, self.r_cja_one_trial, self.r_cjb_one_trial = [], [], []
+        # self.r_ns_one_trial, self.r_cv_one_trial = [], []
 
+        self.trial_history = history.TrialHistory(self)
 
-        self.trial_history = history.TrialHistory()
-
-        for t in np.arange(0, self.t_exp + self.dt, self.dt):
-
-            """Firing rate of OV cells"""
-            r_ova = self.firing_ov_cells(x_a, self.x_min_list[0], self.x_max_list[0], t)
-            r_ovb = self.firing_ov_cells(x_b, self.x_min_list[1], self.x_max_list[1], t)
-            #assert r_ova <= 8, 'r_ova = {}'.format(r_ova)
-            #assert r_ovb <= 8, 'r_ovb = {}'.format(r_ovb)
-
-            """Firing rate of CJA and CJB cells"""
-            self.r_cja, self.S_cja = self.cj_cells(self.r_cja, self.S_cja[0], self.S_cja[1], self.S_cja[2],
-                                                   self.I_eta_cja, self.S_cjb[0], self.S_ns[0], self.S_cjb[1],
-                                                   self.S_ns[1], self.r_cv, r_ova, self.δ_J_nmda_cja,
-                                                   self.δ_J_gaba_cja, self.δ_J_hl_cja, self.δ_J_stim_cja)
-            #assert r_cja <= 80, 'r_cj = {0}, t ={1}'.format(r_cja, t)
-
-            self.r_cjb, self.S_cjb = self.cj_cells(self.r_cjb, self.S_cjb[0], self.S_cjb[1], self.S_cjb[2],
-                                                   self.I_eta_cjb, self.S_cja[0], self.S_ns[0], self.S_cja[1],
-                                                   self.S_ns[1], self.r_cv, r_ovb, self.δ_J_nmda_cjb,
-                                                   self.δ_J_gaba_cjb, self.δ_J_hl_cjb, self.δ_J_stim_cjb)
-            #assert r_cjb <= 80, 'r_cj = {}, t ={1}'.format(r_cjb, t)
-
-            """Firing rate of NS cells"""
-            self.r_ns, self.S_ns = self.ns_cells(self.r_ns, self.S_ns[0], self.S_ns[1], self.S_ns[2],
-                                                 self.I_eta_ns, self.S_cja[0], self.S_cjb[0], self.S_cja[1],
-                                                 self.S_cjb[1], self.r_cv,self.δ_J_gaba_ns)
-
-            """Firing rate of CV cells"""
-            self.r_cv, self.S_gaba_cv = self.cv_cells(self.r_cv, self.S_gaba_cv,
-                                                      self.I_eta_cv, self.S_cja[0], self.S_cjb[0],
-                                                      self.S_ns[0], self.S_cja[1], self.S_cjb[1], self.S_ns[1])
-
-            self.trial_history.r_ovb.append(r_ova)
-            self.trial_history.r_ovb.append(r_ovb)
-            self.trial_history.r_cja.append(self.r_cja)
-            self.trial_history.r_cjb.append(self.r_cjb)
-            self.trial_history.r_cja.append(self.r_ns)
-            self.trial_history.r_cjb.append(self.r_cv)
-
-            self.trial_history.S_ampa_cja.append(self.S_cja[0])
-            self.trial_history.S_ampa_cjb.append(self.S_cjb[0])
-            self.trial_history.S_ampa_ns.append(self.S_ns[0])
-
-            self.trial_history.S_ndma_cja.append(self.S_cja[1])
-            self.trial_history.S_ndma_cjb.append(self.S_cjb[1])
-            self.trial_history.S_ndma_ns.append(self.S_ns[1])
-
-            self.ovb_one_trial.append(r_ovb)
-            self.r_cja_one_trial.append(self.r_cja)
-            self.r_cjb_one_trial.append(self.r_cjb)
-            self.r_ns_one_trial.append(self.r_ns)
-            self.r_cv_one_trial.append(self.r_cv)
-            #le bruit
-            self.I_eta_cja_list.append(self.I_eta_cja)
-            self.I_eta_cjb_list.append(self.I_eta_cjb)
-            self.I_eta_ns_list.append(self.I_eta_ns)
-            self.I_eta_cv_list.append(self.I_eta_cv)
-
+        for t in np.arange(self.dt, self.t_exp + self.dt, self.dt):
+            self.one_step(t, x_a, x_b)
 
         # Determine the final choice in the time window 400-600ms after the offer
-        ria, rib = sum(self.r_cja_one_trial[2800:3201]), sum(self.r_cjb_one_trial[2800:3201])
+        ria, rib = sum(self.trial_history.r_1[2800:3201]), sum(self.trial_history.r_2[2800:3201])
         self.choice = 'B' if ria < rib else 'A'
 
-        return [self.ovb_one_trial, self.r_cja_one_trial,
-                self.r_cjb_one_trial, self.r_ns_one_trial, self.r_cv_one_trial, self.choice,
-                self.I_eta_cja_list, self.I_eta_cjb_list, self.I_eta_ns_list, self.I_eta_cv_list]
+        # return [self.ovb_one_trial, self.r_cja_one_trial,
+        #         self.r_cjb_one_trial, self.r_ns_one_trial, self.r_cv_one_trial, self.choice,
+        #         self.I_eta_cja_list, self.I_eta_cjb_list, self.I_eta_ns_list, self.I_eta_cv_list]
+
+
+    def one_step(self, t, x_a, x_b):
+        """Compute one time-step"""
+        I_ampa_ext, I_ampa_rec, I_nmda_rec, I_gaba_rec, I_stim, I_syn, phi = {}, {}, {}, {}, {}, {}, {}
+
+        # firing rate of ov cells
+        self.r_ov = {} # TODO: do better
+        self.r_ov['1'] = self.firing_ov_cells(x_a, self.x_min_list[0], self.x_max_list[0], t)
+        self.r_ov['2'] = self.firing_ov_cells(x_b, self.x_min_list[1], self.x_max_list[1], t)
+        #assert r_ova <= 8, 'r_ova = {}'.format(r_ova)
+        #assert r_ovb <= 8, 'r_ovb = {}'.format(r_ovb)
+
+        # updating gating variables
+        for i in ['1', '2', '3']:
+            self.S_ampa[i] += self.channel_ampa(i)  # equation 3
+            self.S_nmda[i] += self.channel_nmda(i)  # equation 4
+        self.S_gaba += self.channel_gaba('I')  # equation 5
+
+        # generating noise
+        for j in ['1', '2', '3', 'I']:
+            self.I_eta[j] += self.white_noise(j)  # equation 18
+
+        # computing ampa currents
+        for i in ['1', '2', '3']:
+            I_ampa_ext[i] = self.I_ampa_ext(i) # equation 8
+        I_ampa_ext['I'] = self.I_ampa_ext_I() # equation 14
+
+        for i, j in [('1', '2'), ('2', '1')]: # i != j
+            I_ampa_rec[i] = self.I_ampa_rec(i, j) # equation 9
+        I_ampa_rec['3'] = self.I_ampa_rec_3() # equation 12
+        I_ampa_rec['I'] = self.I_ampa_rec_I() # equation 15
+
+        # computing nmda currents
+        for i, j in [('1', '2'), ('2', '1')]: # i != j
+            I_nmda_rec[i] = self.I_nmda_rec(i, j) # equation 10
+        I_nmda_rec['3'] = self.I_nmda_rec_3() # equation 11
+        I_nmda_rec['I'] = self.I_nmda_rec_I() # equation 16
+
+        # computing gaba currents
+        for i in ['1', '2', '3']:
+            I_gaba_rec[i] = self.I_gaba_rec(i)  # equation 13
+        I_gaba_rec['I'] = self.I_gaba_rec_I()  # equation 17
+
+        # computing primary input currents
+        for i in ['1', '2']:
+            I_stim[i] = self.I_stim(i)  # equation 19
+        for i in ['3', 'I']:
+            I_stim[i] = 0
+
+        # computing the input currents
+        for i in ['1', '2', '3', 'I']:
+            I_syn[i] = self.I_syn(I_ampa_ext[i], I_ampa_rec[i], I_nmda_rec[i], I_gaba_rec[i], I_stim[i])  # equation 7
+
+        for i in ['1', '2', '3']:
+            phi[i] = self.Φ(I_syn[i], self.c_E, self.I_E, self.g_E)  # equation 6
+        phi['I'] = self.Φ(I_syn['I'], self.c_I, self.I_I, self.g_I)  # equation 6
+
+        for i in ['1', '2', '3']:
+            self.r[i] += self.firing_rate_pyr(i, phi[i])  # equation 1
+        self.r['I'] += self.firing_rate_I(phi['I'])  # equation 2
+
+        self.trial_history.update(self, I_ampa_ext, I_ampa_rec, I_nmda_rec, I_gaba_rec, I_stim, I_syn, phi)
+        # self.ovb_one_trial.append(r_ovb)
+        # self.r_cja_one_trial.append(self.r_cja)
+        # self.r_cjb_one_trial.append(self.r_cjb)
+        # self.r_ns_one_trial.append(self.r_ns)
+        # self.r_cv_one_trial.append(self.r_cv)
+        # #le bruit
+        # self.I_eta_cja_list.append(self.I_eta_cja)
+        # self.I_eta_cjb_list.append(self.I_eta_cjb)
+        # self.I_eta_ns_list.append(self.I_eta_ns)
+        # self.I_eta_cv_list.append(self.I_eta_cv)
+
 
     def save_history(self, data):
         print("Saving history...")

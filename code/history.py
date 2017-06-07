@@ -5,23 +5,23 @@ class TrialHistory:
 
     def __init__(self, model):
 
-        self.data = {name: [0] for name in ['r_1', 'r_2', 'r_3', 'r_I',
-                                            'S_ampa_1', 'S_ampa_2', 'S_ampa_3',
-                                            'S_nmda_1', 'S_nmda_2', 'S_nmda_3',
-                                            'S_gaba',
-                                            'I_ampa_rec_1', 'I_ampa_rec_2', 'I_ampa_rec_3', 'I_ampa_rec_I',
-                                            'phi_1', 'phi_2', 'phi_3', 'phi_I',
-                                            'Isyn_1', 'Isyn_2', 'Isyn_3', 'Isyn_I',
-                                            'I_stim_1', 'I_stim_2'
-                                            ]}
+        self.data = {name: [] for name in ['r_1', 'r_2', 'r_3', 'r_I',
+                                           'S_ampa_1', 'S_ampa_2', 'S_ampa_3',
+                                           'S_nmda_1', 'S_nmda_2', 'S_nmda_3',
+                                           'S_gaba',
+                                           'I_ampa_rec_1', 'I_ampa_rec_2', 'I_ampa_rec_3', 'I_ampa_rec_I',
+                                           'phi_1', 'phi_2', 'phi_3', 'phi_I',
+                                           'Isyn_1', 'Isyn_2', 'Isyn_3', 'Isyn_I',
+                                           'I_stim_1', 'I_stim_2'
+                                          ]}
         for i in ['1', '2', '3', 'I']:
-            getattr(self, 'r_{}'.format(i))[0] = model.r[i]
+            getattr(self, 'r_{}'.format(i)).append(model.r[i])
 
         for i in ['1', '2', '3']:
-            getattr(self, 'S_ampa_{}'.format(i))[0] = model.S_ampa[i]
-            getattr(self, 'S_nmda_{}'.format(i))[0] = model.S_nmda[i]
+            getattr(self, 'S_ampa_{}'.format(i)).append(model.S_ampa[i])
+            getattr(self, 'S_nmda_{}'.format(i)).append(model.S_nmda[i])
 
-        self.S_gaba[0] = model.S_gaba
+        self.S_gaba.append(model.S_gaba)
 
 
     def __getattr__(self, name):

@@ -35,7 +35,6 @@ class ReplicableTests(unittest.TestCase):
             print('matlab: {}'.format(', '.join('{: 8.4f}'.format(e) for e in access_data(datamat, key_mat)[:K])))
             print('python: {}'.format(', '.join('{: 8.4f}'.format(e) for e in getattr(model.trial_history, key_py)[:K])))
 
-
         for k in range(K):
             self.assertEqual(access_data(datamat, 'sampa1')[k], model.trial_history.S_ampa_1[k])
             self.assertEqual(access_data(datamat, 'nu1')[k], model.trial_history.r_1[k])

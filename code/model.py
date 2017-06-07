@@ -308,8 +308,8 @@ class Model:
         """Compute one trial"""
 
         # Firing rate of OV B cell, CJ B cell and CV cell for one trial
-        self.r      = {'1': 3, '2': 3, '3': 3, 'I': 8}
-        self.I_eta  = {'1': 0, '2': 0, '3': 0, 'I': 0}
+        self.r = {'1': 3, '2': 3, '3': 3, 'I': 8}
+        self.I_eta = {'1': 0, '2': 0, '3': 0, 'I': 0}
         self.S_ampa = {'1': 0, '2': 0, '3': 0}
         self.S_nmda = {'1': 0.1, '2': 0.1, '3': 0.1}
         self.S_gaba = 0
@@ -337,17 +337,13 @@ class Model:
         I_ampa_ext, I_ampa_rec, I_nmda_rec, I_gaba_rec, I_stim, I_syn, phi = {}, {}, {}, {}, {}, {}, {}
 
         # firing rate of ov cells
-        self.r_ov = {} # TODO: do better
+        self.r_ov = {}  # TODO: do better
         self.r_ov['1'] = self.firing_ov_cells(x_a, self.x_min_list[0], self.x_max_list[0], t)
         self.r_ov['2'] = self.firing_ov_cells(x_b, self.x_min_list[1], self.x_max_list[1], t)
-        #assert r_ova <= 8, 'r_ova = {}'.format(r_ova)
-        #assert r_ovb <= 8, 'r_ovb = {}'.format(r_ovb)
+        # assert r_ova <= 8, 'r_ova = {}'.format(r_ova)
+        # assert r_ovb <= 8, 'r_ovb = {}'.format(r_ovb)
 
-        # updating gating variables
-        for i in ['1', '2', '3']:
-            self.S_ampa[i] += self.channel_ampa(i)  # equation 3
-            self.S_nmda[i] += self.channel_nmda(i)  # equation 4
-        self.S_gaba += self.channel_gaba('I')  # equation 5
+
 
         # generating noise
         for j in ['1', '2', '3', 'I']:
@@ -355,19 +351,19 @@ class Model:
 
         # computing ampa currents
         for i in ['1', '2', '3']:
-            I_ampa_ext[i] = self.I_ampa_ext(i) # equation 8
-        I_ampa_ext['I'] = self.I_ampa_ext_I() # equation 14
+            I_ampa_ext[i] = self.I_ampa_ext(i)  # equation 8
+        I_ampa_ext['I'] = self.I_ampa_ext_I()  # equation 14
 
-        for i, j in [('1', '2'), ('2', '1')]: # i != j
-            I_ampa_rec[i] = self.I_ampa_rec(i, j) # equation 9
-        I_ampa_rec['3'] = self.I_ampa_rec_3() # equation 12
-        I_ampa_rec['I'] = self.I_ampa_rec_I() # equation 15
+        for i, j in [('1', '2'), ('2', '1')]:  # i != j
+            I_ampa_rec[i] = self.I_ampa_rec(i, j)  # equation 9
+        I_ampa_rec['3'] = self.I_ampa_rec_3()  # equation 12
+        I_ampa_rec['I'] = self.I_ampa_rec_I()  # equation 15
 
         # computing nmda currents
-        for i, j in [('1', '2'), ('2', '1')]: # i != j
-            I_nmda_rec[i] = self.I_nmda_rec(i, j) # equation 10
-        I_nmda_rec['3'] = self.I_nmda_rec_3() # equation 11
-        I_nmda_rec['I'] = self.I_nmda_rec_I() # equation 16
+        for i, j in [('1', '2'), ('2', '1')]:  # i != j
+            I_nmda_rec[i] = self.I_nmda_rec(i, j)  # equation 10
+        I_nmda_rec['3'] = self.I_nmda_rec_3()  # equation 11
+        I_nmda_rec['I'] = self.I_nmda_rec_I()  # equation 16
 
         # computing gaba currents
         for i in ['1', '2', '3']:
@@ -384,6 +380,12 @@ class Model:
         for i in ['1', '2', '3', 'I']:
             I_syn[i] = self.I_syn(I_ampa_ext[i], I_ampa_rec[i], I_nmda_rec[i], I_gaba_rec[i], I_stim[i])  # equation 7
 
+        # updating gating variables
+        for i in ['1', '2', '3']:
+            self.S_ampa[i] += self.channel_ampa(i)  # equation 3
+            self.S_nmda[i] += self.channel_nmda(i)  # equation 4
+        self.S_gaba += self.channel_gaba('I')  # equation 5
+
         for i in ['1', '2', '3']:
             phi[i] = self.Φ(I_syn[i], self.c_E, self.I_E, self.g_E)  # equation 6
         phi['I'] = self.Φ(I_syn['I'], self.c_I, self.I_I, self.g_I)  # equation 6
@@ -393,6 +395,7 @@ class Model:
         self.r['I'] += self.firing_rate_I(phi['I'])  # equation 2
 
         self.trial_history.update(self, I_ampa_ext, I_ampa_rec, I_nmda_rec, I_gaba_rec, I_stim, I_syn, phi)
+
         # self.ovb_one_trial.append(r_ovb)
         # self.r_cja_one_trial.append(self.r_cja)
         # self.r_cjb_one_trial.append(self.r_cjb)
@@ -404,11 +407,10 @@ class Model:
         # self.I_eta_ns_list.append(self.I_eta_ns)
         # self.I_eta_cv_list.append(self.I_eta_cv)
 
-
-    def save_history(self, data):
-        print("Saving history...")
-        np.save(data, self.result_one_trial)
-        print("done.")
+        def save_history(self, data):
+            print("Saving history...")
+            np.save(data, self.result_one_trial)
+            print("done.")
 
 
 if __name__ == "__main__":

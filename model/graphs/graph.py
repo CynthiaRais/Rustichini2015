@@ -2,10 +2,17 @@ import numpy as np
 
 import bokeh
 import bokeh.plotting as bpl
-from bokeh.models import FixedTicker
+from bokeh.models import FixedTicker, FuncTickFormatter
 
 from . import utils_bokeh
 from . import graphs3d
+
+
+A_color = '#c5392b'
+B_color = '#2e3abf'
+grey_high   = '#333333'
+grey_medium = '#8c8c8c'
+grey_low    = '#cccccc'
 
 
 class Graph:
@@ -22,12 +29,12 @@ class Graph:
         self.x_axis = 1000 * np.arange(-0.5, 1.0, self.dt)
         self.x_range = np.min(self.x_axis), np.ceil(np.max(self.x_axis))
 
-        X2_axis = ["0B: 1A", "1B: 20A", "1B: 16A", "1B: 12A", "1B: 8A", "1B: 4A", "4B: 1A", "8B: 1A", "12B: 1A",
-               "16B: 1A", "20B: 1A", "1B: 0A"]
+        X2_axis = ["0B: 1A", "1B: 20A", "1B: 16A", "1B: 12A", "1B: 8A", "1B: 4A", "4B: 1A",
+                   "8B: 1A", "12B: 1A", "16B: 1A", "20B: 1A", "1B: 0A"]
         bpl.output_notebook(hide_banner=True)
 
     def fix_x_ticks(self, fig):
-        fig.xaxis[0].ticker = FixedTicker(ticks=[-500, 0, 1000])
+        fig.xaxis[0].ticker = FixedTicker(ticks=[-500, 0, 500, 1000])
 
     def firing_time_ov(self, mean_firing_rates_ov):
         figure_4A = bpl.figure(title="Figure 4A", plot_width=300, plot_height=300, tools=(),
@@ -38,7 +45,7 @@ class Graph:
 
         figure_4A.multi_line([self.x_axis, self.x_axis, self.x_axis],
                              mean_firing_rates_ov,
-                             color=['#cccccc', "#8c8c8c", "#333333"], line_width=4)
+                             color=[grey_low, grey_medium, grey_high], line_width=4)
         bpl.show(figure_4A)
 
     def tuning_curve_ovb(self, tuning_ovb, title='Figure 4B'):
@@ -53,22 +60,48 @@ class Graph:
         bpl.show(figure_4_C)
 
 
-    def firing_offer_B(self, firing_D):
-        print("firing_D", len(firing_D))
-        figure_4_D = bpl.figure(title="Figure 4 D", plot_width=300, plot_height=300)
-        figure_4_D.annulus(x=range(21), y=firing_D, color="purple", inner_radius=0.1, outer_radius=0.2)
-        bpl.show(figure_4_D)
+    def firing_offer_B(self, tuning_ovb):
+        xs_diamonds, ys_diamonds = [], []
+        xs_circles,  ys_circles  = [], []
+        for (x_A, x_B, r_ovb, choice) in tuning_ovb:
+            if choice == 'A':
+                xs_diamonds.append(x_B)
+                ys_diamonds.append(r_ovb)
+            else:
+                xs_circles.append(x_B)
+                ys_circles.append(r_ovb)
+
+        figure_4D = bpl.figure(title="Figure 4D", plot_width=300, plot_height=300,
+                               y_range=[0, 5], tools=())
+        utils_bokeh.tweak_fig(figure_4D)
+
+        figure_4D.diamond(xs_diamonds, ys_diamonds, size=15, fill_color=None, line_color=A_color, line_alpha=0.5)
+        figure_4D.circle(xs_circles, ys_circles, size=10, fill_color=None, line_color=B_color, line_alpha=0.5)
+
+        #figure_4_D.annulus(x=range(21), y=firing_D, color="purple", inner_radius=0.1, outer_radius=0.2)
+        bpl.show(figure_4D)
 
 
-    def firing_time_cjb(self, Y):
-        figure_4_E = bpl.figure(title="Figure 4 E", plot_width=300, plot_height=300)
-        figure_4_E.multi_line([self.X_axis, self.X_axis], Y,
-                          color=['red', "blue"])
-        bpl.show(figure_4_E)
+    def firing_time_cjb(self, mean_firing_rates_cjb):
+        figure_4E = bpl.figure(title="Figure 4E", plot_width=300, plot_height=300, tools=(),
+                               x_range=self.x_range, y_range=(0, 25.0))
+        utils_bokeh.tweak_fig(figure_4E)
+        self.fix_x_ticks(figure_4E)
+
+        figure_4E.multi_line([self.x_axis, self.x_axis],
+                             mean_firing_rates_cjb,
+                             color=[grey_low, grey_high], line_width=4)
+        bpl.show(figure_4E)
+
+
+        # figure_4E = bpl.figure(title="Figure 4E", plot_width=300, plot_height=300)
+        # figure_4E.multi_line([self.X_axis, self.X_axis], Y,
+        #                   color=['red', "blue"])
+        # bpl.show(figure_4E)
 
 
     def tuning_curve_cj(self, tuning_cjb):
-        graphs3d.tuningcurve(tuning_cjb, x_label='offer A', y_label='offer B', title='tuning cj')
+        graphs3d.tuningcurve(tuning_cjb, x_label='offer A', y_label='offer B', title='Figure 4F')
 
 
     def firing_specific_set_cjb(self, cj_choice, pourcentage_choice_B):
@@ -79,24 +112,41 @@ class Graph:
         bpl.show(figure_4_G)
 
 
-    def firing_choice(self, firing_H):
-        Y = firing_H
-        figure_4_H = bpl.figure(title="Figure 4 H", plot_width=300, plot_height=300)
-        figure_4_H.diamond(x=[1 for i in range(len(Y[0]))], y=Y[0], color="red")
-        figure_4_H.circle(x=[2 for i in range(len(Y[1]))], y=Y[1], color="blue")
-        bpl.show(figure_4_H)
+    def firing_choice(self, tunnig_cjb):
+        """Figure 4H"""
+        figure_4H = bpl.figure(title="Figure 4H", plot_width=300, plot_height=300,
+                               x_range=[0.75, 2.25], y_range=[0, 18], tools=())
+
+        utils_bokeh.tweak_fig(figure_4H)
+        figure_4H.xaxis[0].ticker = FixedTicker(ticks=[1, 2])
+        figure_4H.yaxis[0].ticker = FixedTicker(ticks=[0, 5, 10, 15])
+        figure_4H.xaxis.formatter = FuncTickFormatter(code="""
+            var labels = {};
+            return labels[tick];
+        """.format({1: 'A chosen', 2: 'B chosen'}))
+
+        y_A = [r_cjb for x_A, x_B, r_cjb, choice in tunnig_cjb if choice == 'A']
+        y_B = [r_cjb for x_A, x_B, r_cjb, choice in tunnig_cjb if choice == 'B']
+        figure_4H.diamond(x=len(y_A)*[1], y=y_A, size=15, fill_color=None, line_color=A_color, line_alpha=0.5)
+        figure_4H.circle (x=len(y_B)*[2], y=y_B, size=10, fill_color=None, line_color=B_color, line_alpha=0.501)
+
+        bpl.show(figure_4H)
 
 
-    def firing_time_cv(self, Y):
-        figure_4_I = bpl.figure(title="Figure 4 I", plot_width=300, plot_height=300)
-        figure_4_I.multi_line([self.X_axis, self.X_axis, self.X_axis],
-                              Y,
-                              color=['red', "green", "blue"])
-        bpl.show(figure_4_I)
+    def firing_time_cv(self, mean_firing_rates_cv):
+        figure_4I = bpl.figure(title="Figure 4I", plot_width=300, plot_height=300, tools=())
+        utils_bokeh.tweak_fig(figure_4I)
+        self.fix_x_ticks(figure_4I)
+
+        figure_4I.multi_line([self.x_axis, self.x_axis, self.x_axis],
+                              mean_firing_rates_cv,
+                              color=[grey_low, grey_medium, grey_high], line_width=4)
+
+        bpl.show(figure_4I)
 
 
     def tuning_curve_cv(self, tuning_cv):
-        graphs.tuningcurve(tuning_cv, x_label='offer A', y_label='offer B', title='tuning cv')
+        graphs3d.tuningcurve(tuning_cv, x_label='offer A', y_label='offer B', title='Figure 4J')
 
 
     def firing_specific_set_cv(self, cv_choice, pourcentage_choice_B):
@@ -106,14 +156,18 @@ class Graph:
         figure_4_K.circle(x=range(12), y=pourcentage_choice_B, color="black", size=10)
         bpl.show(figure_4_K)
 
-    def firing_chosen_value(self, Y):
-        figure_4_L = bpl.figure(title="Figure 4 L", plot_width=300, plot_height=300)
-        figure_4_L.diamond(x=Y[0], y=Y[1], color="red", size=10)
-        figure_4_L.circle(x=Y[2], y=Y[3], color="blue", size=10)
-        bpl.show(figure_4_L)
+    def firing_chosen_value(self, mean_firing_rate_chosen_value):
+        xs_A, ys_A, xs_B, ys_B = mean_firing_rate_chosen_value
+
+        figure_4L = bpl.figure(title="Figure 4 L", plot_width=300, plot_height=300, tools=())
+        utils_bokeh.tweak_fig(figure_4L)
+
+        figure_4L.diamond(x=xs_A, y=ys_A, color=A_color, size=15, fill_color=None, line_color=A_color, line_alpha=0.5)
+        figure_4L.circle( x=xs_B, y=ys_B, color=B_color, size=10, fill_color=None, line_color=B_color, line_alpha=0.5)
+        bpl.show(figure_4L)
 
     def logistic_regression(self, X):
-        graphs.tuningcurve(X,)
+        graphs3d.tuningcurve(X,)
 
     def cja_cjb(self):
         figure_9A = bpl.figure(title="Figure 9 A", plot_width=700, plot_height=700)
@@ -180,6 +234,6 @@ class Graph:
         bpl.show(figure_4_I)
         bpl.show(figure_4_L)
 
-        #graphs.tuningcurve(self.analysis.tuning_cjb, x_label='offer A', y_label='offer B', title='tuning cj')
+        #graphs3d.tuningcurve(self.analysis.tuning_cjb, x_label='offer A', y_label='offer B', title='tuning cj')
 
 """dans graphs j'ai une fonction tuning-curve qui prend en argument ce dont j'ai besoin pour faire mes tuning curve"""

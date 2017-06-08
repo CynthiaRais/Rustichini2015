@@ -29,8 +29,6 @@ class Graph:
         self.x_axis = 1000 * np.arange(-0.5, 1.0, self.dt)
         self.x_range = np.min(self.x_axis), np.ceil(np.max(self.x_axis))
 
-        X2_axis = ["0B: 1A", "1B: 20A", "1B: 16A", "1B: 12A", "1B: 8A", "1B: 4A", "4B: 1A",
-                   "8B: 1A", "12B: 1A", "16B: 1A", "20B: 1A", "1B: 0A"]
         bpl.output_notebook(hide_banner=True)
 
     def fix_x_ticks(self, fig):
@@ -52,12 +50,50 @@ class Graph:
         graphs3d.tuningcurve(tuning_ovb, x_label='offer A', y_label='offer B', title=title)
 
 
-    def firing_specific_set_ov(self, ov_choice, pourcentage_choice_B):
-        figure_4_C = bpl.figure(title="Figure 4 C", plot_width=300, plot_height=300)
-        figure_4_C.diamond(x=range(0, 6), y=ov_choice[0][:6], color='red', size=10)
-        figure_4_C.circle(x=range(6, 12), y=ov_choice[1][6:], color="blue", size=10)
-        figure_4_C.circle(x=range(12), y=pourcentage_choice_B, color="black", size=10)
-        bpl.show(figure_4_C)
+    def firing_specific_set_ovb(self, offers, ovb_choices, percents_B):
+        """Figure 4C"""
+        self.specific_set_graphs(offers, ovb_choices, percents_B, (0, 5), 'Figure 4C')
+
+
+    def firing_specific_set_cjb(self, offers, cjb_choices, percents_B):
+        """Figure 4G"""
+        self.specific_set_graphs(offers, cjb_choices, percents_B, (0, 16), 'Figure 4G')
+
+
+    def firing_specific_set_cv(self, offers, cv_choices, percents_B):
+        """Figure 4K"""
+        self.specific_set_graphs(offers, cv_choices, percents_B, (10, 17), 'Figure 4K')
+
+
+    def specific_set_graphs(self, offers, firing_rate, percents_B, y_range, title):
+        """Figure 4C, 4G, 4K"""
+        figure = bpl.figure(title=title, plot_width=300, plot_height=300, tools=(),
+                            y_range=(y_range[0] - 0.05 * (y_range[1] - y_range[0]), y_range[1]))
+        utils_bokeh.tweak_fig(figure)
+
+        figure.xaxis[0].ticker = FixedTicker(ticks=list(range(len(offers))))
+        figure.xaxis.formatter = FuncTickFormatter(code="""
+            var labels = {};
+            return labels[tick];
+        """.format({i: '{}B:{}A'.format(x_B, x_A) for i, (x_A, x_B) in enumerate(offers)}))
+        figure.xaxis.major_label_orientation = np.pi / 2
+
+        y_min, y_max = y_range
+        K = 0.94 * (y_max - y_min) + y_min
+        xs = [offers.index(key) for key in percents_B.keys()]
+        ys = [y * 0.94 * (y_max - y_min) + y_min for y in percents_B.values()]
+        print(ys)
+        figure.line(x=(min(xs), max(xs)), y=(K, K), color="black", line_dash='dashed')
+        figure.circle(x=xs, y=ys, color="black", size=15)
+
+        r_A, r_B = firing_rate
+        xs_A = [offers.index(key) for key in r_A.keys()]
+        xs_B = [offers.index(key) for key in r_B.keys()]
+
+        figure.diamond(x=xs_A, y=list(r_A.values()), size=15, color=A_color, alpha=0.75)
+        figure.circle( x=xs_B, y=list(r_B.values()), size=10, color=B_color, alpha=0.75)
+
+        bpl.show(figure)
 
 
     def firing_offer_B(self, tuning_ovb):
@@ -104,14 +140,6 @@ class Graph:
         graphs3d.tuningcurve(tuning_cjb, x_label='offer A', y_label='offer B', title='Figure 4F')
 
 
-    def firing_specific_set_cjb(self, cj_choice, pourcentage_choice_B):
-        figure_4_G = bpl.figure(title="Figure 4 G", plot_width=300, plot_height=300)
-        figure_4_G.diamond(x=range(0, 6), y=cj_choice[0][:6], color='red', size=10)
-        figure_4_G.circle(x=range(6, 12), y=cj_choice[1][6:], color="blue", size=10)
-        figure_4_G.circle(x=range(12), y=pourcentage_choice_B, color="black", size=10)
-        bpl.show(figure_4_G)
-
-
     def firing_choice(self, tunnig_cjb):
         """Figure 4H"""
         figure_4H = bpl.figure(title="Figure 4H", plot_width=300, plot_height=300,
@@ -148,13 +176,6 @@ class Graph:
     def tuning_curve_cv(self, tuning_cv):
         graphs3d.tuningcurve(tuning_cv, x_label='offer A', y_label='offer B', title='Figure 4J')
 
-
-    def firing_specific_set_cv(self, cv_choice, pourcentage_choice_B):
-        figure_4_K = bpl.figure(title="Figure 4 K", plot_width=300, plot_height=300)
-        figure_4_K.diamond(x=range(0, 6), y=cv_choice[0][:6], color='red', size=10)
-        figure_4_K.circle(x=range(6, 12), y=cv_choice[1][6:], color="blue", size=10)
-        figure_4_K.circle(x=range(12), y=pourcentage_choice_B, color="black", size=10)
-        bpl.show(figure_4_K)
 
     def firing_chosen_value(self, mean_firing_rate_chosen_value):
         xs_A, ys_A, xs_B, ys_B = mean_firing_rate_chosen_value

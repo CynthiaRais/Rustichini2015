@@ -145,3 +145,61 @@ class DataAnalysis:
                 tuning_cv.append((x_A, x_B, m, choice))
 
         return tuning_cv
+
+
+    def mean_firing_time_windows_ovb(self, offers=((1, 0), (20, 1), (16, 1), (12, 1), (8,  1), (4, 1),
+                                                   (1, 4), ( 1, 8), (1, 12), (1, 16), (1, 20), (0, 1))):
+        """Average of the firing rate of OVB cells for certain offers between 1s and 1.5s. (Figure 4C)"""
+        #and CJ cells and 1.5 and 2s for CV cells (check this)
+
+        mean_firing_A, mean_firing_B = {}, {}
+        for x_A, x_B in offers:
+            if len(self.means_choice[(x_A, x_B, 'A')]) > 0:
+                mean_firing_A[(x_A, x_B)] = np.mean(self.means_choice[(x_A, x_B, 'A')]['r_ovb'][2000:3001])
+            if len(self.means_choice[(x_A, x_B, 'B')]) > 0:
+                mean_firing_B[(x_A, x_B)] = np.mean(self.means_choice[(x_A, x_B, 'B')]['r_ovb'][2000:3001])
+
+        return mean_firing_A, mean_firing_B
+
+
+    def mean_firing_time_windows_cjb(self, offers=((1, 0), (20, 1), (16, 1), (12, 1), (8,  1), (4, 1),
+                                                   (1, 4), ( 1, 8), (1, 12), (1, 16), (1, 20), (0, 1))):
+        """Average of the firing rate of OVB cells for certain offers between 1s and 1.5s. (Figure 4C)"""
+        #and CJ cells and 1.5 and 2s for CV cells (check this)
+
+        mean_firing_A, mean_firing_B = {}, {}
+        for x_A, x_B in offers:
+            if len(self.means_choice[(x_A, x_B, 'A')]) > 0:
+                mean_firing_A[(x_A, x_B)] = np.mean(self.means_choice[(x_A, x_B, 'A')]['r_2'][3000:4000])
+            if len(self.means_choice[(x_A, x_B, 'B')]) > 0:
+                mean_firing_B[(x_A, x_B)] = np.mean(self.means_choice[(x_A, x_B, 'B')]['r_2'][3000:4000])
+
+        return mean_firing_A, mean_firing_B
+
+
+    def mean_firing_time_windows_cv(self, offers=((1, 0), (20, 1), (16, 1), (12, 1), (8,  1), (4, 1),
+                                                  (1, 4), ( 1, 8), (1, 12), (1, 16), (1, 20), (0, 1))):
+        """Average of the firing rate of OVB cells for certain offers between 1s and 1.5s. (Figure 4C)"""
+        #and CJ cells and 1.5 and 2s for CV cells (check this)
+
+        mean_firing_A, mean_firing_B = {}, {}
+        for x_A, x_B in offers:
+            if len(self.means_choice[(x_A, x_B, 'A')]) > 0:
+                mean_firing_A[(x_A, x_B)] = np.mean(self.means_choice[(x_A, x_B, 'A')]['r_I'][2000:3001])
+            if len(self.means_choice[(x_A, x_B, 'B')]) > 0:
+                mean_firing_B[(x_A, x_B)] = np.mean(self.means_choice[(x_A, x_B, 'B')]['r_I'][2000:3001])
+
+        return mean_firing_A, mean_firing_B
+
+
+    def percents_B(self, offers=((1, 0), (20, 1), (16, 1), (12, 1), (8, 1), (4, 1),
+                                (1, 4), (1, 8), (1, 12), (1, 16), (1, 20), (0, 1))):
+        """Determination of percents of choice B depending on quantity of each juice. (Figure 4C)"""
+
+        percents = {}
+        for x_A, x_B in offers:
+            n_A = len(self.history.trials_choice[(x_A, x_B, 'A')])
+            n_B = len(self.history.trials_choice[(x_A, x_B, 'B')])
+            percents[(x_A, x_B)] = n_B/max(1, n_A + n_B)
+
+        return percents

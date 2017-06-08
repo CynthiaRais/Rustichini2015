@@ -203,47 +203,47 @@ class DataAnalysis:
         print("step 3")
         return [self.mean_low_cv, self.mean_medium_cv, self.mean_high_cv]
 
-    def average_firing_time_windows_ov(self):
-        """ average of the firing rate of all the cells for certain offers betwwen 1s and 1.5s for OV and CJ cells and 1.5 and 2s for CV cells (check this)"""
-        ov_A_choiceA, ov_A_choiceB, ov_B_choiceA, ov_B_choiceB = [], [], [], []
-
-        #Initilisation of mean
-
-        mean_ov_0B1A, mean_ov_1B0A = 0, 0
-
-        for choice_i in ('A', 'B'):
-            for j in range(self.ΔB, 3, -4):
-                mean_ov_ij, mean_ov_ji = 0, 0
-                if len(self.result[(1, j, choice_i)][0]) != 0:
-                    for k in range(2000, 3001):
-                        mean_ov_ij += self.result[(1, j, choice_i)][0][k]
-                else : mean_ov_ij = 0
-                if len(self.result[(j, 1, choice_i)][0]) != 0:
-                    for k in range(2000, 3001):
-                        mean_ov_ji += self.result[(j, 1, choice_i)][0][k]
-                else: mean_ov_ji = 0
-                if choice_i == 'A':
-                    ov_A_choiceA.append(mean_ov_ij / 1000)
-                    ov_B_choiceA.append(mean_ov_ji / 1000)
-                elif choice_i == 'B':
-                    ov_A_choiceB.append(mean_ov_ij / 1000)
-                    ov_B_choiceB.append(mean_ov_ji / 1000)
-            if len(self.result[(1, 0, choice_i)][0]) == 0:
-                mean_ov_0B1A = 0
-            else:
-                for k in range(2000, 3001):
-                    mean_ov_0B1A += self.result[(1, 0, choice_i)][0][k]
-            if len(self.result[(0, 1, choice_i)][0]) == 0:
-                mean_ov_1B0A = 0
-            else:
-                for k in range(2000, 3001):
-                    mean_ov_1B0A += self.result[(0, 1, choice_i)][0][k]
-            if choice_i == 'A':
-                self.ov_choiceA = [mean_ov_0B1A / 1000] + ov_B_choiceA + ov_A_choiceA[::-1] + [mean_ov_1B0A / 1000]
-            else:
-                self.ov_choiceB = [mean_ov_0B1A / 1000] + ov_B_choiceB + ov_A_choiceB[::-1] + [mean_ov_1B0A / 1000]
-        print("step 4", self.ov_choiceA, self.ov_choiceB)
-        return [self.ov_choiceA, self.ov_choiceB]
+    # def average_firing_time_windows_ov(self):
+    #     """ average of the firing rate of all the cells for certain offers betwwen 1s and 1.5s for OV and CJ cells and 1.5 and 2s for CV cells (check this)"""
+    #     ov_A_choiceA, ov_A_choiceB, ov_B_choiceA, ov_B_choiceB = [], [], [], []
+    #
+    #     #Initilisation of mean
+    #
+    #     mean_ov_0B1A, mean_ov_1B0A = 0, 0
+    #
+    #     for choice_i in ('A', 'B'):
+    #         for j in range(self.ΔB, 3, -4):
+    #             mean_ov_ij, mean_ov_ji = 0, 0
+    #             if len(self.result[(1, j, choice_i)][0]) != 0:
+    #                 for k in range(2000, 3001):
+    #                     mean_ov_ij += self.result[(1, j, choice_i)][0][k]
+    #             else : mean_ov_ij = 0
+    #             if len(self.result[(j, 1, choice_i)][0]) != 0:
+    #                 for k in range(2000, 3001):
+    #                     mean_ov_ji += self.result[(j, 1, choice_i)][0][k]
+    #             else: mean_ov_ji = 0
+    #             if choice_i == 'A':
+    #                 ov_A_choiceA.append(mean_ov_ij / 1000)
+    #                 ov_B_choiceA.append(mean_ov_ji / 1000)
+    #             elif choice_i == 'B':
+    #                 ov_A_choiceB.append(mean_ov_ij / 1000)
+    #                 ov_B_choiceB.append(mean_ov_ji / 1000)
+    #         if len(self.result[(1, 0, choice_i)][0]) == 0:
+    #             mean_ov_0B1A = 0
+    #         else:
+    #             for k in range(2000, 3001):
+    #                 mean_ov_0B1A += self.result[(1, 0, choice_i)][0][k]
+    #         if len(self.result[(0, 1, choice_i)][0]) == 0:
+    #             mean_ov_1B0A = 0
+    #         else:
+    #             for k in range(2000, 3001):
+    #                 mean_ov_1B0A += self.result[(0, 1, choice_i)][0][k]
+    #         if choice_i == 'A':
+    #             self.ov_choiceA = [mean_ov_0B1A / 1000] + ov_B_choiceA + ov_A_choiceA[::-1] + [mean_ov_1B0A / 1000]
+    #         else:
+    #             self.ov_choiceB = [mean_ov_0B1A / 1000] + ov_B_choiceB + ov_A_choiceB[::-1] + [mean_ov_1B0A / 1000]
+    #     print("step 4", self.ov_choiceA, self.ov_choiceB)
+    #     return [self.ov_choiceA, self.ov_choiceB]
 
 
     def average_firing_time_windows_cjb(self):

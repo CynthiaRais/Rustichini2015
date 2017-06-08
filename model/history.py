@@ -59,10 +59,14 @@ class History:
 
     def __init__(self, model):
         self.model = model # keeping all the parameters
-        self.trials = {(x_A, x_B, choice): [] for x_A in range(self.model.ΔA + 1)
-                                              for x_B in range(self.model.ΔB + 1)
-                                              for choice in ['A', 'B']}
+        self.trials = {(x_A, x_B): [] for x_A in range(self.model.ΔA + 1)
+                                      for x_B in range(self.model.ΔB + 1)}
+        self.trials_choice = {(x_A, x_B, choice): [] for x_A in range(self.model.ΔA + 1)
+                                                     for x_B in range(self.model.ΔB + 1)
+                                                     for choice in ['A', 'B']}
 
     def add_trial(self, trial_history):
-        key = (trial_history.x_a, trial_history.x_b, trial_history.choice)
+        key = (trial_history.x_a, trial_history.x_b)
         self.trials[key].append(trial_history.export())
+        key_choice = (trial_history.x_a, trial_history.x_b, trial_history.choice)
+        self.trials_choice[key_choice].append(trial_history.export())

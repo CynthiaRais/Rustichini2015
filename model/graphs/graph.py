@@ -4,7 +4,8 @@ import bokeh
 import bokeh.plotting as bpl
 from bokeh.models import FixedTicker
 
-from . import graphs
+from . import utils_bokeh
+from . import graphs3d
 
 
 class Graph:
@@ -31,7 +32,7 @@ class Graph:
     def firing_time_ov(self, mean_firing_rates_ov):
         figure_4A = bpl.figure(title="Figure 4A", plot_width=300, plot_height=300, tools=(),
                                x_range=self.x_range, y_range=(0, 7.0))
-        graphs.tweak_fig(figure_4A)
+        utils_bokeh.tweak_fig(figure_4A)
         self.fix_x_ticks(figure_4A)
         figure_4A.yaxis[0].ticker = FixedTicker(ticks=[0, 2, 4, 6])
 
@@ -40,8 +41,8 @@ class Graph:
                              color=['#cccccc', "#8c8c8c", "#333333"], line_width=4)
         bpl.show(figure_4A)
 
-    def tuning_curve_ov(self, tuning_ov):
-        graphs.tuningcurve(tuning_ov, x_label='offer A', y_label='offer B', title='tuning ov')
+    def tuning_curve_ovb(self, tuning_ovb, title='Figure 4B'):
+        graphs3d.tuningcurve(tuning_ovb, x_label='offer A', y_label='offer B', title=title)
 
 
     def firing_specific_set_ov(self, ov_choice, pourcentage_choice_B):
@@ -67,7 +68,7 @@ class Graph:
 
 
     def tuning_curve_cj(self, tuning_cjb):
-        graphs.tuningcurve(tuning_cjb, x_label='offer A', y_label='offer B', title='tuning cj')
+        graphs3d.tuningcurve(tuning_cjb, x_label='offer A', y_label='offer B', title='tuning cj')
 
 
     def firing_specific_set_cjb(self, cj_choice, pourcentage_choice_B):

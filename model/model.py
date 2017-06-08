@@ -62,8 +62,8 @@ class Model:
 
                         w_p = 1.75,
 
-                        x_max_list = None,
-                        x_min_list = None,
+                        range_A = None,
+                        range_B = None,
 
                         random_seed = 0,
                         verbose     = False):
@@ -82,32 +82,10 @@ class Model:
         self.δ_J_nmda = {'1': δ_J_nmda[0], '2': δ_J_nmda[1]}
         self.δ_J_gaba = {'1': δ_J_gaba[0], '2': δ_J_gaba[1], '3': δ_J_gaba[2]}
 
-        self.list_choice = ['A', 'B']
-
-        # Values at the beginning of each trial (before figure 7)
-        self.choice = 0
-
-        #self.result = sorted(self.result.items(), key = operator.itemgetter(0))
-
         # Determination of g maximum for OV cells firing rate
         self.g_max = max(self.g_t(t) for t in np.arange(self.dt, self.t_exp + self.dt, self.dt))
 
         self.history = history.History(self)
-
-        # # to keep firing rate of one trial
-        # self.result_one_trial = {}
-        # for i in range(self.ΔA + 1):
-        #     for j in range(self.ΔB + 1):
-        #         for choice_i in self.list_choice:
-        #             self.result_one_trial[(i, j, choice_i)] = []
-        # self.ovb_one_trial, self.r_cja_one_trial, self.r_cjb_one_trial = [], [], []
-        # self.r_ns_one_trial, self.r_cv_one_trial = [], []
-        #
-        # # Control of noise
-        # self.I_eta_cja_list = []
-        # self.I_eta_cjb_list = []
-        # self.I_eta_ns_list  = []
-        # self.I_eta_cv_list  = []
 
         if self.verbose:
             print("Finished model initialization.")
@@ -242,10 +220,7 @@ class Model:
         self.S_ampa = {'1': 0, '2': 0, '3': 0}
         self.S_nmda = {'1': 0.1, '2': 0.1, '3': 0.1}
         self.S_gaba = 0
-
-        self.choice = 0
-        # self.ovb_one_trial, self.r_cja_one_trial, self.r_cjb_one_trial = [], [], []
-        # self.r_ns_one_trial, self.r_cv_one_trial = [], []
+        self.choice = None
 
         self.trial_history = history.TrialHistory(self, x_a, x_b)
 
@@ -258,9 +233,6 @@ class Model:
 
         self.trial_history.choice = self.choice
         self.history.add_trial(self.trial_history)
-        # return [self.ovb_one_trial, self.r_cja_one_trial,
-        #         self.r_cjb_one_trial, self.r_ns_one_trial, self.r_cv_one_trial, self.choice,
-        #         self.I_eta_cja_list, self.I_eta_cjb_list, self.I_eta_ns_list, self.I_eta_cv_list]
 
 
     def one_step(self, t, x_a, x_b):
@@ -269,8 +241,8 @@ class Model:
 
         # firing rate of ov cells
         self.r_ov = {}  # TODO: do better
-        self.r_ov['1'] = self.firing_ov_cells(x_a, self.x_min_list[0], self.x_max_list[0], t)
-        self.r_ov['2'] = self.firing_ov_cells(x_b, self.x_min_list[1], self.x_max_list[1], t)
+        self.r_ov['1'] = self.firing_ov_cells(x_a, self.range_A[0], self.range_A[1], t)
+        self.r_ov['2'] = self.firing_ov_cells(x_b, self.range_B[0], self.range_B[1], t)
         # assert r_ova <= 8, 'r_ova = {}'.format(r_ova)
         # assert r_ovb <= 8, 'r_ovb = {}'.format(r_ovb)
 
@@ -324,19 +296,3 @@ class Model:
         self.r['I'] += self.firing_rate_I(phi['I'])  # equation 2
 
         self.trial_history.update(self, I_ampa_ext, I_ampa_rec, I_nmda_rec, I_gaba_rec, I_stim, I_syn, phi)
-
-        # self.ovb_one_trial.append(r_ovb)
-        # self.r_cja_one_trial.append(self.r_cja)
-        # self.r_cjb_one_trial.append(self.r_cjb)
-        # self.r_ns_one_trial.append(self.r_ns)
-        # self.r_cv_one_trial.append(self.r_cv)
-        # #le bruit
-        # self.I_eta_cja_list.append(self.I_eta_cja)
-        # self.I_eta_cjb_list.append(self.I_eta_cjb)
-        # self.I_eta_ns_list.append(self.I_eta_ns)
-        # self.I_eta_cv_list.append(self.I_eta_cv)
-        #
-        # def save_history(self, data):
-        #     print("Saving history...")
-        #     np.save(data, self.result_one_trial)
-        #     print("done.")

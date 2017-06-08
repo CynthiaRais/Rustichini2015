@@ -16,19 +16,10 @@ grey_low    = '#cccccc'
 
 
 class Graph:
-    def __init__(self, ΔA=20, ΔB = 20, t_exp =2.0, dt= 0.0005, analysis=None):
 
-        self.ΔA, self.ΔB = ΔA, ΔB
-        self.choice_A, self.choice_B = {}, {}
-        self.list_choice = ['A', 'B']
-        self.t_exp = t_exp
-        self.dt = dt
-        self.analysis = analysis
-        self.ov, self.cjb, self.cv = {}, {}, {}
-
-        self.x_axis = 1000 * np.arange(-0.5, 1.0, self.dt)
+    def __init__(self, analysis):
+        self.x_axis = 1000 * np.arange(-0.5, 1.0, analysis.history.model.dt)
         self.x_range = np.min(self.x_axis), np.ceil(np.max(self.x_axis))
-
         bpl.output_notebook(hide_banner=True)
 
     def fix_x_ticks(self, fig):
@@ -48,6 +39,12 @@ class Graph:
 
     def tuning_curve_ovb(self, tuning_ovb, title='Figure 4B'):
         graphs3d.tuningcurve(tuning_ovb, x_label='offer A', y_label='offer B', title=title)
+
+    def tuning_curve_cj(self, tuning_cjb):
+        graphs3d.tuningcurve(tuning_cjb, x_label='offer A', y_label='offer B', title='Figure 4F')
+
+    def tuning_curve_cv(self, tuning_cv):
+        graphs3d.tuningcurve(tuning_cv, x_label='offer A', y_label='offer B', title='Figure 4J')
 
 
     def firing_specific_set_ovb(self, offers, ovb_choices, percents_B):
@@ -82,7 +79,7 @@ class Graph:
         K = 0.94 * (y_max - y_min) + y_min
         xs = [offers.index(key) for key in percents_B.keys()]
         ys = [y * 0.94 * (y_max - y_min) + y_min for y in percents_B.values()]
-        print(ys)
+
         figure.line(x=(min(xs), max(xs)), y=(K, K), color="black", line_dash='dashed')
         figure.circle(x=xs, y=ys, color="black", size=15)
 
@@ -129,17 +126,6 @@ class Graph:
                              color=[grey_low, grey_high], line_width=4)
         bpl.show(figure_4E)
 
-
-        # figure_4E = bpl.figure(title="Figure 4E", plot_width=300, plot_height=300)
-        # figure_4E.multi_line([self.X_axis, self.X_axis], Y,
-        #                   color=['red', "blue"])
-        # bpl.show(figure_4E)
-
-
-    def tuning_curve_cj(self, tuning_cjb):
-        graphs3d.tuningcurve(tuning_cjb, x_label='offer A', y_label='offer B', title='Figure 4F')
-
-
     def firing_choice(self, tunnig_cjb):
         """Figure 4H"""
         figure_4H = bpl.figure(title="Figure 4H", plot_width=300, plot_height=300,
@@ -173,10 +159,6 @@ class Graph:
         bpl.show(figure_4I)
 
 
-    def tuning_curve_cv(self, tuning_cv):
-        graphs3d.tuningcurve(tuning_cv, x_label='offer A', y_label='offer B', title='Figure 4J')
-
-
     def firing_chosen_value(self, mean_firing_rate_chosen_value):
         xs_A, ys_A, xs_B, ys_B = mean_firing_rate_chosen_value
 
@@ -186,6 +168,9 @@ class Graph:
         figure_4L.diamond(x=xs_A, y=ys_A, color=A_color, size=15, fill_color=None, line_color=A_color, line_alpha=0.5)
         figure_4L.circle( x=xs_B, y=ys_B, color=B_color, size=10, fill_color=None, line_color=B_color, line_alpha=0.5)
         bpl.show(figure_4L)
+
+
+    ###
 
     def logistic_regression(self, X):
         graphs3d.tuningcurve(X,)
@@ -202,58 +187,6 @@ class Graph:
         bpl.show(figure_test_cj)
         bpl.show(figure_test_cv)
 
-    def figure_4(self):
-
-        figure_test_cjb = bpl.figure(title="Figure test cj b", plot_width=300, plot_height=300)
-        figure_test_ns = bpl.figure(title="Figure test ns", plot_width=300, plot_height=300)
-        figure_test_cv = bpl.figure(title="Figure test cv", plot_width=300, plot_height=300)
-
-        #figure_test_cja.multi_line([self.X_axis, self.X_axis, self.X_axis], self.analysis.test_cja, color=["red", "blue", "green"])
-        figure_test_cjb.multi_line([self.X_axis, self.X_axis, self.X_axis], self.analysis.test_cjb, color=["red", "blue", "green"])
-        figure_test_ns.multi_line([self.X_axis, self.X_axis,self. X_axis], self.analysis.test_ns, color=["red", "blue", "green"])
-        figure_test_cv.multi_line([self.X_axis, self.X_axis, self.X_axis], self.analysis.test_cv, color=["red", "blue", "green"])
-
-
-        #bpl.show(figure_4_A)
-        #bpl.show(figure_4_C)
-        #bpl.show(figure_4_D)
-
-        #bpl.show(figure_4_E)
-        #bpl.show(figure_4_G)
-        #bpl.show(figure_4_H)
-
-        #bpl.show(figure_4_I)
-        #bpl.show(figure_4_K)
-        #bpl.show(figure_4_L)
-
-        #bpl.show(figure_test_cja)
-        bpl.show(figure_test_cjb)
-        bpl.show(figure_test_ns)
-        bpl.show(figure_test_cv)
-
-
-
-
-
-
-    def figure_6(self):
-
-
-        figure_4_E = bpl.figure(title="Figure 4 E", plot_width=700, plot_height=700)
-        figure_4_I = bpl.figure(title="Figure 4 I", plot_width=700, plot_height=700)
-        figure_4_L = bpl.figure(title="Figure 4 L", plot_width=700, plot_height=700)
-
-        figure_4_E.multi_line([self.X_axis, self.X_axis], [self.analysis.mean_A_chosen_cj, self.analysis.mean_B_chosen_cj],
-                              color=['red', "blue"])
-        figure_4_I.multi_line([self.X_axis, self.X_axis, self.X_axis],
-                              [self.analysis.mean_low_cv, self.analysis.mean_medium_cv, self.analysis.mean_high_cv],
-                              color=['red', "green", "blue"])
-        figure_4_L.diamond(x=self.analysis.X_A, y=self.analysis.Y_A, color="red", size=10)
-        figure_4_L.circle(x=self.analysis.X_B, y=self.analysis.Y_B, color="blue", size=10)
-
-        bpl.show(figure_4_E)
-        bpl.show(figure_4_I)
-        bpl.show(figure_4_L)
 
         #graphs3d.tuningcurve(self.analysis.tuning_cjb, x_label='offer A', y_label='offer B', title='tuning cj')
 

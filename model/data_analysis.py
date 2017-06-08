@@ -8,9 +8,10 @@ class DataAnalysis:
     def __init__(self, history):
 
         self.history = history
+        self.model = history.model
 
-        self.ΔA = history.model.ΔA
-        self.ΔB = history.model.ΔB
+        self.ΔA = self.model.ΔA
+        self.ΔB = self.model.ΔB
 
         self.preprocessing()
 
@@ -24,14 +25,16 @@ class DataAnalysis:
             if len(trials) > 0:
                 self.means[key] = {}
                 for key2 in trials[0].keys():
-                    self.means[key][key2] = np.mean([trial[key2] for trial in trials], axis=0)
+                    self.means[key][key2] = np.mean([trial[key2] for trial in trials],
+                                                    axis=0, dtype=np.float32)
             else:
                 self.means[key] = {}
         for key, trials in self.history.trials_choice.items():
             if len(trials) > 0:
                 self.means_choice[key] = {}
                 for key2 in trials[0].keys():
-                    self.means_choice[key][key2] = np.mean([trial[key2] for trial in trials], axis=0)
+                    self.means_choice[key][key2] = np.mean([trial[key2] for trial in trials],
+                                                           axis=0, dtype=np.float32)
             else:
                 self.means_choice[key] = {}
 
@@ -105,10 +108,10 @@ class DataAnalysis:
 
         for x_A, x_B, r_cv, choice in self.tuning_curve_cv():
             if choice == 'A':
-                xs_A.append(x_A * self.history.model.δ_J_stim['1'])
+                xs_A.append(x_A * self.model.δ_J_stim['1'])
                 ys_A.append(r_cv)
             else:
-                xs_B.append(x_B * self.history.model.δ_J_stim['2'])
+                xs_B.append(x_B * self.model.δ_J_stim['2'])
                 ys_B.append(r_cv)
 
         return xs_A, ys_A, xs_B, ys_B

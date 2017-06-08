@@ -62,8 +62,12 @@ class TrialHistory:
 class History:
     """Hold the history of multiple trials"""
 
-    def __init__(self, model):
+    def __init__(self, model, keys=('r_1', 'r_2', 'r_3', 'r_I', 'r_ova', 'r_ovb')):
         self.model = model # keeping all the parameters
+        self.keys = keys
+        self.reset()
+
+    def reset(self):
         self.trials = {(x_A, x_B): [] for x_A in range(self.model.ΔA + 1)
                                       for x_B in range(self.model.ΔB + 1)}
         self.trials_choice = {(x_A, x_B, choice): [] for x_A in range(self.model.ΔA + 1)
@@ -72,6 +76,9 @@ class History:
 
     def add_trial(self, trial_history):
         key = (trial_history.x_a, trial_history.x_b)
-        self.trials[key].append(trial_history.export())
+        self.trials[key].append(trial_history.export(keys=self.keys))
         key_choice = (trial_history.x_a, trial_history.x_b, trial_history.choice)
-        self.trials_choice[key_choice].append(trial_history.export())
+        self.trials_choice[key_choice].append(trial_history.export(keys=self.keys))
+
+    def clear(self):
+        self.trials, self.trials_choice = None, None

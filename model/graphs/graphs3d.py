@@ -30,9 +30,9 @@ def tuningcurve(XYZC, show=True, x_label=None, y_label=None, z_label=None, title
     ax = fig.gca(projection='3d')
     fig.gca().invert_xaxis()
 
-    # Plot the surface.
-    surf = ax.scatter(XA, YA, ZA, c='red', marker=MarkerStyle('D', fillstyle='full'))
-    surf = ax.scatter(XB, YB, ZB, c='blue', marker=MarkerStyle('o', fillstyle='full'))
+    # Plot the markers.
+    surf = ax.scatter(XA, YA, ZA, marker='D', edgecolor='red',  facecolor=(0,0,0,0), s=50)
+    surf = ax.scatter(XB, YB, ZB, marker='o', edgecolor='blue', facecolor=(0,0,0,0), s=70)
 
     # Customize the z axis.
     # ax.set_zlim(-1.01, 1.01)

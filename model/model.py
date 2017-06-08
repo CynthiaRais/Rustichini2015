@@ -1,50 +1,20 @@
-#-*- coding: utf-8 -*-
-from functools import wraps
-import inspect
 import numpy as np
 
 from . import history
-
-
-def autoinit(init_fun):
-    """Autoinitialize the instances members from the list of arguments given to __init__
-
-    >>> class Model:
-    ...     @autoinit
-    ...     def __init__(self, α, γ=0.9):
-    ...         pass
-    >>> m = Model(0.5)
-    >>> m.α, m.γ
-    (0.5, 0.9)
-    """
-    argnames, _, _, defaults = inspect.getargspec(init_fun)
-
-    @wraps(init_fun)
-    def wrapper(self, *args, **kwargs):
-        # args
-        for name, arg in zip(argnames[1:], args):
-            setattr(self, name, arg)
-        # keywords args
-        for name, arg in kwargs.items():
-            setattr(self, name, arg)
-        # defaults args
-        for name, default in zip(reversed(argnames), reversed(defaults)):
-            if not hasattr(self, name): # keyword value given?
-                setattr(self, name, default)
-        init_fun(self, *args, **kwargs)
-
-    return wrapper
+from .utils import autoinit
 
 
 class Model:
 
-    @autoinit
-    def __init__(self,  N_E         = 1600,
+    @autoinit # set all __init__ arguments as instance members
+    def __init__(self,  # Network parameters
+                        N_E         = 1600,
                         N_I         = 400,
                         C_ext       = 800,
                         f           = 0.15,
                         r_ext       = 3,               # spike/s
 
+                        # Time constants, synaptic efficacies, and noise
                         τ_ampa         = 0.002,        # s
                         τ_nmda         = 0.100,        # s
                         τ_gaba         = 0.005,        # s
@@ -60,6 +30,7 @@ class Model:
                         γ              = 0.641,
                         σ_eta          = 0.020,
 
+                        # Parameters of input-output function for integrate-and-fire neurons
                         I_E = 125,
                         g_E = 0.16,
                         c_E = 310,
@@ -67,26 +38,29 @@ class Model:
                         g_I = 0.087,
                         c_I = 615,
 
+                        # Parameters used to model OV cells
                         r_o     = 0,                    # spike/s (0 or 6)
                         Δ_r     = 8,                    # spike/s
                         t_offer = 1.0,                  # s
-                        t_exp = 2.0,                    # s
-                        dt = 0.0005,                      # s
-                        n  = 4000,                       # number of trials
+                        a       = 0.175,
+                        b       = 0.030,
+                        c       = 0.400,
+                        d       = 0.100,
 
+                        # Parameters of the experience
+                        t_exp = 2.0,                    # s
+                        dt = 0.0005,                    # s
+                        n  = 4000,                      # number of trials
+                        ΔA = 20,
+                        ΔB = 20,
+
+                        # Hebbian learning and synaptic imbalance
                         δ_J_hl   = (1, 1),
                         δ_J_stim = (2, 1),
                         δ_J_gaba = (1, 1, 1),
                         δ_J_nmda = (1, 1),
 
                         w_p = 1.75,
-                        a = 0.175,
-                        b = 0.030,
-                        c = 0.400,
-                        d = 0.100,
-
-                        ΔA = 20,
-                        ΔB = 20,
 
                         x_max_list = None,
                         x_min_list = None,
@@ -95,90 +69,45 @@ class Model:
                         verbose     = False):
 
         np.random.seed(random_seed) # FIXME: per model Random instance
-        # self.verbose = verbose
-        #
-        # # Network parameters
-        # self.N_E, self.N_I = N_E, N_I
-        # self.C_ext, self.f, self.r_ext = C_ext, f, r_ext
-        #
-        # # Time constants, synaptic efficacies, and noise
-        # self.τ_ampa, self.τ_nmda, self.τ_gaba = τ_ampa, τ_nmda, τ_gaba
-        # self.J_ampa_ext_pyr, self.J_ampa_rec_pyr = J_ampa_ext_pyr, J_ampa_rec_pyr
-        # self.J_nmda_rec_pyr, self. J_gaba_rec_pyr = J_nmda_rec_pyr, J_gaba_rec_pyr
-        # self.J_ampa_ext_in, self.J_ampa_rec_in = J_ampa_ext_in, J_ampa_rec_in
-        # self.J_nmda_rec_in, self.J_gaba_rec_in = J_nmda_rec_in, J_gaba_rec_in
-        # self.γ, self.σ_eta = γ, σ_eta
-        #
-        # # Parameters of input-output function for integrate-and-fire neurons
-        # self.I_E, self.g_E, self.c_E = I_E, g_E, c_E
-        # self.I_I, self.g_I, self.c_I = I_I, g_I, c_I
 
-        # # Parameters used to model OV cells
-        # self.r_o, self.Δ_r, self.t_offer = r_o, Δ_r, t_offer
-        self.a = (a + t_offer)                    # s
-        self.b = b                                # s
-        self.c = (t_offer + c)                    # s
-        self.d = d                                # s
+        self.a = t_offer + a
+        self.c = t_offer + c
         self.J_ampa_input = ΔJ * J_ampa_ext_pyr
 
-        # self.w_p = w_p
         self.w_m = 1 - f * (self.w_p - 1) / (1 - self.f)
 
         # Hebbian learning and synaptic imbalance
-        self.δ_J_hl   = {'1': δ_J_hl[0], '2': δ_J_hl[1]}
+        self.δ_J_hl   = {'1': δ_J_hl[0],   '2': δ_J_hl[1]}
         self.δ_J_stim = {'1': δ_J_stim[0], '2': δ_J_stim[1]}
         self.δ_J_nmda = {'1': δ_J_nmda[0], '2': δ_J_nmda[1]}
         self.δ_J_gaba = {'1': δ_J_gaba[0], '2': δ_J_gaba[1], '3': δ_J_gaba[2]}
 
-        # # Parameters of the experience
-        # self.t_exp = t_exp
-        # self.dt = dt
-        # self.n = n
-        # self.ΔA = ΔA
-        # self.ΔB = ΔB
         self.list_choice = ['A', 'B']
 
         # Values at the beginning of each trial (before figure 7)
-#        self.r_cja, self.r_cjb, self.r_ns, self.r_cv = 0, 0, 0, 0
-        self.r      = {'1': 0, '2': 0, '3': 0, 'I': 0}
-#        self.I_eta_cja, self.I_eta_cjb, self.I_eta_ns, self.I_eta_cv = 0, 0, 0, 0
-        self.I_eta  = {'1': 0, '2': 0, '3': 0, 'I': 0}
-        self.S_ampa = {'1': 0, '2': 0, '3': 0}
-        self.S_nmda = {'1': 0, '2': 0, '3': 0}
-        self.S_gaba = 0
-        # self.S_cja, self.S_cjb, self.S_ns = [0, 0, 0], [0, 0, 0], [0, 0, 0]
-        # self.S_gaba_cv = 0
         self.choice = 0
 
         #self.result = sorted(self.result.items(), key = operator.itemgetter(0))
 
-        # self.gmax = np.max((1 / (1 + np.exp(- (t- self.a) / self.b))) * (1 / (1 + np.exp((t - self.c) / self.d)))
-        #                   for t in np.arange(0, 2.0, self.dt))         #marche?
-
         # Determination of g maximum for OV cells firing rate
-        self.g_max = float('-inf')
-        for t in np.arange(self.dt, self.t_exp + self.dt, self.dt):
-            g = (1 / (1 + np.exp(- (t - self.a) / self.b))) * (1 / (1 + np.exp((t - self.c) / self.d)))
-            self.g_max = max(self.g_max, g)
+        self.g_max = max(self.g_t(t) for t in np.arange(self.dt, self.t_exp + self.dt, self.dt))
 
-        # self.x_min_list = x_min_list
-        # self.x_max_list = x_max_list
-        self.ov, self.cjb, self.cv = {}, {}, {}
+        self.history = history.History(self)
 
-        # to keep firing rate of one trial
-        self.result_one_trial = {}
-        for i in range(self.ΔA + 1):
-            for j in range(self.ΔB + 1):
-                for choice_i in self.list_choice:
-                    self.result_one_trial[(i, j, choice_i)] = []
-        self.ovb_one_trial, self.r_cja_one_trial, self.r_cjb_one_trial = [], [], []
-        self.r_ns_one_trial, self.r_cv_one_trial = [], []
-
-        # Control of noise
-        self.I_eta_cja_list = []
-        self.I_eta_cjb_list = []
-        self.I_eta_ns_list  = []
-        self.I_eta_cv_list  = []
+        # # to keep firing rate of one trial
+        # self.result_one_trial = {}
+        # for i in range(self.ΔA + 1):
+        #     for j in range(self.ΔB + 1):
+        #         for choice_i in self.list_choice:
+        #             self.result_one_trial[(i, j, choice_i)] = []
+        # self.ovb_one_trial, self.r_cja_one_trial, self.r_cjb_one_trial = [], [], []
+        # self.r_ns_one_trial, self.r_cv_one_trial = [], []
+        #
+        # # Control of noise
+        # self.I_eta_cja_list = []
+        # self.I_eta_cjb_list = []
+        # self.I_eta_ns_list  = []
+        # self.I_eta_cv_list  = []
 
         if self.verbose:
             print("Finished model initialization.")
@@ -209,10 +138,7 @@ class Model:
 
     def Φ(self, I_syn, c, i, gain):  # 6
         """Input-ouput relation for leaky integrate-and-fire cell (Abbott and Chance, 2005) (eq. 6)"""
-        phi = ((c * I_syn - i) / (1 - np.exp(-gain * (c * I_syn - i))))
-
-        return phi
-
+        return ((c * I_syn - i) / (1 - np.exp(-gain * (c * I_syn - i))))
 
         ## Currents and parameters
 
@@ -282,13 +208,16 @@ class Model:
         assert i in ('1', '2')
         return -self.J_ampa_input * self.δ_J_hl[i] * self.δ_J_stim[i] * self.τ_ampa * self.r_ov[i]
 
+    def g_t(self, t):
+        """Computes g_t (eq. 23)"""
+        return (1 / (1 + np.exp(- (t - self.a) / self.b))) * (1 / (1 + np.exp((t - self.c) / self.d)))
 
     def firing_ov_cells(self, x, x_min, x_max, t):  # 20, 21, 22, 23
         """Computing the activity profile of OV cells (eq. 20, 21, 22, 23)"""
         x_i = x / x_max # MATLAB code
         # x_i = (x - xmin) / (x_max - xmin) # ARTICLE (eq. 20)
         assert(0 <= x_i <= 1)
-        g_t = (1 / (1 + np.exp(- (t - self.a) / self.b))) * (1 / (1 + np.exp((t - self.c) / self.d)))
+        g_t = self.g_t(t)
 
         f_t = g_t / self.g_max
         #assert f_t <= 1, 'firing ov trop haut'
@@ -308,8 +237,8 @@ class Model:
         """Compute one trial"""
 
         # Firing rate of OV B cell, CJ B cell and CV cell for one trial
-        self.r = {'1': 3, '2': 3, '3': 3, 'I': 8}
-        self.I_eta = {'1': 0, '2': 0, '3': 0, 'I': 0}
+        self.r      = {'1': 3, '2': 3, '3': 3, 'I': 8}
+        self.I_eta  = {'1': 0, '2': 0, '3': 0, 'I': 0}
         self.S_ampa = {'1': 0, '2': 0, '3': 0}
         self.S_nmda = {'1': 0.1, '2': 0.1, '3': 0.1}
         self.S_gaba = 0
@@ -318,7 +247,7 @@ class Model:
         # self.ovb_one_trial, self.r_cja_one_trial, self.r_cjb_one_trial = [], [], []
         # self.r_ns_one_trial, self.r_cv_one_trial = [], []
 
-        self.trial_history = history.TrialHistory(self)
+        self.trial_history = history.TrialHistory(self, x_a, x_b)
 
         for t in np.arange(self.dt, self.t_exp + self.dt, self.dt):
             self.one_step(t, x_a, x_b)
@@ -327,6 +256,8 @@ class Model:
         ria, rib = sum(self.trial_history.r_1[2800:3201]), sum(self.trial_history.r_2[2800:3201])
         self.choice = 'B' if ria < rib else 'A'
 
+        self.trial_history.choice = self.choice
+        self.history.add_trial(self.trial_history)
         # return [self.ovb_one_trial, self.r_cja_one_trial,
         #         self.r_cjb_one_trial, self.r_ns_one_trial, self.r_cv_one_trial, self.choice,
         #         self.I_eta_cja_list, self.I_eta_cjb_list, self.I_eta_ns_list, self.I_eta_cv_list]
@@ -342,8 +273,6 @@ class Model:
         self.r_ov['2'] = self.firing_ov_cells(x_b, self.x_min_list[1], self.x_max_list[1], t)
         # assert r_ova <= 8, 'r_ova = {}'.format(r_ova)
         # assert r_ovb <= 8, 'r_ovb = {}'.format(r_ovb)
-
-
 
         # generating noise
         for j in ['1', '2', '3', 'I']:
@@ -406,13 +335,8 @@ class Model:
         # self.I_eta_cjb_list.append(self.I_eta_cjb)
         # self.I_eta_ns_list.append(self.I_eta_ns)
         # self.I_eta_cv_list.append(self.I_eta_cv)
-
-        def save_history(self, data):
-            print("Saving history...")
-            np.save(data, self.result_one_trial)
-            print("done.")
-
-
-if __name__ == "__main__":
-    Class = Model()
-    Class.one_trial()
+        #
+        # def save_history(self, data):
+        #     print("Saving history...")
+        #     np.save(data, self.result_one_trial)
+        #     print("done.")

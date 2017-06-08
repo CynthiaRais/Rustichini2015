@@ -21,7 +21,6 @@ class ReplicableTests(unittest.TestCase):
 
     def test_replicable(self):
         """Test that the matlab code remains """
-
         K = 10
 
         datamat_ref = scipy.io.loadmat('testdata_ref.mat')
@@ -34,7 +33,6 @@ class ReplicableTests(unittest.TestCase):
             print('{} [{}]'.format(key_py, key_mat))
             print('matlab: {}'.format(', '.join('{: 8.4f}'.format(e) for e in access_data(datamat, key_mat)[:K])))
             print('python: {}'.format(', '.join('{: 8.4f}'.format(e) for e in getattr(model.trial_history, key_py)[:K])))
-
 
         for k in range(K):
             self.assertEqual(access_data(datamat, 'sampa1')[k], model.trial_history.S_ampa_1[k])

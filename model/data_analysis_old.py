@@ -1,18 +1,61 @@
 import numpy.polynomial.polynomial as poly
 import numpy as np
 
-class data_analysis_cells:
-    def __init__(self, ΔA = 20, ΔB = 20, result_one_trial = None, quantity_a = None, quantity_b = None):
-        self.list_choice=['A', 'B']
 
-        self.ΔA = ΔA
-        self.ΔB = ΔB
+class DataAnalysis:
+
+    def __init__(self, history):
+
+        self.history = history
+
+        self.ΔA = history.model.ΔA
+        self.ΔB = history.model.ΔB
+
+        self.means        = {} # indexed by (x_A, x_B)
+        self.means_choice = {} # indexed by (x_A, x_B, choice)
+        for key, trials in history.trials.items():
+            if len(trials) > 0:
+                self.means[key] = {}
+                for key2 in trials[0].keys():
+                    self.means[key][key2] = np.mean([trial[key2] for trial in trials], axis=0)
+            else:
+                self.means[key] = {}
+        for key, trials in history.trials_choice.items():
+            if len(trials) > 0:
+                self.means_choice[key] = {}
+                for key2 in trials[0].keys():
+                    self.means_choice[key][key2] = np.mean([trial[key2] for trial in trials], axis=0)
+            else:
+                self.means_choice[key] = {}
+
+
+    def mean_firing_rate_ovb(self):
+        """Average of firing rate of OVB cells depending on the quantity of juice B: low, medium, high (fig.4)"""
+        range_k = range(1000, 4000)
+        ovb_rates = ([[] for _ in range_k], # low
+                     [[] for _ in range_k], # medium
+                     [[] for _ in range_k]) # high
+
+        for i in range(0, self.ΔA + 1):
+            for j in range(0, self.ΔB + 1):
+                q = int(3 * j / (self.ΔB+1))
+                if len(self.means[(i, j)]) > 0:
+                    for k in range_k:
+                        ovb_rates[q][k-1000].append(self.means[(i, j)]['r_ovb'][k])
+
+        for ovb_q in ovb_rates:
+            for k, values in enumerate(ovb_q):
+                ovb_q[k] = np.mean(values)
+
+        return ovb_rates
+
+
         self.result_one_trial = result_one_trial
         self.quantity_a, self.quantity_b = quantity_a, quantity_b
         self.result = {}  # contains all the average of each firing depending on (#A, #B, choice)
         for i in range(self.ΔA +1):
             for j in range(self.ΔB +1):
-                for choice_i in self.list_choice:
+                for choice_i in ('A', 'B'):
                     self.result[(i,j,choice_i)]= []
                     for k in range(6):
                         self.result[(i,j,choice_i)].append([])
@@ -30,81 +73,81 @@ class data_analysis_cells:
         self.offer_A, self.firing_cja, self.firing_cjb = [], [], []
         self.colour = ['red', 'orange', 'yellow', 'green', 'green', 'green', 'blue', '']
 
-        """ average of firing rate of each cell firing depending on (#A, #B, choice) """
-
-        for i in range(self.ΔA +1):
-            for j in range(self.ΔB+1):
-                if len(self.result_one_trial[(i,j)]) != 0:
-                    for t in range(4001):
-                        mean_ovb, mean_cja, mean_cjb, mean_ns, mean_cv = 0, 0, 0, 0, 0
-                        number_trial = 0
-                        for l in range(len(self.result_one_trial[(i,j)])):
-                            mean_ovb += self.result_one_trial[(i,j)][l][0][t]
-                            mean_cja += self.result_one_trial[(i,j)][l][1][t]
-                            mean_cjb += self.result_one_trial[(i,j)][l][2][t]
-                            mean_ns += self.result_one_trial[(i,j)][l][3][t]
-                            mean_cv += self.result_one_trial[(i,j)][l][4][t]
-                            number_trial += 1
-                            choice_i = self.result_one_trial[(i, j)][l][5]
-                        if number_trial == 0 :
-                            number_trial = 1
-                        self.result[(i,j, choice_i)][0].append(mean_ovb / number_trial)
-                        self.result[(i,j, choice_i)][1].append(mean_cja / number_trial)
-                        self.result[(i,j,choice_i)][2].append(mean_cjb / number_trial)
-                        self.result[(i,j,choice_i)][3].append(mean_ns / number_trial)
-                        self.result[(i,j,choice_i)][4].append(mean_cv / number_trial)
-        print("step init")
-        
-        """determination of pourcentage of choice B depending on quantity of each juice"""
-
-        for i in range(self.ΔA + 1):
-            for j in range(self.ΔB + 1):
-                nb_choice_A, nb_choice_B = 0, 0
-                for l in range(len(self.result_one_trial[(i, j)])):
-                    if len(self.result_one_trial[(i, j)][l]) != 0:
-                        if self.result_one_trial[(i, j)][l][5] == 'A':
-                            nb_choice_A += 1
-                        else :
-                            nb_choice_B += 1
-                self.choice_A[(i, j)] = nb_choice_A
-                self.choice_B[(i, j)] = nb_choice_B
+        # """ average of firing rate of each cell firing depending on (#A, #B, choice) """
+        #
+        # for i in range(self.ΔA +1):
+        #     for j in range(self.ΔB+1):
+        #         if len(self.result_one_trial[(i,j)]) != 0:
+        #             for t in range(4001):
+        #                 mean_ovb, mean_cja, mean_cjb, mean_ns, mean_cv = 0, 0, 0, 0, 0
+        #                 number_trial = 0
+        #                 for l in range(len(self.result_one_trial[(i,j)])):
+        #                     mean_ovb += self.result_one_trial[(i,j)][l][0][t]
+        #                     mean_cja += self.result_one_trial[(i,j)][l][1][t]
+        #                     mean_cjb += self.result_one_trial[(i,j)][l][2][t]
+        #                     mean_ns += self.result_one_trial[(i,j)][l][3][t]
+        #                     mean_cv += self.result_one_trial[(i,j)][l][4][t]
+        #                     number_trial += 1
+        #                     choice_i = self.result_one_trial[(i, j)][l][5]
+        #                 if number_trial == 0 :
+        #                     number_trial = 1
+        #                 self.result[(i,j, choice_i)][0].append(mean_ovb / number_trial)
+        #                 self.result[(i,j, choice_i)][1].append(mean_cja / number_trial)
+        #                 self.result[(i,j,choice_i)][2].append(mean_cjb / number_trial)
+        #                 self.result[(i,j,choice_i)][3].append(mean_ns / number_trial)
+        #                 self.result[(i,j,choice_i)][4].append(mean_cv / number_trial)
+        # print("step init")
+        #
+        # """determination of pourcentage of choice B depending on quantity of each juice"""
+        #
+        # for i in range(self.ΔA + 1):
+        #     for j in range(self.ΔB + 1):
+        #         nb_choice_A, nb_choice_B = 0, 0
+        #         for l in range(len(self.result_one_trial[(i, j)])):
+        #             if len(self.result_one_trial[(i, j)][l]) != 0:
+        #                 if self.result_one_trial[(i, j)][l][5] == 'A':
+        #                     nb_choice_A += 1
+        #                 else :
+        #                     nb_choice_B += 1
+        #         self.choice_A[(i, j)] = nb_choice_A
+        #         self.choice_B[(i, j)] = nb_choice_B
 
     def func_result(self):
         return self.result
 
-    def average_firing_rate_B_ov(self):
-        """average of firing rate of cells dependind on the quantity of juice B : low, medium, high (fig.4)"""
-        for k in range(1000, 4001):
-            mean_ov_low, mean_ov_high, mean_ov_medium = 0, 0, 0
-            low, medium, high = 0, 0, 0
-            for i in range(0, self.ΔA +1):
-                for j in range(0, round(self.ΔB / 3)):
-                    for choice_i in self.list_choice:
-                        if len(self.result[(i, j, choice_i)][0]) == 0:
-                            mean_ov_low += 0
-                        else:
-                            mean_ov_low += self.result[(i, j, choice_i)][0][k]
-                            low += 1
-                for j in range(round(self.ΔB / 3), round(self.ΔB * 2/3)):
-                    for choice_i in self.list_choice:
-                        if len(self.result[(i, j, choice_i)][0]) == 0:
-                            mean_ov_medium += 0
-                        else:
-                            mean_ov_medium += self.result[(i, j, choice_i)][0][k]
-                            medium += 1
-                for j in range(round(self.ΔB * 2/3), self.ΔB +1):
-                    for choice_i in self.list_choice:
-                        if len(self.result[(i, j, choice_i)][0]) == 0:
-                            mean_ov_high += 0
-                        else:
-                            mean_ov_high += self.result[(i, j, choice_i)][0][k]
-                            high += 1
-            self.ovb_rate_low.append(mean_ov_low / low)
-            self.ovb_rate_medium.append(mean_ov_medium / medium)
-            self.ovb_rate_high.append(mean_ov_high / high)
-        print("step 1")
-        return [self.ovb_rate_low, self.ovb_rate_medium, self.ovb_rate_high]
-
+    # def mean_firing_rate_ovb(self):
+    #     """Average of firing rate of OVB cells depending on the quantity of juice B: low, medium, high (fig.4)"""
+    #     for k in range(1000, 4001):
+    #         mean_ov_low, mean_ov_high, mean_ov_medium = 0, 0, 0
+    #         low, medium, high = 0, 0, 0
+    #         for i in range(0, self.ΔA +1):
+    #             for j in range(0, round(self.ΔB / 3)):
+    #                 for choice_i in ('A', 'B'):
+    #                     if len(self.result[(i, j, choice_i)][0]) == 0:
+    #                         mean_ov_low += 0
+    #                     else:
+    #                         mean_ov_low += self.result[(i, j, choice_i)][0][k]
+    #                         low += 1
+    #             for j in range(round(self.ΔB / 3), round(self.ΔB * 2/3)):
+    #                 for choice_i in ('A', 'B'):
+    #                     if len(self.result[(i, j, choice_i)][0]) == 0:
+    #                         mean_ov_medium += 0
+    #                     else:
+    #                         mean_ov_medium += self.result[(i, j, choice_i)][0][k]
+    #                         medium += 1
+    #             for j in range(round(self.ΔB * 2/3), self.ΔB +1):
+    #                 for choice_i in ('A', 'B'):
+    #                     if len(self.result[(i, j, choice_i)][0]) == 0:
+    #                         mean_ov_high += 0
+    #                     else:
+    #                         mean_ov_high += self.result[(i, j, choice_i)][0][k]
+    #                         high += 1
+    #         self.ovb_rate_low.append(mean_ov_low / low)
+    #         self.ovb_rate_medium.append(mean_ov_medium / medium)
+    #         self.ovb_rate_high.append(mean_ov_high / high)
+    #     print("step 1")
+    #     return [self.ovb_rate_low, self.ovb_rate_medium, self.ovb_rate_high]
+    #
 
     def average_firing_rate_cj(self):
         '''mean depending on choice (figure 4E, 4I)'''
@@ -168,7 +211,7 @@ class data_analysis_cells:
 
         mean_ov_0B1A, mean_ov_1B0A = 0, 0
 
-        for choice_i in self.list_choice:
+        for choice_i in ('A', 'B'):
             for j in range(self.ΔB, 3, -4):
                 mean_ov_ij, mean_ov_ji = 0, 0
                 if len(self.result[(1, j, choice_i)][0]) != 0:
@@ -209,7 +252,7 @@ class data_analysis_cells:
         # Initilisation of mean
         mean_cj_0B1A, mean_cj_1B0A = 0, 0
 
-        for choice_i in self.list_choice:
+        for choice_i in ('A', 'B'):
             for j in range(self.ΔB, 3, -4):
                 mean_cjb_ij, mean_cjb_ji = 0, 0
                 if len(self.result[(1, j, choice_i)][2]) != 0:
@@ -251,7 +294,7 @@ class data_analysis_cells:
         # Initilisation of mean
         mean_cv_0B1A, mean_cv_1B0A = 0, 0
 
-        for choice_i in self.list_choice:
+        for choice_i in ('A', 'B'):
             for j in range(self.ΔB, 3, -4):
                 mean_cv_ij, mean_cv_ji = 0, 0
                 if len(self.result[(1, j, choice_i)][4]) != 0:
@@ -314,7 +357,7 @@ class data_analysis_cells:
             nb_4D = 0
             firing_4D = 0
             for i in range(self.ΔA +1):
-                for choice_i in self.list_choice:
+                for choice_i in ('A', 'B'):
                     if len(self.result[(i, j, choice_i)][0]) != 0:
                         for k in range(2000, 3001):
                             firing_4D += self.result[(i, j, choice_i)][0][k]
@@ -325,75 +368,75 @@ class data_analysis_cells:
         print("step 6")
         return self.firing_D
 
-    def average_firing_choice_cj(self):
-        """graph 4H"""
-        nb_4H_A, nb_4H_B = 0, 0
-        firing_4H_A, firing_4H_B =0, 0
-        for j in range(self.ΔB + 1):
-            for i in range(self.ΔA + 1):
-                if len(self.result[(i, j, 'A')][2]) != 0:
-                    for k in range(3000, 4001):
-                        firing_4H_A += self.result[(i, j, 'A')][2][k]
-                        nb_4H_A += 1
-                if len(self.result[(i,j,'B')][2]) != 0:
-                    for k in range(3000, 4001):
-                        firing_4H_B += self.result[(i, j, 'B')][2][k]
-                        nb_4H_B += 1
-                if nb_4H_A != 0:
-                    self.firing_H_A.append(firing_4H_A / nb_4H_A)
-                else:
-                    self.firing_H_A.append(firing_4H_A)
-                if nb_4H_B != 0:
-                    self.firing_H_B.append(firing_4H_B / nb_4H_B)
-                else:
-                    self.firing_H_B.append(firing_4H_B)
-        print("step 7")
-        return [self.firing_H_A, self.firing_H_B]
+    # def average_firing_choice_cj(self):
+    #     """graph 4H"""
+    #     nb_4H_A, nb_4H_B = 0, 0
+    #     firing_4H_A, firing_4H_B =0, 0
+    #     for j in range(self.ΔB + 1):
+    #         for i in range(self.ΔA + 1):
+    #             if len(self.result[(i, j, 'A')][2]) != 0:
+    #                 for k in range(3000, 4001):
+    #                     firing_4H_A += self.result[(i, j, 'A')][2][k]
+    #                     nb_4H_A += 1
+    #             if len(self.result[(i,j,'B')][2]) != 0:
+    #                 for k in range(3000, 4001):
+    #                     firing_4H_B += self.result[(i, j, 'B')][2][k]
+    #                     nb_4H_B += 1
+    #             if nb_4H_A != 0:
+    #                 self.firing_H_A.append(firing_4H_A / nb_4H_A)
+    #             else:
+    #                 self.firing_H_A.append(firing_4H_A)
+    #             if nb_4H_B != 0:
+    #                 self.firing_H_B.append(firing_4H_B / nb_4H_B)
+    #             else:
+    #                 self.firing_H_B.append(firing_4H_B)
+    #     print("step 7")
+    #     return [self.firing_H_A, self.firing_H_B]
 
-    def average_firing_chosen_value(self):
-        """Get firing rate in function of chosen value"""
+    # def average_firing_chosen_value(self):
+    #     """Get firing rate in function of chosen value"""
+    #
+    #     for i in range(self.ΔA + 1):
+    #         for j in range(self.ΔB + 1):
+    #             for l in range(len(self.result_one_trial[(i, j)])):
+    #                 y_a, y_b = 0, 0
+    #                 nb_Y_A, nb_Y_B = 0, 0
+    #                 if len(self.result_one_trial[(i,j)][l][4]) !=0:
+    #                     if self.result_one_trial[(i,j)][l][5] == 'A':
+    #                         self.X_A.append(i * 2)
+    #                         for k in range(2000, 3001):
+    #                             y_a += self.result_one_trial[(i, j)][l][4][k]
+    #                             nb_Y_A += 1
+    #                         self.Y_A.append(y_a / nb_Y_A)
+    #                     else :
+    #                         self.X_B.append(j)
+    #                         for k in range(2000, 3001):
+    #                             y_b += self.result_one_trial[(i, j)][l][4][k]
+    #                             nb_Y_B += 1
+    #                         self.Y_B.append(y_b / nb_Y_B)
+    #     print("step 8", len(self.X_B), len(self.Y_B))
+    #     return [self.X_A, self.Y_A, self.X_B, self.Y_B]
 
-        for i in range(self.ΔA + 1):
-            for j in range(self.ΔB + 1):
-                for l in range(len(self.result_one_trial[(i, j)])):
-                    y_a, y_b = 0, 0
-                    nb_Y_A, nb_Y_B = 0, 0
-                    if len(self.result_one_trial[(i,j)][l][4]) !=0:
-                        if self.result_one_trial[(i,j)][l][5] == 'A':
-                            self.X_A.append(i * 2)
-                            for k in range(2000, 3001):
-                                y_a += self.result_one_trial[(i, j)][l][4][k]
-                                nb_Y_A += 1
-                            self.Y_A.append(y_a / nb_Y_A)
-                        else :
-                            self.X_B.append(j)
-                            for k in range(2000, 3001):
-                                y_b += self.result_one_trial[(i, j)][l][4][k]
-                                nb_Y_B += 1
-                            self.Y_B.append(y_b / nb_Y_B)
-        print("step 8", len(self.X_B), len(self.Y_B))
-        return [self.X_A, self.Y_A, self.X_B, self.Y_B]
-
-    def tuning_curve_ov(self):
-        for i in range(self.ΔA + 1):
-            for j in range(self.ΔB + 1):
-                if (i,j) != (0, 0):
-                    if self.choice_A[(i, j)] > self.choice_B[(i, j)]:
-                        c = 'A'
-                    else:
-                        c = 'B'
-                    mean_tuning_ov = 0
-                    nb_tun_ov = 0
-                    for l in range(len(self.result_one_trial[(i, j)])):
-                        if len(self.result_one_trial[(i,j)][l][0]) != 0 and self.result_one_trial[(i,j)][l][5] == c:
-                            for k in range(2000, 3001):
-                                mean_tuning_ov += self.result_one_trial[(i, j)][l][0][k]
-                                nb_tun_ov +=1
-                            if nb_tun_ov == 0:
-                                nb_tun_ov = 1
-                            self.tuning_ov.append((i, j, mean_tuning_ov / nb_tun_ov, c))
-        print("step 9")
-        return self.tuning_ov
+    # def tuning_curve_ov(self):
+    #     for i in range(self.ΔA + 1):
+    #         for j in range(self.ΔB + 1):
+    #             if (i,j) != (0, 0):
+    #                 if self.choice_A[(i, j)] > self.choice_B[(i, j)]:
+    #                     c = 'A'
+    #                 else:
+    #                     c = 'B'
+    #                 mean_tuning_ov = 0
+    #                 nb_tun_ov = 0
+    #                 for l in range(len(self.result_one_trial[(i, j)])):
+    #                     if len(self.result_one_trial[(i,j)][l][0]) != 0 and self.result_one_trial[(i,j)][l][5] == c:
+    #                         for k in range(2000, 3001):
+    #                             mean_tuning_ov += self.result_one_trial[(i, j)][l][0][k]
+    #                             nb_tun_ov +=1
+    #                         if nb_tun_ov == 0:
+    #                             nb_tun_ov = 1
+    #                         self.tuning_ov.append((i, j, mean_tuning_ov / nb_tun_ov, c))
+    #     print("step 9")
+    #     return self.tuning_ov
 
     def tuning_curve_cjb(self):
 
@@ -476,6 +519,3 @@ class data_analysis_cells:
                         self.firing_cjb.append(rib / nb_ri)
         print("step 12")
         return self.offer_A, self.firing_cja, self.firing_cjb
-
-#
-

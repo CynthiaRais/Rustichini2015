@@ -2,7 +2,9 @@ import numpy as np
 
 class Offers:
 
-    def __init__(self, ΔA=20, ΔB=20, n=4000):
+    def __init__(self, ΔA=20, ΔB=20, n=4000, random_seed=1):
+        self.random = np.random.RandomState(seed=random_seed)
+
         self.n = n
         self.ΔA, self.ΔB = ΔA, ΔB
 
@@ -10,8 +12,8 @@ class Offers:
         self.offers = []
         while len(self.offers) < self.n:
             self.offers += self.generate_block()
+        self.random.shuffle(self.offers)
         self.offers = self.offers[:self.n]
-        np.random.shuffle(self.offers)
 
         self.range_A = min(x_A for x_A, x_B in self.offers), max(x_A for x_A, x_B in self.offers)
         self.range_B = min(x_B for x_A, x_B in self.offers), max(x_B for x_A, x_B in self.offers)

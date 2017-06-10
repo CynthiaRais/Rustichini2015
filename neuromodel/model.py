@@ -39,20 +39,20 @@ class Model:
                         c_I = 615,
 
                         # Parameters used to model OV cells
-                        r_o     = 0,                    # spike/s (0 or 6)
-                        Δ_r     = 8,                    # spike/s
-                        t_offer = 1.0,                  # s
+                        r_o     = 0,                   # spike/s (0 or 6)
+                        Δ_r     = 8,                   # spike/s
+                        t_offer = 1.0,                 # s
                         a       = 0.175,
                         b       = 0.030,
                         c       = 0.400,
                         d       = 0.100,
 
                         # Parameters of the experience
-                        t_exp = 2.0,                    # s
-                        dt = 0.0005,                    # s
-                        n  = 4000,                      # number of trials
-                        ΔA = 20,
-                        ΔB = 20,
+                        t_exp = 2.0,                   # s
+                        dt    = 0.0005,                # s
+                        n     = 4000,                  # number of trials
+                        ΔA    = 20,                    # maximum quantity of juice A
+                        ΔB    = 20,                    # maximum quantity of juice B
 
                         # Hebbian learning and synaptic imbalance
                         δ_J_hl   = (1, 1),
@@ -65,10 +65,11 @@ class Model:
                         range_A = None,
                         range_B = None,
 
-                        random_seed = 0,
-                        verbose     = False):
+                        random_seed  = 0,
+                        history_keys = ('r_1', 'r_2', 'r_3', 'r_I', 'r_ova', 'r_ovb'),
+                        verbose      = False):
 
-        np.random.seed(random_seed) # FIXME: per model Random instance
+        self.random = np.random.RandomState(seed=random_seed)
 
         self.a = t_offer + a
         self.c = t_offer + c
@@ -85,7 +86,7 @@ class Model:
         # Determination of g maximum for OV cells firing rate
         self.g_max = max(self.g_t(t) for t in np.arange(self.dt, self.t_exp + self.dt, self.dt))
 
-        self.history = history.History(self)
+        self.history = history.History(self, keys=history_keys)
 
         if self.verbose:
             print("Finished model initialization.")
@@ -173,7 +174,7 @@ class Model:
 
     def eta(self):
         """Ornstein-Uhlenbeck process (here just Gaussian random noise)"""
-        return np.random.normal(0, 1)
+        return self.random.normal(0, 1)
 
     def white_noise(self, j):  # 18
         """Compute the update to I_eta, the noise term (eq. 18)"""

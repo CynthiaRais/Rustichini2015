@@ -1,6 +1,7 @@
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 from matplotlib import cm
+import matplotlib.ticker as ticker
 from matplotlib.ticker import IndexLocator, FormatStrFormatter
 from matplotlib.markers import MarkerStyle
 
@@ -26,7 +27,7 @@ def tuningcurve(XYZC, show=True, x_label=None, y_label=None, z_label=None, title
             YB.append(y)
             ZB.append(z)
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=(6, 6))
     ax = fig.gca(projection='3d')
     fig.gca().invert_xaxis()
 
@@ -46,6 +47,12 @@ def tuningcurve(XYZC, show=True, x_label=None, y_label=None, z_label=None, title
 
     for item in (ax.get_xticklabels(), ax.get_yticklabels(), ax.get_zticklabels()):
         plt.setp(item, fontsize=7)
+
+    # Ticks
+    ticks = [0, 10, 20]
+    for axis in [ax.xaxis, ax.yaxis]:
+        axis.set_major_locator(ticker.FixedLocator(ticks))
+        axis.set_major_formatter(ticker.FixedFormatter(['{:d}'.format(tick) for tick in ticks]))
 
     # Labels
     if x_label is not None:

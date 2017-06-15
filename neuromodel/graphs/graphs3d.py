@@ -7,7 +7,7 @@ from matplotlib.markers import MarkerStyle
 
 import numpy as np
 
-def tuningcurve(XYZC, show=True, x_label=None, y_label=None, z_label=None, title=''):
+def tuningcurve(XYZC, show=True, x_label=None, y_label=None, z_label=None, title='', z_ticks=None):
     """
     Tuning curve plotting code for Fig. 4.[B, F, J], Fig. 6.[B, F, J], Fig. 10.[C, I].
 
@@ -29,11 +29,14 @@ def tuningcurve(XYZC, show=True, x_label=None, y_label=None, z_label=None, title
 
     fig = plt.figure(figsize=(6, 6))
     ax = fig.gca(projection='3d')
-    fig.gca().invert_xaxis()
+    ax.set_xlim([0, 20])
+    ax.set_ylim([0, 20])
+    ax.set_autoscaley_on(False)
+    ax.invert_xaxis()
 
-    # Plot the markers.
-    surf = ax.scatter(XA, YA, ZA, marker='D', edgecolor='red',  facecolor=(0,0,0,0), s=50)
-    surf = ax.scatter(XB, YB, ZB, marker='o', edgecolor='blue', facecolor=(0,0,0,0), s=70)
+    ax.grid(linestyle='dashed')
+    ax.grid(which='major', alpha=0.1)
+    ax.view_init(elev=5, azim=-35)
 
     # Customize the z axis.
     # ax.set_zlim(-1.01, 1.01)
@@ -49,10 +52,13 @@ def tuningcurve(XYZC, show=True, x_label=None, y_label=None, z_label=None, title
         plt.setp(item, fontsize=7)
 
     # Ticks
-    ticks = [0, 10, 20]
+    xy_ticks = [0, 10, 20]
     for axis in [ax.xaxis, ax.yaxis]:
-        axis.set_major_locator(ticker.FixedLocator(ticks))
-        axis.set_major_formatter(ticker.FixedFormatter(['{:d}'.format(tick) for tick in ticks]))
+        axis.set_major_locator(ticker.FixedLocator(xy_ticks))
+        axis.set_major_formatter(ticker.FixedFormatter(['{:d}'.format(tick) for tick in xy_ticks]))
+
+    if z_ticks is not None:
+        ax.zaxis.set_major_locator(ticker.FixedLocator(z_ticks))
 
     # Labels
     if x_label is not None:
@@ -63,5 +69,10 @@ def tuningcurve(XYZC, show=True, x_label=None, y_label=None, z_label=None, title
         ax.set_zlabel(z_label)
 
     plt.title(title)
+
+    # Plot the markers.
+    surf = ax.scatter(XA, YA, ZA, marker='D', edgecolor='red',  facecolor=(0,0,0,0), s=50)
+    surf = ax.scatter(XB, YB, ZB, marker='o', edgecolor='blue', facecolor=(0,0,0,0), s=70)
+
     plt.savefig('tuningcurve.pdf')
     plt.show()

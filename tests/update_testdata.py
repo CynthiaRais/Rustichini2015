@@ -6,17 +6,17 @@ altered.
 """
 
 import dotdot
-from code import Model, settings
+from neuromodel import Model
 
 def generate_testdata(seed=0):
     """Return the history of a run"""
-    model = Model(x_min_list=[0, 0], x_max_list=[20, 20], random_seed=seed)
-    model.one_trial(1, 10)
-
+    model = Model(range_A=[0, 20], range_B=[0, 20], random_seed=seed)
+    
     results = []
     for x_a, x_b in [(1, 1), (4, 4), (3, 6), (1, 10)]:
-        data = model.one_trial(x_a, x_b)
-        sparse_data = [e[::100] for e in data]
+        model.one_trial(x_a, x_b)
+        data = model.trial_history.export(keys=['r_ovb', 'r_1', 'r_3', 'r_I'])
+        sparse_data = {k: v[::100] for k, v in data.items()}
         results.append(sparse_data)
 
     return results

@@ -67,6 +67,7 @@ class Model:
 
                         random_seed  = 0,
                         history_keys = ('r_1', 'r_2', 'r_3', 'r_I', 'r_ova', 'r_ovb'),
+                        full_log     = False, # does trial history log everything?
                         verbose      = False):
 
         self.random = np.random.RandomState(seed=random_seed)
@@ -223,7 +224,7 @@ class Model:
         self.S_gaba = 0
         self.choice = None
 
-        self.trial_history = history.TrialHistory(self, x_a, x_b)
+        self.trial_history = history.TrialHistory(self, x_a, x_b, full_log=self.full_log)
 
         for t in np.arange(self.dt, self.t_exp + self.dt, self.dt):
             self.one_step(t, x_a, x_b)

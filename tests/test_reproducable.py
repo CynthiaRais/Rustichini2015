@@ -8,7 +8,7 @@ import unittest
 import pickle
 
 import dotdot
-from code import Model, settings
+from neuromodel import Model
 from update_testdata import generate_testdata
 
 class ReproducibleTests(unittest.TestCase):

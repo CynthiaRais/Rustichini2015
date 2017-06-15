@@ -10,8 +10,10 @@ import numpy as np
 import scipy.io
 
 import dotdot
-from code import Model
+from neuromodel import Model
 
+
+VERBOSE=False
 
 def access_data(datamat, key):
     return list(datamat['history'][key][0][0][0])
@@ -19,29 +21,28 @@ def access_data(datamat, key):
 class ReplicableTests(unittest.TestCase):
     """Test replicability"""
 
-    def test_replicable(self):
+    def test_replicable(self, verbose=VERBOSE):
         """Test that the matlab code remains """
-        K = 10
+        K = 100
 
         datamat_ref = scipy.io.loadmat('testdata_ref.mat')
         datamat     = scipy.io.loadmat('testdata.mat')
-        model = Model(x_min_list=[0, 0], x_max_list=[15, 15], random_seed=0, t_exp=120*0.0005, σ_eta=0)
+        model = Model(range_A=[0, 15], range_B=[0, 15], random_seed=0, t_exp=(100+K)*0.0005, σ_eta=0,
+                      full_log=True)
         model.one_trial(1, 10)
 
-        for key_mat, key_py in [('sampa1', 'S_ampa_1'), ('nu1', 'r_1'), ('Iamparec1', 'I_ampa_rec_1'),
-                                ('phi1', 'phi_1'), ('Isyn1' , 'Isyn_1'), ('Istim1', 'I_stim_1')]:
-            print('{} [{}]'.format(key_py, key_mat))
-            print('matlab: {}'.format(', '.join('{: 8.4f}'.format(e) for e in access_data(datamat, key_mat)[:K])))
-            print('python: {}'.format(', '.join('{: 8.4f}'.format(e) for e in getattr(model.trial_history, key_py)[:K])))
+        if verbose:
+            for key_mat, key_py in [('sampa1', 'S_ampa_1'), ('nu1', 'r_1'), ('Iamparec1', 'I_ampa_rec_1'),
+                                    ('phi1', 'phi_1'), ('Isyn1' , 'Isyn_1'), ('Istim1', 'I_stim_1')]:
+                print('{} [{}]'.format(key_py, key_mat))
+                print('matlab: {}'.format(', '.join('{: 8.4f}'.format(e) for e in access_data(datamat, key_mat)[:K])))
+                print('python: {}'.format(', '.join('{: 8.4f}'.format(e) for e in getattr(model.trial_history, key_py)[:K])))
 
-        for k in range(K):
-            self.assertEqual(access_data(datamat, 'sampa1')[k], model.trial_history.S_ampa_1[k])
-            self.assertEqual(access_data(datamat, 'nu1')[k], model.trial_history.r_1[k])
 
-#        self.assertEqual(access_data(datamat, 'nu1'), access_data(datamat_ref, 'nu1'))
+        np.allclose(access_data(datamat, 'sampa1')[:K], model.trial_history.S_ampa_1[:K])
+        np.allclose(access_data(datamat, 'nu1')[:K], model.trial_history.r_1[:K])
+        np.allclose(access_data(datamat, 'nuI')[:K], model.trial_history.r_I[:K])
 
 
 if __name__ == '__main__':
-    # import scipy.io
-    # print(scipy.io.loadmat('testdata.mat'))
     unittest.main()

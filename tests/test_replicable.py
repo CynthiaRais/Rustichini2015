@@ -39,9 +39,9 @@ class ReplicableTests(unittest.TestCase):
                 print('python: {}'.format(', '.join('{: 8.4f}'.format(e) for e in getattr(model.trial_history, key_py)[:K])))
 
 
-        np.allclose(access_data(datamat, 'sampa1')[:K], model.trial_history.S_ampa_1[:K])
-        np.allclose(access_data(datamat, 'nu1')[:K], model.trial_history.r_1[:K])
-        np.allclose(access_data(datamat, 'nuI')[:K], model.trial_history.r_I[:K])
+        np.testing.assert_almost_equal(access_data(datamat, 'sampa1')[:K], model.trial_history.S_ampa_1[:K])
+        np.testing.assert_almost_equal(access_data(datamat, 'nu1')[:K], model.trial_history.r_1[:K])
+        np.testing.assert_almost_equal(access_data(datamat, 'nuI')[:K], model.trial_history.r_I[:K])
 
     def test_replication(self):
         for (x_a,x_b) in [(1,0), (1,10), (4,1), (5,10)]:

@@ -18,7 +18,7 @@ class ReproducibleTests(unittest.TestCase):
         """Test that data generated with previous version of the code match the current one"""
 
         testdata = generate_testdata()
-        with open('testdata.pickle', 'rb') as f:
+        with open('data/testdata.pickle', 'rb') as f:
             refdata = pickle.load(f)
 
         self.assertEqual(testdata, refdata)

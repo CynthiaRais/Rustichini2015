@@ -37,7 +37,13 @@ class ReplicableTests(unittest.TestCase):
         K = 6000
 
         datamat     = scipy.io.loadmat('data/testdata{}A{}B.mat'.format(x_a, x_b))
-        model = Model(range_A=[0, 20], range_B=[0, 20], random_seed=1, t_exp=(100+K)*0.0005, # σ_eta=0,
+        seed_mat = access_data(datamat, 'seed')[0]
+        assert seed_mat != 0, "Seed 0 is not supported, due to implementation differences between Numpy as Matlab."
+        slicesize   = access_data(datamat, 'slice')[0]
+        Kslice = K // slicesize
+
+
+        model = Model(range_A=[0, 20], range_B=[0, 20], random_seed=seed_mat, t_exp=(100+K)*0.0005, # σ_eta=0,
                       full_log=True)
         model.one_trial(x_a, x_b)
 
@@ -56,24 +62,24 @@ class ReplicableTests(unittest.TestCase):
         if verbose:
             no_mismatch = []
             for key in key_compare:
-                k = first_mismatch(access_data(datamat, key)[:K], getattr(model.trial_history, key)[:K], rtol=rtol, atol=atol)
+                data_py  = getattr(model.trial_history, key)[:K:slicesize]
+                data_mat = access_data(datamat, key)[:Kslice]
+                k = first_mismatch(data_py, data_mat, rtol=rtol, atol=atol)
                 if k is None:
                     no_mismatch.append(key)
                 else:
                     k_prev = max(0, k - 3)
                     print('{}: t={}-{} (first mismatch t={})'.format(key, k_prev, k_prev+10, k))
-                    print('matlab: {}'.format(', '.join('{: 14.10f}'.format(e) for e in access_data(datamat, key)[k_prev:k_prev+10])))
-                    print('python: {}'.format(', '.join('{: 14.10f}'.format(e) for e in getattr(model.trial_history, key)[k_prev:k_prev+10])))
+                    print('matlab: {}'.format(', '.join('{: 14.10f}'.format(e) for e in data_mat[k_prev:k_prev+10])))
+                    print('python: {}'.format(', '.join('{: 14.10f}'.format(e) for e in  data_py[k_prev:k_prev+10])))
             print('No mismatch for: {}'.format(', '.join(no_mismatch)))
 
         for key in key_compare:
-            if not np.allclose(access_data(datamat, key)[:K],
-                               getattr(model.trial_history, key)[:K],
-                               rtol=rtol, atol=atol):
+            data_py  = getattr(model.trial_history, key)[:K:slicesize]
+            data_mat = access_data(datamat, key)[:Kslice]
+            if not np.allclose(data_mat, data_py, rtol=rtol, atol=atol):
                 print(key)
-                np.testing.assert_allclose(access_data(datamat, key)[:K],
-                                           getattr(model.trial_history, key)[:K],
-                                           rtol=rtol, atol=atol)
+                np.testing.assert_allclose(data_mat, data_py, rtol=rtol, atol=atol)
 
 
     def test_replication(self):
@@ -85,7 +91,8 @@ class ReplicableTests(unittest.TestCase):
         print('done!')
 
 
-    def test_specific_offers(self, offers=[(0, 1)]):
+    def test_specific_offers(self, offers=[(1, 10)]):
+        """Test specific offers"""
         for x_a, x_b in offers:
                 if x_a != 0 or x_b != 0:
                     print('checking {}A{}B ...'.format(x_a, x_b))

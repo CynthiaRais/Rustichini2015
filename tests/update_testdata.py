@@ -11,7 +11,7 @@ from neuromodel import Model
 def generate_testdata(seed=0):
     """Return the history of a run"""
     model = Model(range_A=[0, 20], range_B=[0, 20], random_seed=seed)
-    
+
     results = []
     for x_a, x_b in [(1, 1), (4, 4), (3, 6), (1, 10)]:
         model.one_trial(x_a, x_b)
@@ -26,5 +26,5 @@ if __name__ == '__main__':
     import pickle
 
     testdata = generate_testdata(0)
-    with open('testdata.pickle', 'wb') as f:
+    with open('data/testdata.pickle', 'wb') as f:
         pickle.dump(testdata, f)

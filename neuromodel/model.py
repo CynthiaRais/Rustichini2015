@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.stats import norm
 
 from . import history
 from .utils import autoinit
@@ -175,7 +176,8 @@ class Model:
 
     def eta(self):
         """Ornstein-Uhlenbeck process (here just Gaussian random noise)"""
-        return self.random.normal(0, 1)
+        return norm.ppf(self.random.rand()) # compatible with Matlab noise
+        # return self.random.normal(0, 1)
 
     def white_noise(self, j):  # 18
         """Compute the update to I_eta, the noise term (eq. 18)"""
@@ -248,10 +250,6 @@ class Model:
         # assert r_ova <= 8, 'r_ova = {}'.format(r_ova)
         # assert r_ovb <= 8, 'r_ovb = {}'.format(r_ovb)
 
-        # generating noise
-        for j in ['1', '2', '3', 'I']:
-            self.I_eta[j] += self.white_noise(j)  # equation 18
-
         # computing ampa currents
         for i in ['1', '2', '3']:
             I_ampa_ext[i] = self.I_ampa_ext(i)  # equation 8
@@ -296,5 +294,10 @@ class Model:
         for i in ['1', '2', '3']:
             self.r[i] += self.firing_rate_pyr(i, phi[i])  # equation 1
         self.r['I'] += self.firing_rate_I(phi['I'])  # equation 2
+
+        # generating noise
+        for j in ['1', '2', '3', 'I']:
+            self.I_eta[j] += self.white_noise(j)  # equation 18
+
 
         self.trial_history.update(self, I_ampa_ext, I_ampa_rec, I_nmda_rec, I_gaba_rec, I_stim, I_syn, phi)

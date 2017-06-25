@@ -16,7 +16,7 @@ class TrialHistory:
                          'I_eta_1', 'I_eta_2', 'I_eta_3', 'I_eta_I',
                          'I_ampa_rec_1', 'I_ampa_rec_2', 'I_ampa_rec_3', 'I_ampa_rec_I',
                          'phi_1', 'phi_2', 'phi_3', 'phi_I',
-                         'Isyn_1', 'Isyn_2', 'Isyn_3', 'Isyn_I',
+                         'I_syn_1', 'I_syn_2', 'I_syn_3', 'I_syn_I',
                          'I_stim_1', 'I_stim_2'
                         ])
 
@@ -25,6 +25,8 @@ class TrialHistory:
             self.data['r_{}'.format(i)].append(model.r[i])
 
         if self.full_log:
+            for i in ['1', '2', '3', 'I']:
+                self.data['I_eta_{}'.format(i)].append(0.0)
             for i in ['1', '2', '3']:
                 self.data['S_ampa_{}'.format(i)].append(model.S_ampa[i])
                 self.data['S_nmda_{}'.format(i)].append(model.S_nmda[i])
@@ -51,7 +53,7 @@ class TrialHistory:
             for i in ['1', '2', '3', 'I']:
                 self.data['I_eta_{}'.format(i)].append(model.I_eta[i])
                 self.data['I_ampa_rec_{}'.format(i)].append(I_ampa_rec[i])
-                self.data['Isyn_{}'.format(i)].append(I_syn[i])
+                self.data['I_syn_{}'.format(i)].append(I_syn[i])
                 self.data['phi_{}'.format(i)].append(phi[i])
 
             for i in ['1', '2']:

@@ -1,7 +1,7 @@
 import numpy.polynomial.polynomial as poly
 import numpy as np
 import scipy.signal
-
+import scipy.optimize
 
 class DataAnalysis:
 
@@ -170,7 +170,6 @@ s
                 percents[(x_A, x_B)] = n_A/max(1, n_A + n_B)
             else:
                 percents[(x_A, x_B)] = n_B/max(1, n_A + n_B)
-
         return percents
 
 
@@ -188,3 +187,54 @@ s
                 mean_firing_B[(x_A, x_B)] = np.mean(self.means_choice[(x_A, x_B, 'B')][key][step_range[0]:step_range[1]])
 
         return mean_firing_A, mean_firing_B
+
+
+    def approx_polynome(self, x, a_0, a_1, a_2, a_3, a_4, a_5):
+        ''' Approximation of the polynome for the regression'''
+        x_a, x_b = x
+        X = a_0 + a_1 * x_a + a_2 * x_b + a_3 * x_a * x_a + a_4 * x_b * x_b + a_5 * x_a * x_b
+        return 1 / (1 + np.exp(-X))
+
+    def data_regression(self, dim='3D'):
+        X_A, X_B, choice_B = [], [], []
+        for (x_a, x_b), (n_a, n_b) in sorted(self.choices.items()):
+            if x_a != 0 or x_b != 0:
+                X_A.append(x_a)
+                X_B.append(x_b)
+                choice_B.append(n_b / (n_a + n_b))
+        a_opt, a_cov = scipy.optimize.curve_fit(self.approx_polynome, [X_A, X_B], choice_B, bounds=((-20,) * 6, (20,) * 6))
+
+        # computing the regressed model over all possible quantities by 0.5 increments.
+        X_A_reg = np.arange(0, 20.5, 0.5)
+        X_B_reg = np.arange(0, 20.5, 0.5)
+        X_A_reg, X_B_reg = np.meshgrid(X_A_reg, X_B_reg)
+        choice_B_reg = 100 * self.approx_polynome((X_A_reg, X_B_reg), *a_opt)
+
+        if dim == '3D':
+            return X_A, X_B, 100*np.array(choice_B), X_A_reg, X_B_reg, choice_B_reg
+        elif dim == '2D':
+            return 100*self.approx_polynome((X_B_reg, X_A_reg), *a_opt)
+        else:
+            return ValueError
+
+    def easy_split(self, key):
+        """Return the mean of a variable, according to the previous choice made.
+
+                :param key:          name of the variable to consider (e.g. 'r_2', 'r_I')
+                :param time_window:  time window in seconds from which to compute the mean (e.g. (0, 0.5)).
+                                     Times are relative to the offer time.
+        s
+                Used in Figure 8B
+                """
+
+        chosen_means_previous = {'A': [], 'B': []}  # A chosen, B chosen
+        step_range = self.step_range((-0.5, 1.0))
+        for (x_A, x_B, choice), means in self.means_choice.items():
+            if len(means) > 0:
+                if choice == 'A':
+                    if len(self.means_choice[(x_A, x_B, 'B')]) > 0:
+                        chosen_means_previous['B'].append(means[key][step_range[0]:step_range[1]])
+                    else:
+                        chosen_means_previous['A'].append(means[key][step_range[0]:step_range[1]])
+        return (self.mean_window(np.mean(chosen_means_previous['A'], axis=0)),
+                self.mean_window(np.mean(chosen_means_previous['B'], axis=0)))

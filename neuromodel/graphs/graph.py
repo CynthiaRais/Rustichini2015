@@ -7,6 +7,9 @@ from bokeh.models import FixedTicker, FuncTickFormatter
 from . import utils_bokeh
 from . import graphs3d
 
+import matplotlib.pyplot as plt
+import scipy.linalg
+from mpl_toolkits.mplot3d import Axes3D
 
 A_color = '#c5392b'
 B_color = '#2e3abf'
@@ -148,8 +151,16 @@ class Graph:
 
         bpl.show(figure_4H)
 
+    def regression_2D(self, data_5B, title='Figure 5B'):
+        N = 500
+        x = np.linspace(0, 20, N)
+        y = np.linspace(0, 20, N)
+        xx, yy = np.meshgrid(x, y)
+        p = bpl.figure(x_range=(0, 20), y_range=(0, 20))
+        p.image(image=[data_5B], x=0, y=0, dw=20, dh=20, palette="Spectral11")
+        bpl.show(p)
 
-    # def logistic_regression(self, X):
+        # def logistic_regression(self, X):
     #     graphs3d.tuningcurve(X,)
     #
     # def cja_cjb(self):

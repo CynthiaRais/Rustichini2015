@@ -86,7 +86,8 @@ def tuningcurve(XYZC, show=True, **kwargs):
         plt.show()
 
 
-def regression(X, Y, Z, X_reg, Y_reg, Z_reg, show=True, **kwargs):
+def regression(data, show=True, **kwargs):
+    X , Y, Z, X_reg, Y_reg, Z_reg = data
     fig, ax = _prepare_plot(**kwargs)
     ax.view_init(azim=-35, elev=31)
     ax.set_zlim(0.0, 100.0)

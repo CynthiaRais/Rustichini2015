@@ -176,8 +176,8 @@ class Model:
 
     def eta(self):
         """Ornstein-Uhlenbeck process (here just Gaussian random noise)"""
-        return norm.ppf(self.random.rand()) # compatible with Matlab noise
-        # return self.random.normal(0, 1)
+        #return norm.ppf(self.random.rand()) # compatible with Matlab noise, much slower.
+        return self.random.normal(0, 1)
 
     def white_noise(self, j):  # 18
         """Compute the update to I_eta, the noise term (eq. 18)"""
@@ -237,7 +237,6 @@ class Model:
 
         self.trial_history.choice = self.choice
         self.history.add_trial(self.trial_history)
-
 
     def one_step(self, t, x_a, x_b):
         """Compute one time-step"""

@@ -81,9 +81,12 @@ class History:
     def reset(self):
         self.trials = {(x_A, x_B): [] for x_A in range(self.model.ΔA + 1)
                                       for x_B in range(self.model.ΔB + 1)}
+        self.trials.pop((0, 0)) # not running this case.
         self.trials_choice = {(x_A, x_B, choice): [] for x_A in range(self.model.ΔA + 1)
                                                      for x_B in range(self.model.ΔB + 1)
                                                      for choice in ['A', 'B']}
+        self.trials_choice.pop((0, 0, 'A'))
+        self.trials_choice.pop((0, 0, 'B'))
 
     def add_trial(self, trial_history):
         key = (trial_history.x_a, trial_history.x_b)

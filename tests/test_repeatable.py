@@ -8,7 +8,7 @@ import numpy as np
 import array
 
 import dotdot
-from neuromodel import Model
+from neuromodel import Model, MatlabModel
 
 
 class RepeatableTests(unittest.TestCase):
@@ -17,12 +17,13 @@ class RepeatableTests(unittest.TestCase):
     def test_repeatable(self):
         """Test that two 50-steps runs yield the same history"""
 
-        def run(seed):
+        def run(seed, ModelClass=Model):
             """Return the history of a run"""
-            model = Model(range_A=[0, 20], range_B=[0, 20], random_seed=seed)
+            model = ModelClass(range_A=[0, 20], range_B=[0, 20], random_seed=seed)
             return model.one_trial(1, 10)
 
-        self.assertEqual(run(0), run(0))
+        self.assertEqual(run(0, ModelClass=Model), run(0, ModelClass=Model))
+        self.assertEqual(run(0, ModelClass=MatlabModel), run(0, ModelClass=MatlabModel))
 
 
 if __name__ == '__main__':

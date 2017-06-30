@@ -1,5 +1,4 @@
 import numpy as np
-from scipy.stats import norm
 
 from . import history
 from .utils import autoinit
@@ -96,11 +95,11 @@ class Model:
 
     def firing_rate_pyr(self, i, phi_i): #1
         """Compute the update of the firing rate of pyramidale cells (eq. 1)"""
-        return ((- self.r[i] + phi_i) / self.τ_ampa) * self.dt
+        return self.dt * ((- self.r[i] + phi_i) / self.τ_ampa)
 
     def firing_rate_I(self, phi_I):  # 2
         """Compute the update of  the firing rate of interneurons (eq. 2)"""
-        return ((-self.r['I'] + phi_I) / self.τ_ampa) * self.dt
+        return self.dt * ((-self.r['I'] + phi_I) / self.τ_ampa)
 
 
     def channel_ampa(self, i):  # 3
@@ -176,13 +175,12 @@ class Model:
 
     def eta(self):
         """Ornstein-Uhlenbeck process (here just Gaussian random noise)"""
-        #return norm.ppf(self.random.rand()) # compatible with Matlab noise, much slower.
         return self.random.normal(0, 1)
 
     def white_noise(self, j):  # 18
         """Compute the update to I_eta, the noise term (eq. 18)"""
-        return (-self.I_eta[j] * (self.dt / self.τ_ampa) +
-                self.eta() * np.sqrt(self.dt/self.τ_ampa) * self.σ_eta)
+        return self.dt * (-self.I_eta[j]
+                          + self.eta() * np.sqrt(self.τ_ampa * self.σ_eta**2) / self.τ_ampa)
 
 
     def I_stim(self, i):  # 19
@@ -194,10 +192,13 @@ class Model:
         """Computes g_t (eq. 23)"""
         return (1 / (1 + np.exp(- (t - self.a) / self.b))) * (1 / (1 + np.exp((t - self.c) / self.d)))
 
+    def range_adaptation(self, x, x_min, x_max):  # 20
+        """Compute the range adaptation of a juice quantity (eq. 20)"""
+        return (x - x_min) / (x_max - x_min)
+
     def firing_ov_cells(self, x, x_min, x_max, t):  # 20, 21, 22, 23
         """Computing the activity profile of OV cells (eq. 20, 21, 22, 23)"""
-        x_i = x / x_max # MATLAB code
-        # x_i = (x - xmin) / (x_max - xmin) # ARTICLE (eq. 20)
+        x_i = self.range_adaptation(x, x_min, x_max)
         assert(0 <= x_i <= 1)
         g_t = self.g_t(t)
 

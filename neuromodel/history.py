@@ -51,7 +51,7 @@ class TrialHistory:
 
         if self.full_log:
             for i in ['1', '2', '3', 'I']:
-                self.data['I_eta_{}'.format(i)].append(model.I_eta[i])
+                self.data['I_eta_{}'.format(i)].append(model.I_η[i])
                 self.data['I_ampa_rec_{}'.format(i)].append(I_ampa_rec[i])
                 self.data['I_syn_{}'.format(i)].append(I_syn[i])
                 self.data['phi_{}'.format(i)].append(phi[i])

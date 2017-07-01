@@ -10,7 +10,7 @@ import numpy as np
 import scipy.io
 
 import dotdot
-from neuromodel import Model
+from neuromodel import MatlabModelReplicable
 
 
 VERBOSE  = False  # useful output when mismatch are detected.
@@ -38,13 +38,13 @@ class ReplicableTests(unittest.TestCase):
 
         datamat     = scipy.io.loadmat('data/testdata{}A{}B.mat'.format(x_a, x_b))
         seed_mat = access_data(datamat, 'seed')[0]
-        assert seed_mat != 0, "Seed 0 is not supported, due to implementation differences between Numpy as Matlab."
+        assert seed_mat != 0, "Seed 0 is not supported, due to implementation differences between Numpy and Matlab."
         slicesize   = access_data(datamat, 'slice')[0]
-        Kslice = K // slicesize
+        Kslice = K // slicesize 
 
 
-        model = Model(range_A=[0, 20], range_B=[0, 20], random_seed=seed_mat, t_exp=(100+K)*0.0005, # σ_eta=0,
-                      full_log=True)
+        model = MatlabModelReplicable(range_A=[0, 20], range_B=[0, 20], random_seed=seed_mat,
+                                      t_exp=(100+K)*0.0005, full_log=True)
         model.one_trial(x_a, x_b)
 
         key_compare =  ['r_ovb', 'r_2', 'r_3', 'r_I']
@@ -98,9 +98,6 @@ class ReplicableTests(unittest.TestCase):
                     print('checking {}A{}B ...'.format(x_a, x_b))
                     self.aux_test_replicable(x_a=x_a, x_b=x_b)
         print('done!')
-
-    #    for (x_a,x_b) in [(1, 0), (5, 10), (4, 1), (1, 10)]:
-    #        self.aux_test_replicable(x_a = x_a, x_b = x_b)
 
 
 if __name__ == '__main__':

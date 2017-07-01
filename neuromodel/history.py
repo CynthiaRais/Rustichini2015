@@ -51,7 +51,7 @@ class TrialHistory:
 
         if self.full_log:
             for i in ['1', '2', '3', 'I']:
-                self.data['I_eta_{}'.format(i)].append(model.I_eta[i])
+                self.data['I_eta_{}'.format(i)].append(model.I_η[i])
                 self.data['I_ampa_rec_{}'.format(i)].append(I_ampa_rec[i])
                 self.data['I_syn_{}'.format(i)].append(I_syn[i])
                 self.data['phi_{}'.format(i)].append(phi[i])
@@ -81,9 +81,12 @@ class History:
     def reset(self):
         self.trials = {(x_A, x_B): [] for x_A in range(self.model.ΔA + 1)
                                       for x_B in range(self.model.ΔB + 1)}
+        self.trials.pop((0, 0)) # not running this case.
         self.trials_choice = {(x_A, x_B, choice): [] for x_A in range(self.model.ΔA + 1)
                                                      for x_B in range(self.model.ΔB + 1)
                                                      for choice in ['A', 'B']}
+        self.trials_choice.pop((0, 0, 'A'))
+        self.trials_choice.pop((0, 0, 'B'))
 
     def add_trial(self, trial_history):
         key = (trial_history.x_a, trial_history.x_b)

@@ -11,7 +11,7 @@ class AnalysisTest(unittest.TestCase):
     def test_means(self):
         """Test of the mean firing rate of ovb cells for Figure 4 graphs."""
         model = Model(ΔA=15, ΔB=15, range_A=[0, 15], range_B=[0, 15],
-                      random_seed=0, t_exp=120*0.0005, σ_eta=0)
+                      random_seed=0, t_exp=120*0.0005, σ_η=0)
         model.history.trials[(1, 1)].append({'r_ova': [0, 1, 2, 3],
                                                   'r_ovb': [5, 6, 7, 8]})
         model.history.trials[(1, 1)].append({'r_ova': [3, 2, 1, 0],

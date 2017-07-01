@@ -1,5 +1,4 @@
 import numpy as np
-from scipy.stats import norm
 
 from . import history
 from .utils import autoinit
@@ -29,7 +28,7 @@ class Model:
                         J_gaba_rec_in  = 0.0180,
                         ΔJ             = 30,
                         γ              = 0.641,
-                        σ_eta          = 0.020,
+                        σ_η            = 0.020,
 
                         # Parameters of input-output function for integrate-and-fire neurons
                         I_E = 125,
@@ -96,11 +95,11 @@ class Model:
 
     def firing_rate_pyr(self, i, phi_i): #1
         """Compute the update of the firing rate of pyramidale cells (eq. 1)"""
-        return ((- self.r[i] + phi_i) / self.τ_ampa) * self.dt
+        return self.dt * ((- self.r[i] + phi_i) / self.τ_ampa)
 
     def firing_rate_I(self, phi_I):  # 2
         """Compute the update of  the firing rate of interneurons (eq. 2)"""
-        return ((-self.r['I'] + phi_I) / self.τ_ampa) * self.dt
+        return self.dt * ((-self.r['I'] + phi_I) / self.τ_ampa)
 
 
     def channel_ampa(self, i):  # 3
@@ -129,7 +128,7 @@ class Model:
 
     def I_ampa_ext(self, i):  # 8
         """Compute the external AMPA current for pyramidal cells (eq. 8)"""
-        return -self.J_ampa_ext_pyr * self.τ_ampa * self.C_ext * self.r_ext + self.I_eta[i]
+        return -self.J_ampa_ext_pyr * self.τ_ampa * self.C_ext * self.r_ext + self.I_η[i]
 
     def I_ampa_rec(self, i, j):  # 9
         """Compute the recurrent AMPA current for CJA and CJB cells (eq. 9)"""
@@ -158,7 +157,7 @@ class Model:
 
     def I_ampa_ext_I(self):  # 14
         """Compute the external AMPA current for interneurons (eq. 14)"""
-        return -self.J_ampa_ext_in * self.τ_ampa * self.C_ext * self.r_ext + self.I_eta['I']
+        return -self.J_ampa_ext_in * self.τ_ampa * self.C_ext * self.r_ext + self.I_η['I']
 
     def I_ampa_rec_I(self):  # 15
         """Compute the recurrent AMPA current for interneurons (eq. 15)"""
@@ -174,15 +173,14 @@ class Model:
         """Compute the recurrent GABA current for interneurons (eq. 17)"""
         return -self.N_I * self.J_gaba_rec_in * self.S_gaba
 
-    def eta(self):
-        """Ornstein-Uhlenbeck process (here just Gaussian random noise)"""
-        return norm.ppf(self.random.rand()) # compatible with Matlab noise
-        # return self.random.normal(0, 1)
+    def η(self):
+        """Compute η, white noise with unit noise."""
+        return self.random.normal(0, 1)
 
-    def white_noise(self, j):  # 18
-        """Compute the update to I_eta, the noise term (eq. 18)"""
-        return (-self.I_eta[j] * (self.dt / self.τ_ampa) +
-                self.eta() * np.sqrt(self.dt/self.τ_ampa) * self.σ_eta)
+    def I_η_update(self, j):  # 18
+        """Compute the update to I_η, modelized by a Ornstein-Uhlenbeck process (eq. 18)."""
+        return self.dt * (-self.I_η[j]
+                          + self.η() * np.sqrt(self.τ_ampa * self.σ_η**2) / self.τ_ampa)
 
 
     def I_stim(self, i):  # 19
@@ -194,10 +192,13 @@ class Model:
         """Computes g_t (eq. 23)"""
         return (1 / (1 + np.exp(- (t - self.a) / self.b))) * (1 / (1 + np.exp((t - self.c) / self.d)))
 
+    def range_adaptation(self, x, x_min, x_max):  # 20
+        """Compute the range adaptation of a juice quantity (eq. 20)"""
+        return (x - x_min) / (x_max - x_min)
+
     def firing_ov_cells(self, x, x_min, x_max, t):  # 20, 21, 22, 23
         """Computing the activity profile of OV cells (eq. 20, 21, 22, 23)"""
-        x_i = x / x_max # MATLAB code
-        # x_i = (x - xmin) / (x_max - xmin) # ARTICLE (eq. 20)
+        x_i = self.range_adaptation(x, x_min, x_max)
         assert(0 <= x_i <= 1)
         g_t = self.g_t(t)
 
@@ -220,7 +221,7 @@ class Model:
 
         # Firing rate of OV B cell, CJ B cell and CV cell for one trial
         self.r      = {'1': 3, '2': 3, '3': 3, 'I': 8}
-        self.I_eta  = {'1': 0, '2': 0, '3': 0, 'I': 0}
+        self.I_η    = {'1': 0, '2': 0, '3': 0, 'I': 0}
         self.S_ampa = {'1': 0, '2': 0, '3': 0}
         self.S_nmda = {'1': 0.1, '2': 0.1, '3': 0.1}
         self.S_gaba = 0
@@ -237,7 +238,6 @@ class Model:
 
         self.trial_history.choice = self.choice
         self.history.add_trial(self.trial_history)
-
 
     def one_step(self, t, x_a, x_b):
         """Compute one time-step"""
@@ -297,7 +297,7 @@ class Model:
 
         # generating noise
         for j in ['1', '2', '3', 'I']:
-            self.I_eta[j] += self.white_noise(j)  # equation 18
+            self.I_η[j] += self.I_η_update(j)  # equation 18
 
 
         self.trial_history.update(self, I_ampa_ext, I_ampa_rec, I_nmda_rec, I_gaba_rec, I_stim, I_syn, phi)

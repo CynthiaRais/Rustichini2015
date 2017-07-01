@@ -239,6 +239,9 @@ class Model:
         self.trial_history.choice = self.choice
         self.history.add_trial(self.trial_history)
 
+        return self.trial_history
+
+
     def one_step(self, t, x_a, x_b):
         """Compute one time-step"""
         I_ampa_ext, I_ampa_rec, I_nmda_rec, I_gaba_rec, I_stim, I_syn, phi = {}, {}, {}, {}, {}, {}, {}

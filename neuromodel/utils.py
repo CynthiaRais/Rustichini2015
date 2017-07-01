@@ -1,8 +1,11 @@
-from functools import wraps
+import functools
+#from functools import wraps
 import inspect
 import pickle
 import time
 import os
+import copy
+import multiprocessing
 
 from tqdm import tqdm
 
@@ -11,7 +14,8 @@ from .data_analysis import DataAnalysis
 
 def human_duration(seconds):
     """Return a human readable duration as minutes/seconds"""
-    return "{}:{:} minutes and {:>04.1f} seconds".format(seconds // 60, seconds % 60)
+    seconds = int(seconds)
+    return "{:d} minutes and {:d} seconds".format(seconds // 60, seconds % 60)
 
 
 def autoinit(init_fun):
@@ -27,7 +31,7 @@ def autoinit(init_fun):
     """
     argnames, _, _, defaults = inspect.getargspec(init_fun)
 
-    @wraps(init_fun)
+    @functools.wraps(init_fun)
     def wrapper(self, *args, **kwargs):
         # args
         for name, arg in zip(argnames[1:], args):
@@ -44,7 +48,15 @@ def autoinit(init_fun):
     return wrapper
 
 
-def run_model(model, offers, filename=None, opportunistic=True, verbose=True,
+def run_trial(offer, model):
+    #print('run_trial {}'.format(offer))
+    x_A, x_B = offer
+    trial_history = model.one_trial(x_a=x_A, x_b=x_B)
+    model.history.reset()
+    return trial_history
+
+
+def run_model(model, offers, filename=None, opportunistic=True, verbose=True, parallel=True,
               history_keys=('r_1', 'r_2', 'r_3', 'r_I', 'r_ova', 'r_ovb')):
     """Run a model on a set of offers.
 
@@ -65,8 +77,17 @@ def run_model(model, offers, filename=None, opportunistic=True, verbose=True,
 
         model.history.keys = history_keys # only save specific data
 
-        for x_A, x_B in tqdm(offers.offers):
-            model.one_trial(x_a=x_A, x_b=x_B)
+        if parallel: # use multiple processes to compute faster. Some random sequences are shared.
+            model_multi = model
+            model = copy.deepcopy(model_multi)
+            pool = multiprocessing.Pool()
+            func = functools.partial(run_trial, model=model_multi)
+            for trial_history in tqdm(pool.imap_unordered(func, offers.offers), total=len(offers.offers)):
+                model.history.add_trial(trial_history)
+
+        else: # sequential, slower. Required for proper hysteresis.
+            for x_A, x_B in tqdm(offers.offers):
+                model.one_trial(x_a=x_A, x_b=x_B)
 
         analysis = DataAnalysis(model)
         analysis.clear_history()

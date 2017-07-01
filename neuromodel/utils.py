@@ -1,8 +1,17 @@
 from functools import wraps
 import inspect
 import pickle
+import time
+import os
+
+from tqdm import tqdm
 
 from .data_analysis import DataAnalysis
+
+
+def human_duration(seconds):
+    """Return a human readable duration as minutes/seconds"""
+    return "{}:{:} minutes and {:>04.1f} seconds".format(seconds // 60, seconds % 60)
 
 
 def autoinit(init_fun):
@@ -35,31 +44,38 @@ def autoinit(init_fun):
     return wrapper
 
 
-def run_model(model, offers, filename=None, opportunistic=True,
+def run_model(model, offers, filename=None, opportunistic=True, verbose=True,
               history_keys=('r_1', 'r_2', 'r_3', 'r_I', 'r_ova', 'r_ovb')):
-    """Run a model against a set of offers
+    """Run a model on a set of offers.
 
     :param opportunistic:  if it finds a file named `filename`, it will load it rather
                            than running the model.
     """
-    try:
-        if not opportunistic:
-            raise FileNotFoundError
+    if opportunistic and os.path.isfile(filename): # load from disk.
+        if verbose:
+            print('Loading results of {} from disk: {}.'.format(model.__class__.__name__,
+                                                                    filename))
         with open(filename, 'rb') as f:
             analysis = pickle.load(f)
 
-    except FileNotFoundError:
+    else: # compute from scratch.
+        start_time = time.time()
+        if verbose:
+            print('Computing results of {}.'.format(model.__class__.__name__))
 
         model.history.keys = history_keys # only save specific data
 
-        for i, (x_A, x_B) in enumerate(offers.offers):
-            if (i + 1) % 100 == 0:
-                print('step {}'.format(i + 1))
+        for x_A, x_B in tqdm(offers.offers):
             model.one_trial(x_a=x_A, x_b=x_B)
 
         analysis = DataAnalysis(model)
         analysis.clear_history()
+
+        if verbose:
+            print('Done! (took {})'.format(human_duration(time.time() - start_time)))
+            print('Saving results to {}.'.format(filename))
         with open(filename, 'wb') as f:
              pickle.dump(analysis, f)
+
 
     return analysis

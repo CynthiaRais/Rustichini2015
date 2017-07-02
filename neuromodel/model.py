@@ -93,13 +93,13 @@ class Model:
             print("Finished model initialization.")
 
 
-    def firing_rate_pyr(self, i, phi_i): #1
+    def firing_rate_pyr(self, i, phi_i): # 1
         """Compute the update of the firing rate of pyramidale cells (eq. 1)"""
         return self.dt * ((- self.r[i] + phi_i) / self.τ_ampa)
 
     def firing_rate_I(self, phi_I):  # 2
         """Compute the update of  the firing rate of interneurons (eq. 2)"""
-        return self.dt * ((-self.r['I'] + phi_I) / self.τ_ampa)
+        return self.dt * ((-self.r['I'] + phi_I) / self.τ_gaba)
 
 
     def channel_ampa(self, i):  # 3
@@ -180,7 +180,7 @@ class Model:
     def I_η_update(self, j):  # 18
         """Compute the update to I_η, modelized by a Ornstein-Uhlenbeck process (eq. 18)."""
         return self.dt * (-self.I_η[j]
-                          + self.η() * np.sqrt(self.τ_ampa * self.σ_η**2) / self.τ_ampa)
+                          + self.η() * np.sqrt(self.τ_ampa * self.σ_η**2)) / self.τ_ampa
 
 
     def I_stim(self, i):  # 19

@@ -9,9 +9,12 @@ class ReplicatedModel(model.Model):
     and Camillo Padoa-Schioppa.
     """
 
-    def η(self):
-        """Compute η, white noise with unit noise."""
-        return self.random.normal(0, 1)
+    def firing_rate_I(self, phi_I):  # 2
+        """Compute the update of  the firing rate of interneurons (eq. 2)
+
+        In this equation, `self.τ_ampa` should be `self.τ_gaba`.
+        """
+        return ((-self.r['I'] + phi_I) / self.τ_ampa) * self.dt
 
     def I_η_update(self, j):  # 18
         """Compute the update to I_η, modelized by a Ornstein-Uhlenbeck process (eq. 18).
@@ -20,13 +23,6 @@ class ReplicatedModel(model.Model):
         """
         return (-self.I_η[j] * (self.dt / self.τ_ampa) +
                 self.η() * np.sqrt(self.dt / self.τ_ampa) * self.σ_η)
-
-    def firing_rate_I(self, phi_I):  # 2
-        """Compute the update of  the firing rate of interneurons (eq. 2)
-
-        In this equation, `self.τ_ampa` should be `self.τ_gaba`.
-        """
-        return ((-self.r['I'] + phi_I) / self.τ_ampa) * self.dt
 
     def range_adaptation(self, x, x_min, x_max):
         """Compute the range adaptation of a juice quantity (eq. 20)

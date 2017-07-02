@@ -10,7 +10,7 @@ import numpy as np
 import scipy.io
 
 import dotdot
-from neuromodel import MatlabModelReplicable
+from neuromodel import QuantitativelyReplicatedModel
 
 
 VERBOSE  = False  # useful output when mismatch are detected.
@@ -28,23 +28,24 @@ def first_mismatch(a, b, rtol=1e-07, atol=1e-07):
     return None
 
 
-class ReplicableTests(unittest.TestCase):
+class TestReplicability(unittest.TestCase):
     """Test replicability"""
 
     def aux_test_replicable(self, x_a=5, x_b=10, rtol=0.0, atol=1e-8, # rtol=1e-9, atol=0,
                                   verbose=VERBOSE, full_log=FULL_LOG):
-        """Test that the matlab code remains """
+        """Test that QuantitativelyReplicatedModel reproduce exactly the same sequence of values
+        as the Matlab code obtained from Aldo Rustichini and Camillo Padoa-Schioppa."""
         K = 6000
 
         datamat     = scipy.io.loadmat('data/testdata{}A{}B.mat'.format(x_a, x_b))
         seed_mat = access_data(datamat, 'seed')[0]
         assert seed_mat != 0, "Seed 0 is not supported, due to implementation differences between Numpy and Matlab."
         slicesize   = access_data(datamat, 'slice')[0]
-        Kslice = K // slicesize 
+        Kslice = K // slicesize
 
 
-        model = MatlabModelReplicable(range_A=[0, 20], range_B=[0, 20], random_seed=seed_mat,
-                                      t_exp=(100+K)*0.0005, full_log=True)
+        model = QuantitativelyReplicatedModel(range_A=[0, 20], range_B=[0, 20], t_exp=(100+K)*0.0005,
+                                              random_seed=seed_mat, full_log=True)
         model.one_trial(x_a, x_b)
 
         key_compare =  ['r_ovb', 'r_2', 'r_3', 'r_I']
@@ -83,6 +84,12 @@ class ReplicableTests(unittest.TestCase):
 
 
     def test_replication(self):
+        """Test all offers combination for replicability.
+
+        Note here that to avoid large files, the Matlab's logs contains values sampled every 100th
+        timestep (every 0.05s), and comparisons are done against thoses values and timesteps with
+        the Python model data.
+        """
         for x_a in range(21):
             for x_b in range(21):
                 if x_a != 0 or x_b != 0:
@@ -92,7 +99,11 @@ class ReplicableTests(unittest.TestCase):
 
 
     def test_specific_offers(self, offers=[(1, 10)]):
-        """Test specific offers"""
+        """Test specific offers.
+
+        Here, the Matlab's log for the A1B10 offer has full records of every timestep, and
+        therefore the comparison with the Python model is done against every timestep.
+        """
         for x_a, x_b in offers:
                 if x_a != 0 or x_b != 0:
                     print('checking {}A{}B ...'.format(x_a, x_b))

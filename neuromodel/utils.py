@@ -9,6 +9,7 @@ import multiprocessing
 
 from tqdm import tqdm
 
+from .history import History
 from .data_analysis import DataAnalysis
 
 
@@ -56,7 +57,7 @@ def run_trial(offer, model):
     return trial_history
 
 
-def run_model(model, offers, filename=None, opportunistic=True, verbose=True, parallel=True,
+def run_model(model, offers, filename=None, opportunistic=True, verbose=True, parallel=False,
               history_keys=('r_1', 'r_2', 'r_3', 'r_I', 'r_ova', 'r_ovb')):
     """Run a model on a set of offers.
 
@@ -78,12 +79,17 @@ def run_model(model, offers, filename=None, opportunistic=True, verbose=True, pa
         model.history.keys = history_keys # only save specific data
 
         if parallel: # use multiple processes to compute faster. Some random sequences are shared.
-            model_multi = model
-            model = copy.deepcopy(model_multi)
+            raise ValueError('Does not work yet.')
+
+            history = History(model)
+            history.keys = model.history.keys # only save specific data
+
             pool = multiprocessing.Pool()
-            func = functools.partial(run_trial, model=model_multi)
+            func = functools.partial(run_trial, model=model)
             for trial_history in tqdm(pool.imap_unordered(func, offers.offers), total=len(offers.offers)):
-                model.history.add_trial(trial_history)
+                history.add_trial(trial_history)
+
+            model.history = history
 
         else: # sequential, slower. Required for proper hysteresis.
             for x_A, x_B in tqdm(offers.offers):

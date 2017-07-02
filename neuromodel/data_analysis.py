@@ -213,7 +213,7 @@ s
         if dim == '3D':
             return X_A, X_B, 100*np.array(choice_B), X_A_reg, X_B_reg, choice_B_reg
         elif dim == '2D':
-            return 100*self.approx_polynome((X_B_reg, X_A_reg), *a_opt)
+            return 100 * self.approx_polynome((X_B_reg, X_A_reg), *a_opt)
         else:
             return ValueError
 

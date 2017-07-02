@@ -92,9 +92,8 @@ def regression(data, show=True, **kwargs):
     ax.view_init(azim=-35, elev=31)
     ax.set_zlim(0.0, 100.0)
 
-    ax.scatter(X, Y, Z, marker='.', edgecolor='grey',  facecolor=(0,0,0,0), s=20)
-
     ax.plot_surface(X_reg, Y_reg, Z_reg, cmap=cm.jet, linewidth=0, antialiased=True)
+    ax.scatter(X, Y, Z, marker='.', edgecolor='grey',  facecolor=(0,0,0,0), s=20)
 
     if show:
         plt.show()

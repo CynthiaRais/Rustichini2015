@@ -56,7 +56,7 @@ def _prepare_plot(x_label='offer A', y_label='offer B', z_label=None, title='', 
     return fig, ax
 
 
-def tuningcurve(XYZC, show=True, **kwargs):
+def tuningcurve(XYZC, show=True, filename_suffix='', **kwargs):
     """
     Tuning curve plotting code for Fig. 4.[B, F, J], Fig. 6.[B, F, J], Fig. 10.[C, I].
 
@@ -82,11 +82,14 @@ def tuningcurve(XYZC, show=True, **kwargs):
     surf = ax.scatter(XA, YA, ZA, marker='D', edgecolor='red',  facecolor=(0,0,0,0), s=50)
     surf = ax.scatter(XB, YB, ZB, marker='o', edgecolor='blue', facecolor=(0,0,0,0), s=70)
 
+    plt.savefig('figures/{}{}.pdf'.format(kwargs['title'], filename_suffix))
+
     if show:
         plt.show()
 
 
-def regression(data, show=True, **kwargs):
+
+def regression_3D(data, show=True, filename_suffix='', **kwargs):
     X , Y, Z, X_reg, Y_reg, Z_reg = data
     fig, ax = _prepare_plot(**kwargs)
     ax.view_init(azim=-35, elev=31)
@@ -95,5 +98,6 @@ def regression(data, show=True, **kwargs):
     ax.plot_surface(X_reg, Y_reg, Z_reg, cmap=cm.jet, linewidth=0, antialiased=True)
     ax.scatter(X, Y, Z, marker='.', edgecolor='grey',  facecolor=(0,0,0,0), s=20)
 
+    plt.savefig('figures/{}{}.pdf'.format(kwargs['title'], filename_suffix))
     if show:
         plt.show()

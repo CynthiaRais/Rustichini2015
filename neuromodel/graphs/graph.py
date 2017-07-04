@@ -5,6 +5,8 @@ import bokeh.plotting as bpl
 from bokeh.models import FixedTicker, FuncTickFormatter
 from bokeh.io import export_png
 
+import matplotlib as mpl
+
 from . import utils_bokeh
 from . import graphs3d
 
@@ -18,7 +20,7 @@ B_color = '#2e3abf'
 grey_high   = '#333333'
 grey_medium = '#8c8c8c'
 grey_low    = '#cccccc'
-TOOLS = ('save',)
+TOOLS = ()
 
 class Graph:
 
@@ -38,6 +40,8 @@ class Graph:
 
     def save_fig(self, fig, title):
         """Save files as png"""
+        if not os.path.exists('figures'):
+            os.mkdir('figures')
         export_png(fig, filename='figures/{}{}.png'.format(title, self.filename_suffix))
 
     def specific_set(self, x_offers, firing_rate, percents_B, y_range=None, title=''):
@@ -173,11 +177,15 @@ class Graph:
         x = np.linspace(0, 20, N)
         y = np.linspace(0, 20, N)
         xx, yy = np.meshgrid(x, y)
-        p = bpl.figure(x_range=(0, 20), y_range=(0, 20))
-        p.image(image=[data_5B], x=0, y=0, dw=20, dh=20, palette="Spectral11")
+        fig = bpl.figure(x_range=(0, 20), y_range=(0, 20), tools=TOOLS,)
+        utils_bokeh.tweak_fig(fig)
+
+        jet = ["#%02x%02x%02x" % (int(r), int(g), int(b)) for r, g, b, _ in 255*mpl.cm.jet(mpl.colors.Normalize()(np.arange(0, 1, 0.01)))]
+
+        fig.image(image=[data_5B], x=0, y=0, dw=20, dh=20, palette=jet)
 
         self.save_fig(fig, title)
-        bpl.show(p)
+        bpl.show(fig)
 
     def regression_3D(self, data, show=True, **kwargs):
         return graphs3d.regression_3D(data, show=show, filename_suffix=self.filename_suffix, **kwargs)

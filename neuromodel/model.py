@@ -88,6 +88,7 @@ class Model:
         self.g_max = max(self.g_t(t) for t in np.arange(self.dt, self.t_exp + self.dt, self.dt))
 
         self.history = history.History(self, keys=history_keys)
+        self.reset_trajectories()
 
         if self.verbose:
             print("Finished model initialization.")
@@ -174,13 +175,19 @@ class Model:
         return -self.N_I * self.J_gaba_rec_in * self.S_gaba
 
     def η(self):
-        """Compute η, white noise with unit noise."""
+        """Compute η, white noise with unit variance."""
         return self.random.normal(0, 1)
 
     def I_η_update(self, j):  # 18
         """Compute the update to I_η, modelized by a Ornstein-Uhlenbeck process (eq. 18)."""
-        return self.dt * (-self.I_η[j]
-                          + self.η() * np.sqrt(self.τ_ampa * self.σ_η**2)) / self.τ_ampa
+        return (-self.I_η[j] * (self.dt / self.τ_ampa) +
+                self.η() * np.sqrt(self.dt / self.τ_ampa) * self.σ_η)
+        #
+        # D = 2 * self.σ_η**2 / self.τ_ampa
+        # return self.dt * (-self.I_η[j] / self.τ_ampa + np.sqrt(D) * self.η())
+        #
+        # return self.dt * (-self.I_η[j]
+        #                   + self.η() * np.sqrt(2 * self.τ_ampa * self.σ_η**2)) / self.τ_ampa
 
 
     def I_stim(self, i):  # 19
@@ -216,10 +223,8 @@ class Model:
         return choice_B
 
 
-    def one_trial(self, x_a, x_b):
-        """Compute one trial"""
-
-        # Firing rate of OV B cell, CJ B cell and CV cell for one trial
+    def reset_trajectories(self):
+        """Reset all state trajectories"""
         self.r      = {'1': 3, '2': 3, '3': 3, 'I': 8}
         self.I_η    = {'1': 0, '2': 0, '3': 0, 'I': 0}
         self.S_ampa = {'1': 0, '2': 0, '3': 0}
@@ -227,6 +232,12 @@ class Model:
         self.S_gaba = 0
         self.choice = None
 
+
+    def one_trial(self, x_a, x_b):
+        """Compute one trial"""
+
+        # Firing rate of OV B cell, CJ B cell and CV cell for one trial
+        self.reset_trajectories()
         self.trial_history = history.TrialHistory(self, x_a, x_b, full_log=self.full_log)
 
         for t in np.arange(self.dt, self.t_exp + self.dt, self.dt):

@@ -3,9 +3,13 @@ import numpy as np
 import bokeh
 import bokeh.plotting as bpl
 from bokeh.models import FixedTicker, FuncTickFormatter
+from bokeh.io import export_png
+
+import matplotlib as mpl
 
 from . import utils_bokeh
 from . import graphs3d
+
 
 import matplotlib.pyplot as plt
 import scipy.linalg
@@ -16,13 +20,14 @@ B_color = '#2e3abf'
 grey_high   = '#333333'
 grey_medium = '#8c8c8c'
 grey_low    = '#cccccc'
-TOOLS = ('save',)
+TOOLS = ()
 
 class Graph:
 
-    def __init__(self, analysis):
+    def __init__(self, analysis, filename_suffix):
         self.x_axis = 1000 * np.arange(-0.5, 1.0, analysis.model.dt)
         self.x_range = np.min(self.x_axis), np.ceil(np.max(self.x_axis))
+        self.filename_suffix = filename_suffix
         bpl.output_notebook(hide_banner=True)
 
     def fix_x_ticks(self, fig):
@@ -30,8 +35,14 @@ class Graph:
 
 
     def tuning_curve(self, tuning_data, title):
-        graphs3d.tuningcurve(tuning_data, x_label='offer A', y_label='offer B', title=title)
+        graphs3d.tuningcurve(tuning_data, x_label='offer A', y_label='offer B', title=title,
+                             filename_suffix=self.filename_suffix)
 
+    def save_fig(self, fig, title):
+        """Save files as png"""
+        if not os.path.exists('figures'):
+            os.mkdir('figures')
+        export_png(fig, filename='figures/{}{}.png'.format(title, self.filename_suffix))
 
     def specific_set(self, x_offers, firing_rate, percents_B, y_range=None, title=''):
         """Figure 4C, 4G, 4K"""
@@ -61,6 +72,7 @@ class Graph:
         fig.diamond(x=xs_A, y=list(r_A.values()), size=15, color=A_color, alpha=0.75)
         fig.circle( x=xs_B, y=list(r_B.values()), size=10, color=B_color, alpha=0.75)
 
+        self.save_fig(fig, title)
         bpl.show(fig)
 
 
@@ -79,6 +91,8 @@ class Graph:
 
         fig.multi_line([self.x_axis, self.x_axis, self.x_axis], means,
                        color=[grey_low, grey_medium, grey_high], line_width=4)
+
+        self.save_fig(fig, title)
         bpl.show(fig)
 
 
@@ -93,10 +107,12 @@ class Graph:
 
         fig.diamond(x=xs_A, y=ys_A, color=A_color, size=15, fill_color=None, line_color=A_color, line_alpha=0.5)
         fig.circle( x=xs_B, y=ys_B, color=B_color, size=10, fill_color=None, line_color=B_color, line_alpha=0.5)
+
+        self.save_fig(fig, title)
         bpl.show(fig)
 
 
-    def firing_offer_B(self, tuning_ovb, y_range=(0, 5)):
+    def firing_offer_B(self, tuning_ovb, y_range=(0, 5), title=''):
         xs_diamonds, ys_diamonds = [], []
         xs_circles,  ys_circles  = [], []
         for (x_A, x_B, r_ovb, choice) in tuning_ovb:
@@ -107,14 +123,15 @@ class Graph:
                 xs_circles.append(x_B)
                 ys_circles.append(r_ovb)
 
-        figure_4D = bpl.figure(title="Figure 4D", plot_width=300, plot_height=300, tools=TOOLS,
-                               y_range=y_range)
-        utils_bokeh.tweak_fig(figure_4D)
+        fig = bpl.figure(title=title, plot_width=300, plot_height=300, tools=TOOLS,
+                         y_range=y_range)
+        utils_bokeh.tweak_fig(fig)
 
-        figure_4D.diamond(xs_diamonds, ys_diamonds, size=15, fill_color=None, line_color=A_color, line_alpha=0.5)
-        figure_4D.circle(xs_circles, ys_circles, size=10, fill_color=None, line_color=B_color, line_alpha=0.5)
+        fig.diamond(xs_diamonds, ys_diamonds, size=15, fill_color=None, line_color=A_color, line_alpha=0.5)
+        fig.circle(xs_circles, ys_circles, size=10, fill_color=None, line_color=B_color, line_alpha=0.5)
 
-        bpl.show(figure_4D)
+        self.save_fig(fig, title)
+        bpl.show(fig)
 
 
     def means_chosen_choice(self, mean_chosen_choice, title='Figure 4E',
@@ -128,49 +145,47 @@ class Graph:
 
         fig.multi_line([self.x_axis, self.x_axis], mean_chosen_choice,
                        color=[grey_low, grey_high], line_width=4)
+
+        self.save_fig(fig, title)
         bpl.show(fig)
 
 
-    def firing_choice(self, tunnig_cjb):
+    def firing_choice(self, tunnig_cjb, title='Figure 4H'):
         """Figure 4H"""
-        figure_4H = bpl.figure(title="Figure 4H", plot_width=300, plot_height=300, tools=TOOLS,
-                               x_range=[0.75, 2.25], y_range=[0, 18])
+        fig = bpl.figure(title=title, plot_width=300, plot_height=300, tools=TOOLS,
+                         x_range=[0.75, 2.25], y_range=[0, 18])
 
-        utils_bokeh.tweak_fig(figure_4H)
-        figure_4H.xaxis[0].ticker = FixedTicker(ticks=[1, 2])
-        figure_4H.yaxis[0].ticker = FixedTicker(ticks=[0, 5, 10, 15])
-        figure_4H.xaxis.formatter = FuncTickFormatter(code="""
+        utils_bokeh.tweak_fig(fig)
+        fig.xaxis[0].ticker = FixedTicker(ticks=[1, 2])
+        fig.yaxis[0].ticker = FixedTicker(ticks=[0, 5, 10, 15])
+        fig.xaxis.formatter = FuncTickFormatter(code="""
             var labels = {};
             return labels[tick];
         """.format({1: 'A chosen', 2: 'B chosen'}))
 
         y_A = [r_cjb for x_A, x_B, r_cjb, choice in tunnig_cjb if choice == 'A']
         y_B = [r_cjb for x_A, x_B, r_cjb, choice in tunnig_cjb if choice == 'B']
-        figure_4H.diamond(x=len(y_A)*[1], y=y_A, size=15, fill_color=None, line_color=A_color, line_alpha=0.5)
-        figure_4H.circle (x=len(y_B)*[2], y=y_B, size=10, fill_color=None, line_color=B_color, line_alpha=0.501)
+        fig.diamond(x=len(y_A)*[1], y=y_A, size=15, fill_color=None, line_color=A_color, line_alpha=0.5)
+        fig.circle (x=len(y_B)*[2], y=y_B, size=10, fill_color=None, line_color=B_color, line_alpha=0.501)
 
-        bpl.show(figure_4H)
+        self.save_fig(fig, title)
+        bpl.show(fig)
+
 
     def regression_2D(self, data_5B, title='Figure 5B'):
         N = 500
         x = np.linspace(0, 20, N)
         y = np.linspace(0, 20, N)
         xx, yy = np.meshgrid(x, y)
-        p = bpl.figure(x_range=(0, 20), y_range=(0, 20))
-        p.image(image=[data_5B], x=0, y=0, dw=20, dh=20, palette="Spectral11")
-        bpl.show(p)
+        fig = bpl.figure(x_range=(0, 20), y_range=(0, 20), tools=TOOLS,)
+        utils_bokeh.tweak_fig(fig)
 
-        # def logistic_regression(self, X):
-    #     graphs3d.tuningcurve(X,)
-    #
-    # def cja_cjb(self):
-    #     figure_9A = bpl.figure(title="Figure 9 A", plot_width=700, plot_height=700)
-    #
-    #
-    # def test(self, firing_cj, firing_cv):
-    #     figure_test_cj = bpl.figure(title="Figure test cj a", plot_width=300, plot_height=300)
-    #     figure_test_cj.line(x=np.arange(-1, 1, 0.0005 ), y=firing_cj, color="red")
-    #     figure_test_cv = bpl.figure(title="Figure test cj a", plot_width=300, plot_height=300)
-    #     figure_test_cv.line(x=np.arange(-1, 1, 0.0005), y=firing_cv, color="red")
-    #     bpl.show(figure_test_cj)
-    #     bpl.show(figure_test_cv)
+        jet = ["#%02x%02x%02x" % (int(r), int(g), int(b)) for r, g, b, _ in 255*mpl.cm.jet(mpl.colors.Normalize()(np.arange(0, 1, 0.01)))]
+
+        fig.image(image=[data_5B], x=0, y=0, dw=20, dh=20, palette=jet)
+
+        self.save_fig(fig, title)
+        bpl.show(fig)
+
+    def regression_3D(self, data, show=True, **kwargs):
+        return graphs3d.regression_3D(data, show=show, filename_suffix=self.filename_suffix, **kwargs)

@@ -25,9 +25,13 @@ def lines(xs, yss, title='', width=400, height=200, dots=False, legends=None, fi
         fig = figure(plot_width=width, plot_height=height, tools="save", title=title, **kwargs)
 
     for i, ys in enumerate(yss):
+        legend = None
         if legends is not None:
             legend = legends[i]
-        fig.line(xs, ys, line_color=colors[i], line_alpha=alpha, line_width=line_width, legend=legend, )
+        color = None
+        if colors is not None and len(colors) >= len(yss):
+            color = colors[i]
+        fig.line(xs, ys, line_color=color, line_alpha=alpha, line_width=line_width, legend=legend, )
         if dots:
             fig.scatter(xs, ys, line_color=None, fill_color=colors[i], size=4)
 

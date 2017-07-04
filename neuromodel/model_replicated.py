@@ -16,14 +16,6 @@ class ReplicatedModel(model.Model):
         """
         return ((-self.r['I'] + phi_I) / self.τ_ampa) * self.dt
 
-    def I_η_update(self, j):  # 18
-        """Compute the update to I_η, modelized by a Ornstein-Uhlenbeck process (eq. 18).
-
-        Here, `np.sqrt(self.dt / self.τ_ampa)` should be `self.dt / np.sqrt(self.τ_ampa)`
-        """
-        return (-self.I_η[j] * (self.dt / self.τ_ampa) +
-                self.η() * np.sqrt(self.dt / self.τ_ampa) * self.σ_η)
-
     def range_adaptation(self, x, x_min, x_max):
         """Compute the range adaptation of a juice quantity (eq. 20)
 

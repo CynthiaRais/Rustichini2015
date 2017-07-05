@@ -65,6 +65,8 @@ class Model:
                         range_A = None,
                         range_B = None,
 
+                        hysteresis = False,
+
                         random_seed  = 0,
                         history_keys = ('r_1', 'r_2', 'r_3', 'r_I', 'r_ova', 'r_ovb'),
                         full_log     = False, # does trial history log everything?
@@ -232,12 +234,23 @@ class Model:
         self.S_gaba = 0
         self.choice = None
 
+    def hysteresis_trajectories(self):
+        self.r = {'1': self.r['1'], '2': self.r['2'], '3': self.r['3'], 'I': self.r['I']}
+        self.I_η = {'1': 0, '2': 0, '3': 0, 'I': 0}
+        self.S_ampa = {'1': self.S_ampa['1'], '2': self.S_ampa['2'], '3': self.S_ampa['3']}
+        self.S_nmda = {'1': self.S_nmda['1'], '2': self.S_nmda['2'], '3': self.S_nmda['3']}
+        self.S_gaba = self.S_gaba
+        self.choice = None
 
     def one_trial(self, x_a, x_b):
         """Compute one trial"""
 
         # Firing rate of OV B cell, CJ B cell and CV cell for one trial
-        self.reset_trajectories()
+        if self.hysteresis:
+            self.hysteresis_trajectories()
+        else :
+            self.reset_trajectories()
+
         self.trial_history = history.TrialHistory(self, x_a, x_b, full_log=self.full_log)
 
         for t in np.arange(self.dt, self.t_exp + self.dt, self.dt):

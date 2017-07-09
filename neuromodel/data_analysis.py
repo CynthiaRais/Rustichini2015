@@ -190,7 +190,7 @@ s
 
 
     def approx_polynome(self, x, a_0, a_1, a_2, a_3, a_4, a_5):
-        ''' Approximation of the polynome for the regression'''
+        """Approximation of the polynome for the regression"""
         x_a, x_b = x
         X = a_0 + a_1 * x_a + a_2 * x_b + a_3 * x_a * x_a + a_4 * x_b * x_b + a_5 * x_a * x_b
         return 1 / (1 + np.exp(-X))
@@ -217,24 +217,30 @@ s
         else:
             return ValueError
 
-    def easy_split(self, key):
-        """Return the mean of a variable, according to the previous choice made.
+    def easy_split_fig8(self, key, A_offers=range(10)):
+        # FIXME: verify experimentally which trials are split and which are not.
+        """Return mean firing rates, divided between easy and split offers, for Figure 8B.
 
-                :param key:          name of the variable to consider (e.g. 'r_2', 'r_I')
-                :param time_window:  time window in seconds from which to compute the mean (e.g. (0, 0.5)).
-                                     Times are relative to the offer time.
-        s
-                Used in Figure 8B
-                """
+        'Split' offers are offers where the model sometimes chooses A, sometimes B. 'Easy' offers
+        are the one where the model always make the same decision. The denomination can be made
+        experimentally, or theoretically. Here, the authors have decided to consider that offers
+        where the value of A is between 1 and 10 may be split, but not the others.
 
-        chosen_means_previous = {'A': [], 'B': []}  # A chosen, B chosen
+        From the article: "For each quantity of A that induced some split decisions (i.e., offer
+        value A 1...10), trials in which the network chose juice A were divided into easy and split"
+
+        :param key:          name of the variable to consider (e.g. 'r_2', 'r_I')
+
+        Used in Figure 8B.
+        """
+        firing_rates = {'easy': [], 'split': []}
         step_range = self.step_range((-0.5, 1.0))
+
         for (x_A, x_B, choice), means in self.means_choice.items():
-            if len(means) > 0:
-                if choice == 'A':
-                    if len(self.means_choice[(x_A, x_B, 'B')]) > 0:
-                        chosen_means_previous['B'].append(means[key][step_range[0]:step_range[1]])
-                    else:
-                        chosen_means_previous['A'].append(means[key][step_range[0]:step_range[1]])
-        return (self.mean_window(np.mean(chosen_means_previous['A'], axis=0)),
-                self.mean_window(np.mean(chosen_means_previous['B'], axis=0)))
+            if x_A in A_offers and choice == 'A' and len(means) > 0:
+                if len(self.means_choice[(x_A, x_B, 'B')]) > 0: # B was also chosen sometimes
+                    firing_rates['split'].append(means[key][step_range[0]:step_range[1]])
+                else:
+                    firing_rates['easy'].append(means[key][step_range[0]:step_range[1]])
+        return (self.mean_window(np.mean(firing_rates['easy'], axis=0)),
+                self.mean_window(np.mean(firing_rates['split'], axis=0)))

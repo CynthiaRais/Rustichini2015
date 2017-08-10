@@ -238,3 +238,50 @@ s
                         chosen_means_previous['A'].append(means[key][step_range[0]:step_range[1]])
         return (self.mean_window(np.mean(chosen_means_previous['A'], axis=0)),
                 self.mean_window(np.mean(chosen_means_previous['B'], axis=0)))
+
+
+    def choice_hysteresis(self, key='r_2', time_window=(-0.5, 1.0)):
+        self.previous = {'split': {'A': [], 'B': []}, 'easy': {'A': [], 'B': []}}
+        step_range = self.step_range(time_window)
+        for (x_A, x_B, choice), means in self.means_choice.items():
+            if len(self.means_choice[(x_A, x_B, 'A')]) > 0 and len(self.means_choice[(x_A, x_B, 'B')]) > 0:
+                self.previous['split'][choice].append(means[key][step_range[0]:step_range[1]])
+            else:
+                if len(means) > 0:
+                    self.previous['easy'][choice].append(means[key][step_range[0]:step_range[1]])
+        return (self.mean_window(np.mean(self.previous['easy']['A'], axis=0)),
+                self.mean_window(np.mean(self.previous['easy']['B'], axis=0)),
+                self.mean_window(np.mean(self.previous['split']['A'], axis=0)),
+                self.mean_window(np.mean(self.previous['split']['B'], axis=0)))
+
+    def regression_hysteresis(self, type=None, range_A = 20):
+        # hysteresis
+        X_A, X_B, choice_B = {'easy': [], 'split': []}, {'easy': [], 'split': []}, {'easy': [], 'split': []}
+        for (x_a, x_b), (n_a, n_b) in sorted(self.choices.items()):
+            if x_a != 0 or x_b != 0:
+                if n_a != 0 and n_b != 0:
+                    X_A['split'].append(x_a)
+                    X_B['split'].append(x_b)
+                    choice_B['split'].append(n_b / (n_a + n_b))
+                else:
+                    X_A['easy'].append(x_a)
+                    X_B['easy'].append(x_b)
+                    choice_B['easy'].append(n_b / (n_a + n_b))
+        a_opt_easy, a_cov_easy = scipy.optimize.curve_fit(self.approx_polynome, [X_A['easy'], X_B['easy']],
+                                                          choice_B['easy'], bounds=((-20,) * 6, (20,) * 6))
+        a_opt_split, a_cov_split = scipy.optimize.curve_fit(self.approx_polynome, [X_A['split'], X_B['split']],
+                                                            choice_B['split'], bounds=((-20,) * 6, (20,) * 6))
+
+        # computing the regressed model over all possible quantities by 0.5 increments.
+        X_A_reg = np.arange(0, range_A +0.5, 0.5)
+        X_B_reg = np.arange(0, 20.5, 0.5)
+        X_A_reg, X_B_reg = np.meshgrid(X_A_reg, X_B_reg)
+        choice_B_reg_easy = 100 * self.approx_polynome((X_A_reg, X_B_reg), *a_opt_easy)
+        choice_B_reg_split = 100 * self.approx_polynome((X_A_reg, X_B_reg), *a_opt_split)
+        if type == 'easy':
+            return X_A['easy'], X_B['easy'], 100 * np.array(choice_B['easy']), X_A_reg, X_B_reg, choice_B_reg_easy
+        elif type == 'split':
+            return X_A['split'], X_B['split'], 100 * np.array(choice_B['split']), X_A_reg, X_B_reg, choice_B_reg_split
+        else:
+            return ValueError
+

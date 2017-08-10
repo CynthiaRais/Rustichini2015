@@ -10,6 +10,7 @@ import matplotlib as mpl
 from . import utils_bokeh
 from . import graphs3d
 
+import os
 
 import matplotlib.pyplot as plt
 import scipy.linalg
@@ -189,3 +190,23 @@ class Graph:
 
     def regression_3D(self, data, show=True, **kwargs):
         return graphs3d.regression_3D(data, show=show, filename_suffix=self.filename_suffix, **kwargs)
+
+
+    def means_previous_choice(self, means, title, y_range=(0, 40), y_ticks=None):
+        """Graphs for 'previous choice' figures.
+
+        Used in Figures 7C and 7E.
+        """
+        fig = bpl.figure(title=title, plot_width=300, plot_height=300, tools=TOOLS,
+                         x_range=self.x_range, y_range=y_range)
+        utils_bokeh.tweak_fig(fig)
+        self.fix_x_ticks(fig)
+        if y_ticks is not None:
+            fig.yaxis[0].ticker = FixedTicker(ticks=y_ticks)
+        fig.line(x=(0, 0), y=y_range, color="black", line_dash='dashed')
+
+        fig.multi_line([self.x_axis, self.x_axis, self.x_axis, self.x_axis], means,
+                       color=["blue", "green", "red", "yellow"], line_width=4)
+
+        self.save_fig(fig, title)
+        bpl.show(fig)

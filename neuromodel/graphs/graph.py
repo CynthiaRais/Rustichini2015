@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 
 import bokeh
@@ -21,6 +23,10 @@ B_color = '#2e3abf'
 grey_high   = '#333333'
 grey_medium = '#8c8c8c'
 grey_low    = '#cccccc'
+blue_pale   = '#9090c3'
+blue_dark   = '#3a4596'
+
+
 TOOLS = ()
 
 class Graph:
@@ -136,7 +142,8 @@ class Graph:
 
 
     def means_chosen_choice(self, mean_chosen_choice, title='Figure 4E',
-                            y_range=(0, 25), y_ticks=(0, 5, 10, 15, 20, 25)):
+                            y_range=(0, 25), y_ticks=(0, 5, 10, 15, 20, 25),
+                            colors=[grey_low, grey_high], line_width=4, legends=None):
         fig = bpl.figure(title=title, plot_width=300, plot_height=300, tools=TOOLS,
                          x_range=self.x_range, y_range=y_range)
         utils_bokeh.tweak_fig(fig)
@@ -144,9 +151,18 @@ class Graph:
         fig.yaxis[0].ticker = FixedTicker(ticks=y_ticks)
         fig.line(x=(0, 0), y=y_range, color="black", line_dash='dashed')
 
-        fig.multi_line([self.x_axis, self.x_axis], mean_chosen_choice,
-                       color=[grey_low, grey_high], line_width=4)
+        if legends is None:
+            legends = len(mean_chosen_choice) * (None,)
 
+        for i, mean_y in enumerate(mean_chosen_choice):
+            fig.line(self.x_axis, mean_y[:len(self.x_axis)], color=colors[i], legend=legends[i],
+                     line_width=line_width, line_cap='round')
+
+        fig.legend.location = 'top_left'
+
+        # fig.multi_line([self.x_axis, self.x_axis], mean_chosen_choice,
+        #                color=colors, line_width=line_width, line_cap='round', legend=legends)
+        #
         self.save_fig(fig, title)
         bpl.show(fig)
 

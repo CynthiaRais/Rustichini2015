@@ -5,6 +5,7 @@ import numpy as np
 import bokeh
 import bokeh.plotting as bpl
 from bokeh.models import FixedTicker, FuncTickFormatter
+from bokeh.models import LinearColorMapper, BasicTicker, ColorBar
 from bokeh.io import export_png
 
 import matplotlib as mpl
@@ -194,12 +195,19 @@ class Graph:
         x = np.linspace(0, 20, N)
         y = np.linspace(0, 20, N)
         xx, yy = np.meshgrid(x, y)
-        fig = bpl.figure(x_range=(0, 20), y_range=(0, 20), tools=TOOLS,)
+        fig = bpl.figure(x_range=(0, 20), y_range=(0, 20), tools=TOOLS, title=title)
         utils_bokeh.tweak_fig(fig)
 
-        jet = ["#%02x%02x%02x" % (int(r), int(g), int(b)) for r, g, b, _ in 255*mpl.cm.jet(mpl.colors.Normalize()(np.arange(0, 1, 0.01)))]
+#        jet = ["#%02x%02x%02x" % (int(r), int(g), int(b)) for r, g, b, _ in 255*mpl.cm.jet(mpl.colors.Normalize()(np.arange(0, 1, 0.01)))]
 
-        fig.image(image=[data_5B], x=0, y=0, dw=20, dh=20, palette=jet)
+#        fig.image(image=[data_5B], x=0, y=0, dw=20, dh=20, palette=jet)
+
+        color_mapper = LinearColorMapper(palette="RdYlBu11", low=0, high=100)
+        fig.image(image=[data_5B], x=0, y=0, dw=20, dh=20, color_mapper=color_mapper)
+
+        color_bar = ColorBar(color_mapper=color_mapper, ticker=BasicTicker(),
+                             label_standoff=12, border_line_color=None, location=(0,0))
+        fig.add_layout(color_bar, 'right')
 
         self.save_fig(fig, title)
         bpl.show(fig)

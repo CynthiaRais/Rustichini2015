@@ -10,9 +10,10 @@ def strip_file(filepath):
     filename = os.path.basename(filepath)
     _, ext = os.path.splitext(filename)
     if ext == '.ipynb':
-        cmd = ('jupyter-nbconvert --inplace --to notebook '
-               '--ClearOutputPreprocessor.enabled=True {} --output {}')
-        subprocess.check_call(cmd.format(filepath, filename).split())
+        cmd = ('jupyter-nbconvert', '--inplace', '--to', 'notebook',
+               '--ClearOutputPreprocessor.enabled=True', filepath, '--output',
+               filename)
+        subprocess.check_call(cmd)
 
 def strip_dir(path):
     """Strip notebooks in a directory and its subdirectories"""

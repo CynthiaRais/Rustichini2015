@@ -1,6 +1,9 @@
 scipy
 numpy
 tqdm
+bokeh
+pathos
 matplotlib
 selenium
 pathos
+jupyter

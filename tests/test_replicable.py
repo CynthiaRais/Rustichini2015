@@ -90,28 +90,27 @@ class TestReplicability(unittest.TestCase):
         x_a, x_b = x_ab
         return self._aux_test_replicable(x_a, x_b)
 
-    # def test_replication(self):
-    #     """Test all offers combination for replicability.
-    #
-    #     Note here that to avoid large files, the Matlab's logs contains values sampled every 100th
-    #     timestep (every 0.05s), and comparisons are done against thoses values and timesteps with
-    #     the Python model data.
-    #     """
-    #     pool = pathos.multiprocessing.Pool()
-    #     pool.map(self._aux2_test_replicable, [(x_a, x_b) for x_a in range(21)
-    #                                                      for x_b in range(21)])
-    #     print('done!')
-    #
-    #
-    # def test_specific_offers(self, offers=[(1, 10)]):
-    #     """Test specific offers.
-    #
-    #     Here, the Matlab's log for the A1B10 offer has full records of every timestep, and
-    #     therefore the comparison with the Python model is done against every timestep.
-    #     """
-    #     pool = pathos.multiprocessing.Pool()
-    #     pool.map(self._aux2_test_replicable, offers)
-    #     print('done!')
+    def test_replication(self):
+        """Test all offers combination for replicability.
+
+        Note here that to avoid large files, the Matlab's logs contains values sampled every 100th
+        timestep (every 0.05s), and comparisons are done against thoses values and timesteps with
+        the Python model data.
+        """
+        pool = pathos.multiprocessing.Pool()
+        pool.map(self._aux2_test_replicable, [(x_a, x_b) for x_a in range(21)
+                                                         for x_b in range(21)])
+        print('done!')
+
+    def test_specific_offers(self, offers=[(1, 10)]):
+        """Test specific offers.
+
+        Here, the Matlab's log for the A1B10 offer has full records of every timestep, and
+        therefore the comparison with the Python model is done against every timestep.
+        """
+        pool = pathos.multiprocessing.Pool()
+        pool.map(self._aux2_test_replicable, offers)
+        print('done!')
 
     def test_fig5_replicability(self, offers=[(1, 2), (3, 10), (10, 20)]):
         for x_a, x_b in offers:

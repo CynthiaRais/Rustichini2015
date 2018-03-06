@@ -207,14 +207,12 @@ class Graph:
         y = np.linspace(0, 20, N)
         xx, yy = np.meshgrid(x, y)
         fig = bpl.figure(x_range=(0, 20), y_range=(0, 20), tools=TOOLS,
-                         plot_width=size, plot_height=size, title=title)
+                         plot_width=int(1.14*size), plot_height=size, title=title)
         utils_bokeh.tweak_fig(fig)
 
-#        jet = ["#%02x%02x%02x" % (int(r), int(g), int(b)) for r, g, b, _ in 255*mpl.cm.jet(mpl.colors.Normalize()(np.arange(0, 1, 0.01)))]
-
-#        fig.image(image=[data_5B], x=0, y=0, dw=20, dh=20, palette=jet)
-
-        color_mapper = LinearColorMapper(palette="RdYlBu11", low=0, high=100)
+        jet = ["#%02x%02x%02x" % (int(r), int(g), int(b))
+               for r, g, b, _ in 228*mpl.cm.jet(mpl.colors.Normalize()(np.arange(0, 1, 0.01)))]
+        color_mapper = LinearColorMapper(palette=jet, low=-5, high=105)
         fig.image(image=[data_5B], x=0, y=0, dw=20, dh=20, color_mapper=color_mapper)
 
         color_bar = ColorBar(color_mapper=color_mapper, ticker=BasicTicker(),

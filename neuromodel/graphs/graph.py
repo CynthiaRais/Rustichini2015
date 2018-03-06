@@ -19,13 +19,17 @@ import matplotlib.pyplot as plt
 import scipy.linalg
 from mpl_toolkits.mplot3d import Axes3D
 
-A_color = '#c5392b'
-B_color = '#2e3abf'
+
+A_color = '#bd5151' # 189, 81, 81  fig4: '#c5392b'
+B_color = '#575aa3' #  87, 90,163  fig4: '#2e3abf'
+
 grey_high   = '#333333'
 grey_medium = '#8c8c8c'
 grey_low    = '#cccccc'
 blue_pale   = '#9090c3'
 blue_dark   = '#3a4596'
+
+SIZE = 500
 
 
 TOOLS = ()
@@ -52,10 +56,12 @@ class Graph:
             os.mkdir('figures')
         export_png(fig, filename='figures/{}{}.png'.format(title, self.filename_suffix))
 
-    def specific_set(self, x_offers, firing_rate, percents_B, y_range=None, title=''):
+    def specific_set(self, x_offers, firing_rate, percents_B, y_range=None,
+                     title='', size=SIZE):
         """Figure 4C, 4G, 4K"""
-        fig = bpl.figure(title=title, plot_width=300, plot_height=300, tools=TOOLS,
-                            y_range=(y_range[0] - 0.05 * (y_range[1] - y_range[0]), y_range[1]))
+        fig = bpl.figure(title=title, plot_width=size, plot_height=size,
+                         tools=TOOLS,
+                         y_range=(y_range[0] - 0.05 * (y_range[1] - y_range[0]), y_range[1]))
         utils_bokeh.tweak_fig(fig)
 
         fig.xaxis[0].ticker = FixedTicker(ticks=list(range(len(x_offers))))
@@ -84,13 +90,14 @@ class Graph:
         bpl.show(fig)
 
 
-    def means_lowmedhigh(self, means, title, y_range=(0, 25), y_ticks=None):
+    def means_lowmedhigh(self, means, title, y_range=(0, 25), y_ticks=None,
+                         size=SIZE):
         """Graphs for 'low, medium, high' figures.
 
         Used in Figures 4A, 4I, 6A, 6E, 6I.
         """
-        fig = bpl.figure(title=title, plot_width=300, plot_height=300, tools=TOOLS,
-                         x_range=self.x_range, y_range=y_range)
+        fig = bpl.figure(title=title, plot_width=size, plot_height=size,
+                         tools=TOOLS, x_range=self.x_range, y_range=y_range)
         utils_bokeh.tweak_fig(fig)
         self.fix_x_ticks(fig)
         if y_ticks is not None:
@@ -104,23 +111,26 @@ class Graph:
         bpl.show(fig)
 
 
-    def means_chosen_value(self, means, title='', y_range=(0, 25), y_ticks=None):
+    def means_chosen_value(self, means, title='', y_range=(0, 25), y_ticks=None,
+                           size=SIZE):
         xs_A, ys_A, xs_B, ys_B = means
 
-        fig = bpl.figure(title=title, plot_width=300, plot_height=300, tools=TOOLS,
-                         y_range=y_range)
+        fig = bpl.figure(title=title, plot_width=size, plot_height=size,
+                         tools=TOOLS, y_range=y_range)
         utils_bokeh.tweak_fig(fig)
         if y_ticks is not None:
             fig.yaxis[0].ticker = FixedTicker(ticks=y_ticks)
 
-        fig.diamond(x=xs_A, y=ys_A, color=A_color, size=15, fill_color=None, line_color=A_color, line_alpha=0.5)
-        fig.circle( x=xs_B, y=ys_B, color=B_color, size=10, fill_color=None, line_color=B_color, line_alpha=0.5)
+        fig.diamond(x=xs_A, y=ys_A, color=A_color, size=22, fill_color=None,
+                    line_color=A_color, line_alpha=0.5, line_width=2)
+        fig.circle( x=xs_B, y=ys_B, color=B_color, size=15, fill_color=None,
+                    line_color=B_color, line_alpha=0.5, line_width=2)
 
         self.save_fig(fig, title)
         bpl.show(fig)
 
 
-    def firing_offer_B(self, tuning_ovb, y_range=(0, 5), title=''):
+    def firing_offer_B(self, tuning_ovb, y_range=(0, 5), title='', size=SIZE):
         xs_diamonds, ys_diamonds = [], []
         xs_circles,  ys_circles  = [], []
         for (x_A, x_B, r_ovb, choice) in tuning_ovb:
@@ -131,8 +141,8 @@ class Graph:
                 xs_circles.append(x_B)
                 ys_circles.append(r_ovb)
 
-        fig = bpl.figure(title=title, plot_width=300, plot_height=300, tools=TOOLS,
-                         y_range=y_range)
+        fig = bpl.figure(title=title, plot_width=size, plot_height=size,
+                         tools=TOOLS, y_range=y_range)
         utils_bokeh.tweak_fig(fig)
 
         fig.diamond(xs_diamonds, ys_diamonds, size=15, fill_color=None, line_color=A_color, line_alpha=0.5)
@@ -144,9 +154,10 @@ class Graph:
 
     def means_chosen_choice(self, mean_chosen_choice, title='Figure 4E',
                             y_range=(0, 25), y_ticks=(0, 5, 10, 15, 20, 25),
-                            colors=[grey_low, grey_high], line_width=4, legends=None):
-        fig = bpl.figure(title=title, plot_width=300, plot_height=300, tools=TOOLS,
-                         x_range=self.x_range, y_range=y_range)
+                            colors=[grey_low, grey_high], line_width=4,
+                            size=SIZE, legends=None):
+        fig = bpl.figure(title=title, plot_width=size, plot_height=size,
+                         tools=TOOLS, x_range=self.x_range, y_range=y_range)
         utils_bokeh.tweak_fig(fig)
         self.fix_x_ticks(fig)
         fig.yaxis[0].ticker = FixedTicker(ticks=y_ticks)
@@ -168,10 +179,10 @@ class Graph:
         bpl.show(fig)
 
 
-    def firing_choice(self, tunnig_cjb, title='Figure 4H'):
+    def firing_choice(self, tunnig_cjb, title='Figure 4H', size=SIZE):
         """Figure 4H"""
-        fig = bpl.figure(title=title, plot_width=300, plot_height=300, tools=TOOLS,
-                         x_range=[0.75, 2.25], y_range=[0, 18])
+        fig = bpl.figure(title=title, plot_width=size, plot_height=size,
+                         tools=TOOLS, x_range=[0.75, 2.25], y_range=[0, 18])
 
         utils_bokeh.tweak_fig(fig)
         fig.xaxis[0].ticker = FixedTicker(ticks=[1, 2])
@@ -190,12 +201,13 @@ class Graph:
         bpl.show(fig)
 
 
-    def regression_2D(self, data_5B, title='Figure 5B'):
+    def regression_2D(self, data_5B, title='Figure 5B', size=SIZE):
         N = 500
         x = np.linspace(0, 20, N)
         y = np.linspace(0, 20, N)
         xx, yy = np.meshgrid(x, y)
-        fig = bpl.figure(x_range=(0, 20), y_range=(0, 20), tools=TOOLS, title=title)
+        fig = bpl.figure(x_range=(0, 20), y_range=(0, 20), tools=TOOLS,
+                         plot_width=size, plot_height=size, title=title)
         utils_bokeh.tweak_fig(fig)
 
 #        jet = ["#%02x%02x%02x" % (int(r), int(g), int(b)) for r, g, b, _ in 255*mpl.cm.jet(mpl.colors.Normalize()(np.arange(0, 1, 0.01)))]
@@ -216,13 +228,14 @@ class Graph:
         return graphs3d.regression_3D(data, show=show, filename_suffix=self.filename_suffix, **kwargs)
 
 
-    def means_previous_choice(self, means, title, y_range=(0, 40), y_ticks=None):
+    def means_previous_choice(self, means, title, y_range=(0, 40), y_ticks=None,
+                              size=SIZE):
         """Graphs for 'previous choice' figures.
 
         Used in Figures 7C and 7E.
         """
-        fig = bpl.figure(title=title, plot_width=300, plot_height=300, tools=TOOLS,
-                         x_range=self.x_range, y_range=y_range)
+        fig = bpl.figure(title=title, plot_width=size, plot_height=size,
+                         tools=TOOLS, x_range=self.x_range, y_range=y_range)
         utils_bokeh.tweak_fig(fig)
         self.fix_x_ticks(fig)
         if y_ticks is not None:

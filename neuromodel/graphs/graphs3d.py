@@ -7,10 +7,12 @@ from matplotlib.markers import MarkerStyle
 
 import numpy as np
 
+A_color = '#bd5151' # 189, 81, 81  fig4: '#c5392b'
+B_color = '#575aa3' #  87, 90,163  fig4: '#2e3abf'
 
 def _prepare_plot(x_label='offer A', y_label='offer B', z_label=None, title='', z_ticks=None):
 
-    fig = plt.figure(figsize=(6, 6))
+    fig = plt.figure(figsize=(10, 10))
     ax = fig.gca(projection='3d')
     ax.set_xlim([0, 20])
     ax.set_ylim([0, 20])
@@ -79,8 +81,10 @@ def tuningcurve(XYZC, show=True, filename_suffix='', **kwargs):
             ZB.append(z)
 
     # Plot the markers.
-    surf = ax.scatter(XA, YA, ZA, marker='D', edgecolor='red',  facecolor=(0,0,0,0), s=50)
-    surf = ax.scatter(XB, YB, ZB, marker='o', edgecolor='blue', facecolor=(0,0,0,0), s=70)
+    surf = ax.scatter(XA, YA, ZA, marker='D', edgecolor=A_color, linewidths=2,
+                      facecolor=(0,0,0,0), s=100)
+    surf = ax.scatter(XB, YB, ZB, marker='o', edgecolor=B_color, linewidths=2,
+                      facecolor=(0,0,0,0), s=140)
 
     plt.savefig('figures/{}{}.pdf'.format(kwargs['title'], filename_suffix))
 

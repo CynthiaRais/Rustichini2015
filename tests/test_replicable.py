@@ -33,7 +33,7 @@ class TestReplicability(unittest.TestCase):
     """Test replicability"""
 
     def _aux_test_replicable(self, x_a=5, x_b=10, rtol=0.0, atol=1e-8, # rtol=1e-9, atol=0,
-                                  verbose=VERBOSE, full_log=FULL_LOG):
+                                  verbose=VERBOSE, full_log=FULL_LOG, prefix='', model_args={}):
         """Test that QuantitativelyReplicatedModel reproduce exactly the same sequence of values
         as the Matlab code obtained from Aldo Rustichini and Camillo Padoa-Schioppa."""
         if x_a != 0 or x_b != 0:
@@ -41,15 +41,15 @@ class TestReplicability(unittest.TestCase):
                 print('checking {}A{}B ...'.format(x_a, x_b))
             K = 6000
 
-            datamat  = scipy.io.loadmat('data/testdata{}A{}B.mat'.format(x_a, x_b))
+            print('loading {}'.format('data/matlab/{}testdata{}A{}B.mat'.format(prefix, x_a, x_b)))
+            datamat  = scipy.io.loadmat('data/matlab/{}testdata{}A{}B.mat'.format(prefix, x_a, x_b))
             seed_mat = access_data(datamat, 'seed')[0]
             assert seed_mat != 0, "Seed 0 is not supported, due to implementation differences between Numpy and Matlab."
             slicesize   = access_data(datamat, 'slice')[0]
             Kslice = K // slicesize
 
-
             model = QuantitativelyReplicatedModel(range_A=[0, 20], range_B=[0, 20], t_exp=(100+K)*0.0005,
-                                                  random_seed=seed_mat, full_log=True)
+                                                  random_seed=seed_mat, full_log=True, **model_args)
             model.one_trial(x_a, x_b)
 
             key_compare =  ['r_ovb', 'r_2', 'r_3', 'r_I']
@@ -113,6 +113,10 @@ class TestReplicability(unittest.TestCase):
         pool.map(self._aux2_test_replicable, offers)
         print('done!')
 
+    def test_fig5_replicability(self, offers=[(1, 2), (3, 10), (10, 20)]):
+        for x_a, x_b in offers:
+            self._aux_test_replicable(x_a, x_b, prefix='fig5_NMDA_',
+                model_args={'δ_J_stim': (1, 1), 'δ_J_nmda': (1.05, 1)})
 
 if __name__ == '__main__':
     unittest.main()

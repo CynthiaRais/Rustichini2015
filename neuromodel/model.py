@@ -161,7 +161,6 @@ class Model:
         """Compute the recurrent NMDA current for pyramidal cells (eq. 13)"""
         return -self.N_I * self.J_gaba_rec_pyr * self.δ_J_gaba[i] * self.S_gaba
 
-
     def I_ampa_ext_I(self):  # 14
         """Compute the external AMPA current for interneurons (eq. 14)"""
         return -self.J_ampa_ext_in * self.τ_ampa * self.C_ext * self.r_ext + self.I_η['I']

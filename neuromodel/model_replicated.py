@@ -24,6 +24,13 @@ class ReplicatedModel(model.Model):
         """
         return x / x_max
 
+    def I_nmda_rec(self, i):  # 11
+        """Compute the recurrent NMDA current for CJA and CJB cells (eq. 11)"""
+        assert i in ('1', '2')
+        j = '2' if i == '1' else '1' # j != i
+        return (-self.N_E * self.f * self.J_nmda_rec_pyr * (self.δ_J_nmda[i] * self.w_p * self.S_nmda[i] + self.w_m * self.S_nmda[j])
+                - self.N_E * (1 - 2 * self.f) * self.J_nmda_rec_pyr * self.w_m * self.S_nmda['3'])
+
 
 class QuantitativelyReplicatedModel(ReplicatedModel):
     """This model quantitatively reproduces the behavior of the Matlab code obtained from

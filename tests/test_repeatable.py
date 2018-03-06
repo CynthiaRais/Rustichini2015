@@ -8,7 +8,7 @@ import numpy as np
 import array
 
 import dotdot
-from neuromodel import Model, MatlabModel
+from neuromodel import Model, ReplicatedModel
 
 
 class RepeatableTests(unittest.TestCase):
@@ -22,8 +22,8 @@ class RepeatableTests(unittest.TestCase):
             model = ModelClass(range_A=[0, 20], range_B=[0, 20], random_seed=seed)
             return model.one_trial(1, 10)
 
-        self.assertEqual(run(0, ModelClass=Model), run(0, ModelClass=Model))
-        self.assertEqual(run(0, ModelClass=MatlabModel), run(0, ModelClass=MatlabModel))
+        self.assertEqual(run(0, ModelClass=Model).data, run(0, ModelClass=Model).data)
+        self.assertEqual(run(0, ModelClass=ReplicatedModel).data, run(0, ModelClass=ReplicatedModel).data)
 
 
 if __name__ == '__main__':

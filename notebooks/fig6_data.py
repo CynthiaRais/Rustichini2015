@@ -1,3 +1,5 @@
+import pathos
+
 import dotdot
 from neuromodel import Offers, Model, ReplicatedModel, run_model
 
@@ -21,7 +23,10 @@ def compute_fig6_data(w_p, model_class=Model):
 
 
 if __name__ == '__main__':
-    for model_class in [Model, ReplicatedModel]:
-        compute_fig6_data(1.55, model_class=model_class)
-        compute_fig6_data(1.70, model_class=model_class)
-        compute_fig6_data(1.85, model_class=model_class)
+        def aux(args):
+            compute_fig6_data(args['w_p'], model_class=args['model_class'])
+
+        runs=[{'model_class': model, 'w_p': w_p} for w_p in [1.55, 1.70, 1.85]
+              for model in [Model, ReplicatedModel]]
+        pool = pathos.multiprocessing.Pool()
+        pool.map(aux, runs)

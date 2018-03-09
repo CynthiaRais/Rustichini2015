@@ -240,8 +240,11 @@ class Graph:
             fig.yaxis[0].ticker = FixedTicker(ticks=y_ticks)
         fig.line(x=(0, 0), y=y_range, color="black", line_dash='dashed')
 
+        colors = ["#%02x%02x%02x" % (int(r), int(g), int(b)) for r, g, b in
+                  [(167, 39, 46), (48, 64, 143), (219, 144, 146), (139, 140, 192)]]
+
         fig.multi_line([self.x_axis, self.x_axis, self.x_axis, self.x_axis], means,
-                       color=["blue", "green", "red", "yellow"], line_width=4)
+                       color=colors, line_width=3)
 
         self.save_fig(fig, title)
         bpl.show(fig)

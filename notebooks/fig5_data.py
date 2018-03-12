@@ -15,8 +15,7 @@ def compute_fig5_data(model_class=Model, δ_J_stim=(1, 1),
     model = model_class(n=n, ΔA=ΔA, ΔB=ΔB, random_seed=1,
                         δ_J_stim=δ_J_stim, δ_J_gaba=δ_J_gaba, δ_J_nmda=δ_J_nmda)
 
-    filename_suffix = '_replicate' if model_class is ReplicatedModel else ''
-    filename='data/fig5_{}[{}]{}.pickle'.format(desc, n, filename_suffix)
+    filename='data/fig5_{}[{}]{}.pickle'.format(desc, n, model.desc)
     run_model(model, offers, history_keys=(), filename=filename)
 
 if __name__ == '__main__':

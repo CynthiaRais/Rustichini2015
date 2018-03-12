@@ -9,6 +9,9 @@ class ReplicatedModel(model.Model):
     and Camillo Padoa-Schioppa.
     """
 
+    desc = '_replicate'
+
+
     def firing_rate_I(self, phi_I):  # 2
         """Compute the update of  the firing rate of interneurons (eq. 2)
 
@@ -41,6 +44,8 @@ class QuantitativelyReplicatedModel(ReplicatedModel):
     same random sequence as the Matlab code. As this is much less efficient, this model is much
     slower than ReplicatedModel, and therefore is only used in `test_replicated.py`.
     """
+
+    desc = '_qreplicate'
 
     def η(self):
         """Compute η, white noise with unit noise.

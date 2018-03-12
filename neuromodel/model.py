@@ -6,6 +6,8 @@ from .utils import autoinit
 
 class Model:
 
+    desc = ''
+
     @autoinit # set all __init__ arguments as instance members
     def __init__(self,  # Network parameters
                         N_E         = 1600,

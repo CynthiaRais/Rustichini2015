@@ -36,10 +36,10 @@ TOOLS = ()
 
 class Graph:
 
-    def __init__(self, analysis, filename_suffix):
+    def __init__(self, analysis):
         self.x_axis = 1000 * np.arange(-0.5, 1.0, analysis.model.dt)
         self.x_range = np.min(self.x_axis), np.ceil(np.max(self.x_axis))
-        self.filename_suffix = filename_suffix
+        self.model_desc = analysis.model.desc
         bpl.output_notebook(hide_banner=True)
 
     def fix_x_ticks(self, fig):
@@ -48,13 +48,14 @@ class Graph:
 
     def tuning_curve(self, tuning_data, title):
         graphs3d.tuningcurve(tuning_data, x_label='offer A', y_label='offer B', title=title,
-                             filename_suffix=self.filename_suffix)
+                             model_desc=self.model_desc)
 
     def save_fig(self, fig, title):
         """Save files as png"""
         if not os.path.exists('figures'):
             os.mkdir('figures')
-        export_png(fig, filename='figures/{}{}.png'.format(title, self.filename_suffix))
+        print('figures/{}{}.png'.format(title, self.model_desc))
+        export_png(fig, filename='figures/{}{}.png'.format(title, self.model_desc))
 
     def specific_set(self, x_offers, firing_rate, percents_B, y_range=None,
                      title='', size=SIZE):
@@ -223,7 +224,7 @@ class Graph:
         bpl.show(fig)
 
     def regression_3D(self, data, show=True, **kwargs):
-        return graphs3d.regression_3D(data, show=show, filename_suffix=self.filename_suffix, **kwargs)
+        return graphs3d.regression_3D(data, show=show, model_desc=self.model_desc, **kwargs)
 
 
     def means_previous_choice(self, means, title, y_range=(0, 40), y_ticks=None,

@@ -74,7 +74,7 @@ class DataAnalysis:
         :param key:          name of the variable to consider (e.g. 'r_2', 'r_I')
         :param time_window:  time window in seconds from which to compute the mean (e.g. (0, 0.5)).
                              Times are relative to the offer time.
-s
+
         Used in Figure 4E, 4H, 6A, 6E, 6I
         """
         step_range = self.step_range(time_window)
@@ -102,10 +102,10 @@ s
         for (x_A, x_B, choice), means in self.means_choice.items():
             if len(means) > 0:
                 if choice == 'A':
-                    q = int(3 * x_A / (self.ΔA + 1))
+                    q = int(3 * x_A / (self.ΔA[1] + 1))
                     means_lmh[q].append(means[key][1000:4000])
                 if choice == 'B':
-                    q = int(3 * x_B / (self.ΔB + 1))
+                    q = int(3 * x_B / (self.ΔB[1] + 1))
                     means_lmh[q].append(means[key][1000:4000])
 
         return [self.mean_window(np.mean(m, axis=0)) for m in means_lmh]
@@ -123,7 +123,7 @@ s
 
         for (x_A, x_B, choice), means in self.means_choice.items():
             if len(means) > 0:
-                q = int(3 * x_B / (self.ΔB + 1))
+                q = int(3 * x_B / (self.ΔB[1] + 1))
                 means_lmh[q].append(means[key][1000:4000])
 
         return [self.mean_window(np.mean(m, axis=0)) for m in means_lmh]

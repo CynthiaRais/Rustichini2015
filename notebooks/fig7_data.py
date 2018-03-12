@@ -11,8 +11,7 @@ def compute_fig7_data(model_class=Model, w_p=1.82):
     model = model_class(n=n, ΔA=ΔA, ΔB=ΔB, random_seed=1, w_p=1.82,
                         hysteresis=True)
 
-    filename_suffix = '_replicate' if model_class is ReplicatedModel else ''
-    filename='data/fig7_{}[{}]{}.pickle'.format(w_p, n, filename_suffix)
+    filename='data/fig7_{}[{}]{}.pickle'.format(w_p, n, model.desc)
     return run_model(model, offers, history_keys=('r_ovb', 'r_2', 'r_I'), filename=filename)
 
 

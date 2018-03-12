@@ -16,8 +16,7 @@ def compute_fig6_data(w_p, model_class=Model):
     """
     model = model_class(n=n, ΔA=ΔA, ΔB=ΔB, random_seed=1, w_p=w_p)
 
-    filename_suffix = '_replicate' if model_class is ReplicatedModel else ''
-    filename='data/fig6_{}[{}]{}.pickle'.format(w_p, n, filename_suffix)
+    filename='data/fig6_{}[{}]{}.pickle'.format(w_p, n, model.desc)
     return run_model(model, offers, history_keys=('r_2', 'r_I'), filename=filename)
 
 
@@ -26,6 +25,6 @@ if __name__ == '__main__':
             compute_fig6_data(args['w_p'], model_class=args['model_class'])
 
         runs=[{'model_class': model, 'w_p': w_p} for w_p in [1.55, 1.70, 1.85]
-              for model in [Model, ReplicatedModel]]
+                                                 for model in [Model, ReplicatedModel]]
         pool = pathos.multiprocessing.Pool()
         pool.map(aux, runs)

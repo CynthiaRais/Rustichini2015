@@ -15,8 +15,7 @@ def compute_fig4_data(model_class=Model):
     """
     model = model_class(n=n, random_seed=1, ΔA=ΔA, ΔB=ΔB)
 
-    filename_suffix = '_replicate' if model_class is ReplicatedModel else ''
-    filename='data/fig4[{}]{}.pickle'.format(n, filename_suffix)
+    filename='data/fig4[{}]{}.pickle'.format(n, model.desc)
     return run_model(model, offers, history_keys=('r_ovb', 'r_2', 'r_I'), filename=filename)
 
 

@@ -1,4 +1,5 @@
 notebooks/figures/
+notebooks/html/
 
 # Byte-compiled / optimized / DLL files
 .pytest_cache/

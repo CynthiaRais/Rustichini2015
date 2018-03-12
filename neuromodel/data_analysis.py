@@ -56,8 +56,8 @@ class DataAnalysis:
             self.choices[key] = choices_A[key], choices_B[key]
 
 
-    def mean_window(self, y):
-        return scipy.signal.savgol_filter(y, 11, 1)
+    def mean_window(self, y, size=11):
+        return scipy.signal.savgol_filter(y, size, 1)
 
     def step_range(self, time_range):
         """Transform a time_range (in seconds) into a step_range.
@@ -233,17 +233,24 @@ class DataAnalysis:
 
         Used in Figure 8B.
         """
-        firing_rates = {'easy': [], 'split': []}
+        A_means = {'easy': [], 'split':[]}
         step_range = self.step_range((-0.5, 1.0))
 
-        for (x_A, x_B, choice), means in self.means_choice.items():
-            if x_A in A_offers and choice == 'A' and len(means) > 0:
-                if len(self.means_choice[(x_A, x_B, 'B')]) > 0:  # B was also chosen sometimes
-                    firing_rates['split'].append(means[key][step_range[0]:step_range[1]])
-                else:
-                    firing_rates['easy'].append(means[key][step_range[0]:step_range[1]])
-            return (self.mean_window(np.mean(firing_rates['easy'], axis=0)),
-                    self.mean_window(np.mean(firing_rates['split'], axis=0)))
+        for A_offer in A_offers:
+            firing_rates = {'easy': [], 'split': []}
+            for (x_A, x_B, choice), means in self.means_choice.items():
+                if x_A == A_offer and choice == 'A' and len(means) > 0:
+                    if len(self.means_choice[(x_A, x_B, 'B')]) > 0:  # B was also chosen sometimes
+                        for _ in range(len(self.means_choice[(x_A, x_B, 'A')])):
+                            firing_rates['split'].append(means[key][step_range[0]:step_range[1]])
+                    else:
+                        for _ in range(len(self.means_choice[(x_A, x_B, 'A')])):
+                            firing_rates['easy'].append(means[key][step_range[0]:step_range[1]])
+            A_means['easy'].append(np.mean(firing_rates['easy'], axis=0))
+            A_means['split'].append(np.mean(firing_rates['split'], axis=0))
+
+        return (self.mean_window(np.mean(A_means['easy'], axis=0), size=201),
+                self.mean_window(np.mean(A_means['split'], axis=0), size=201))
 
     def choice_hysteresis(self, key='r_2', time_window=(-0.5, 1.0)):
         self.previous = {'split': {'A': [], 'B': []}, 'easy': {'A': [], 'B': []}}

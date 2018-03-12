@@ -39,20 +39,20 @@ class Model:
                         c_I = 615,
 
                         # Parameters used to model OV cells
-                        r_o     = 0,                   # spike/s (0 or 6)
-                        Δ_r     = 8,                   # spike/s
-                        t_offer = 1.0,                 # s
+                        r_o     = 0,              # spike/s (0 or 6)
+                        Δ_r     = 8,              # spike/s
+                        t_offer = 1.0,            # s
                         a       = 0.175,
                         b       = 0.030,
                         c       = 0.400,
                         d       = 0.100,
 
                         # Parameters of the experience
-                        t_exp = 2.0,                   # s
-                        dt    = 0.0005,                # s
-                        n     = 4000,                  # number of trials
-                        ΔA    = 20,                    # maximum quantity of juice A
-                        ΔB    = 20,                    # maximum quantity of juice B
+                        t_exp = 2.0,              # s
+                        dt    = 0.0005,           # s
+                        n     = 4000,             # number of trials
+                        ΔA    = (0, 20),          # min/max quantity of juice A
+                        ΔB    = (0, 20),          # min/max quantity of juice B
 
                         # Hebbian learning and synaptic imbalance
                         δ_J_hl   = (1, 1),
@@ -62,8 +62,6 @@ class Model:
 
                         w_p = 1.75,
 
-                        range_A = (0, 20),
-                        range_B = (0, 20),
 
                         hysteresis = False,
 
@@ -215,7 +213,7 @@ class Model:
         g_t = self.g_t(t)
 
         f_t = g_t / self.g_max
-        #assert f_t <= 1, 'firing ov trop haut'
+        assert f_t <= 1
         r_ov = self.r_o + self.Δ_r * f_t * x_i
         return r_ov
 
@@ -275,10 +273,8 @@ class Model:
 
         # firing rate of ov cells
         self.r_ov = {}  # TODO: do better
-        self.r_ov['1'] = self.firing_ov_cells(x_a, self.range_A[0], self.range_A[1], t)
-        self.r_ov['2'] = self.firing_ov_cells(x_b, self.range_B[0], self.range_B[1], t)
-        # assert r_ova <= 8, 'r_ova = {}'.format(r_ova)
-        # assert r_ovb <= 8, 'r_ovb = {}'.format(r_ovb)
+        self.r_ov['1'] = self.firing_ov_cells(x_a, self.ΔA[0], self.ΔA[1], t)
+        self.r_ov['2'] = self.firing_ov_cells(x_b, self.ΔB[0], self.ΔB[1], t)
 
         # computing ampa currents
         for i in ['1', '2', '3']:

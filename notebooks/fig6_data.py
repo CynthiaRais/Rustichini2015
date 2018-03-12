@@ -4,7 +4,7 @@ import dotdot
 from neuromodel import Offers, Model, ReplicatedModel, run_model
 
 
-ΔA, ΔB, n = 20, 20, 4000
+ΔA, ΔB, n = (0, 20), (0, 20), 4000
 offers = Offers(ΔA=ΔA, ΔB=ΔB, n=n, random_seed=0)
 
 def compute_fig6_data(w_p, model_class=Model):
@@ -14,8 +14,7 @@ def compute_fig6_data(w_p, model_class=Model):
     :param model_class:  set to ReplicatedModel if you want to replicate the published figures.
                          set to Model to use the 'corrected' model, as described in the article.
     """
-    model = model_class(n=n, ΔA=ΔA, ΔB=ΔB, random_seed=1, w_p=w_p,
-                        range_A=offers.range_A, range_B=offers.range_B)
+    model = model_class(n=n, ΔA=ΔA, ΔB=ΔB, random_seed=1, w_p=w_p)
 
     filename_suffix = '_replicate' if model_class is ReplicatedModel else ''
     filename='data/fig6_{}[{}]{}.pickle'.format(w_p, n, filename_suffix)

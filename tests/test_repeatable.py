@@ -19,7 +19,7 @@ class RepeatableTests(unittest.TestCase):
 
         def run(seed, ModelClass=Model):
             """Return the history of a run"""
-            model = ModelClass(range_A=[0, 20], range_B=[0, 20], random_seed=seed)
+            model = ModelClass(random_seed=seed)
             return model.one_trial(1, 10)
 
         self.assertEqual(run(0, ModelClass=Model).data, run(0, ModelClass=Model).data)

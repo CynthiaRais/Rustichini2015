@@ -5,7 +5,7 @@ from neuromodel import Offers, Model, ReplicatedModel, run_model
 
 
 # configuring offers
-ΔA, ΔB, n = 20, 20, 4000
+ΔA, ΔB, n = (0, 20), (0, 20), 4000
 offers = Offers(ΔA=ΔA, ΔB=ΔB, n=n, random_seed=0)
 
 
@@ -13,7 +13,6 @@ def compute_fig5_data(model_class=Model, δ_J_stim=(1, 1),
                       δ_J_nmda=(1, 1), δ_J_gaba=(1, 1, 1), desc=''):
     """Compute the data for Figure 5."""
     model = model_class(n=n, ΔA=ΔA, ΔB=ΔB, random_seed=1,
-                        range_A=offers.range_A, range_B=offers.range_B,
                         δ_J_stim=δ_J_stim, δ_J_gaba=δ_J_gaba, δ_J_nmda=δ_J_nmda)
 
     filename_suffix = '_replicate' if model_class is ReplicatedModel else ''

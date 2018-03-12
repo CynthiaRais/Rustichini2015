@@ -10,7 +10,7 @@ from neuromodel import Model
 
 def generate_testdata(seed=0):
     """Return the history of a run"""
-    model = Model(range_A=[0, 20], range_B=[0, 20], random_seed=seed)
+    model = Model(ΔA=(0, 20), ΔB=(0, 20), random_seed=seed)
 
     results = []
     for x_a, x_b in [(1, 1), (4, 4), (3, 6), (1, 10)]:

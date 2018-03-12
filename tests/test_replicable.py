@@ -90,7 +90,7 @@ class TestReplicability(unittest.TestCase):
         x_a, x_b = x_ab
         return self._aux_test_replicable(x_a, x_b)
 
-    def test_replication(self, range_A=(0, 20), range_B=(0, 20)):
+    def test_replication(self, ΔA=(0, 20), ΔB=(0, 20)):
         """Test all offers combination for replicability.
 
         Note here that to avoid large files, the Matlab's logs contains values sampled every 100th
@@ -98,8 +98,8 @@ class TestReplicability(unittest.TestCase):
         the Python model data.
         """
         pool = pathos.multiprocessing.Pool()
-        pool.map(self._aux2_test_replicable, [(x_a, x_b) for x_a in range(range_A[0], range_A[1]+1)
-                                                         for x_b in range(range_B[0], range_B[1]+1)])
+        pool.map(self._aux2_test_replicable, [(x_a, x_b) for x_a in range(ΔA[0], ΔA[1]+1)
+                                                         for x_b in range(ΔB[0], ΔB[1]+1)])
         print('done!')
 
     def test_specific_offers(self, offers=[(1, 10)]):
@@ -123,7 +123,7 @@ class TestReplicability(unittest.TestCase):
     def test_fig7_replicability(self, offers=[(1, 2), (3, 10), (10, 20)]):
         for x_a, x_b in offers:
             self._aux_test_replicable(x_a, x_b, prefix='fig7_EF_',
-                model_args={'range_A': (0, 10), 'w_p': 1.82})
+                model_args={'ΔA': (0, 10), 'w_p': 1.82})
 
 if __name__ == '__main__':
     unittest.main()

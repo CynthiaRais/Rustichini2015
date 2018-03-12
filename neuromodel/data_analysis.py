@@ -259,7 +259,7 @@ s
                 self.mean_window(np.mean(self.previous['split']['A'], axis=0)),
                 self.mean_window(np.mean(self.previous['split']['B'], axis=0)))
 
-    def regression_hysteresis(self, type=None, range_A = 20):
+    def regression_hysteresis(self, type=None, ΔA=(0, 20), ΔB=(0, 20)):
         # hysteresis
         X_A, X_B, choice_B = {'easy': [], 'split': []}, {'easy': [], 'split': []}, {'easy': [], 'split': []}
         for (x_a, x_b), (n_a, n_b) in sorted(self.choices.items()):
@@ -278,8 +278,8 @@ s
                                                             choice_B['split'], bounds=((-20,) * 6, (20,) * 6))
 
         # computing the regressed model over all possible quantities by 0.5 increments.
-        X_A_reg = np.arange(0, range_A +0.5, 0.5)
-        X_B_reg = np.arange(0, 20.5, 0.5)
+        X_A_reg = np.arange(ΔA[0], ΔA[1] + 0.5, 0.5)
+        X_B_reg = np.arange(ΔB[0], ΔB[1] + 0.5, 0.5)
         X_A_reg, X_B_reg = np.meshgrid(X_A_reg, X_B_reg)
         choice_B_reg_easy = 100 * self.approx_polynome((X_A_reg, X_B_reg), *a_opt_easy)
         choice_B_reg_split = 100 * self.approx_polynome((X_A_reg, X_B_reg), *a_opt_split)
@@ -289,4 +289,3 @@ s
             return X_A['split'], X_B['split'], 100 * np.array(choice_B['split']), X_A_reg, X_B_reg, choice_B_reg_split
         else:
             return ValueError
-

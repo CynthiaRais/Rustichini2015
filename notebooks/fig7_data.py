@@ -4,8 +4,10 @@ import dotdot
 from neuromodel import Offers, Model, ReplicatedModel, run_model
 
 
-ΔA, ΔB, n = 20, 20, 4000
-offers = Offers(ΔA=ΔA, ΔB=ΔB, n=n, random_seed=0)
+ΔA, ΔB, n = 10, 20, 4000
+offers = Offers(ΔA=ΔA, ΔB=ΔB, n=n, random_seed=0
+                range_A=(0, 10), range_B=(0, 20))
+assert range_A == (0, 10)
 
 def compute_fig7_data(model_class=Model, w_p=1.82):
     model = model_class(n=n, ΔA=ΔA, ΔB=ΔB, random_seed=1, w_p=1.82,

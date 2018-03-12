@@ -62,8 +62,8 @@ class Model:
 
                         w_p = 1.75,
 
-                        range_A = None,
-                        range_B = None,
+                        range_A = (0, 20),
+                        range_B = (0, 20),
 
                         hysteresis = False,
 

@@ -48,8 +48,8 @@ class TestReplicability(unittest.TestCase):
             slicesize   = access_data(datamat, 'slice')[0]
             Kslice = K // slicesize
 
-            model = QuantitativelyReplicatedModel(range_A=[0, 20], range_B=[0, 20], t_exp=(100+K)*0.0005,
-                                                  random_seed=seed_mat, full_log=True, **model_args)
+            model = QuantitativelyReplicatedModel(t_exp=(100+K)*0.0005, random_seed=seed_mat,
+                                                  full_log=True, **model_args)
             model.one_trial(x_a, x_b)
 
             key_compare =  ['r_ovb', 'r_2', 'r_3', 'r_I']
@@ -90,7 +90,7 @@ class TestReplicability(unittest.TestCase):
         x_a, x_b = x_ab
         return self._aux_test_replicable(x_a, x_b)
 
-    def test_replication(self):
+    def test_replication(self, range_A=(0, 20), range_B=(0, 20)):
         """Test all offers combination for replicability.
 
         Note here that to avoid large files, the Matlab's logs contains values sampled every 100th
@@ -98,8 +98,8 @@ class TestReplicability(unittest.TestCase):
         the Python model data.
         """
         pool = pathos.multiprocessing.Pool()
-        pool.map(self._aux2_test_replicable, [(x_a, x_b) for x_a in range(21)
-                                                         for x_b in range(21)])
+        pool.map(self._aux2_test_replicable, [(x_a, x_b) for x_a in range(range_A[0], range_A[1]+1)
+                                                         for x_b in range(range_B[0], range_B[1]+1)])
         print('done!')
 
     def test_specific_offers(self, offers=[(1, 10)]):
@@ -119,6 +119,11 @@ class TestReplicability(unittest.TestCase):
         for x_a, x_b in offers:
             self._aux_test_replicable(x_a, x_b, prefix='fig5_GABA_',
                 model_args={'δ_J_stim': (1, 1), 'δ_J_gaba': (1, 1.02, 1)})
+
+    def test_fig7_replicability(self, offers=[(1, 2), (3, 10), (10, 20)]):
+        for x_a, x_b in offers:
+            self._aux_test_replicable(x_a, x_b, prefix='fig7_EF_',
+                model_args={'range_A': (0, 10), 'w_p': 1.82})
 
 if __name__ == '__main__':
     unittest.main()

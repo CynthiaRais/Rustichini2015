@@ -1,4 +1,5 @@
 import os
+import warnings
 
 import numpy as np
 
@@ -54,8 +55,9 @@ class Graph:
         """Save files as png"""
         if not os.path.exists('figures'):
             os.mkdir('figures')
-        print('figures/{}{}.png'.format(title, self.model_desc))
-        export_png(fig, filename='figures/{}{}.png'.format(title, self.model_desc))
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            export_png(fig, filename='figures/{}{}.png'.format(title, self.model_desc))
 
     def specific_set(self, x_offers, firing_rate, percents_B, y_range=None,
                      title='', size=SIZE):

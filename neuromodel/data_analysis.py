@@ -5,14 +5,15 @@ import scipy.optimize
 
 class DataAnalysis:
 
-    def __init__(self, model):
+    def __init__(self, model, preprocess=True):
 
         self.model = model
 
         self.ΔA = self.model.ΔA
         self.ΔB = self.model.ΔB
 
-        self.preprocessing()
+        if preprocess:
+            self.preprocessing()
 
     def clear_history(self):
         """Clear trial history.
@@ -296,3 +297,25 @@ class DataAnalysis:
             return X_A['split'], X_B['split'], 100 * np.array(choice_B['split']), X_A_reg, X_B_reg, choice_B_reg_split
         else:
             return ValueError
+
+    def fig9_average_activity(self, offers):
+        """
+        For each trial, the average activity between 400ms and 600ms after the
+        offer of CJA cells (y-axis) and CJB cells (x-axis).
+
+        :param offers:  only trials that have an offer belonging to the
+                        `offers` set will be considered.
+
+        The data is returned as a dictionary offer -> list of x/y coordinates.
+        """
+        results = {offer: [] for offer in offers}
+        step_range = self.step_range((0.4, 0.6))
+
+        for offer, trials in self.model.history.trials.items():
+            if offer in offers:
+                for trial in trials:
+                    r_cja_mean = np.mean(trial['r_1'][step_range[0]:step_range[1]])
+                    r_cjb_mean = np.mean(trial['r_2'][step_range[0]:step_range[1]])
+                    results[offer].append((r_cjb_mean, r_cja_mean))
+
+        return results

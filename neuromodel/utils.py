@@ -62,7 +62,8 @@ def load_analysis(filename):
         return pickle.load(f)
 
 
-def run_model(model, offers, filename=None, opportunistic=True, verbose=True, parallel=False,
+def run_model(model, offers, filename=None, opportunistic=True, verbose=True,
+              parallel=False, preprocess=True,
               history_keys=('r_1', 'r_2', 'r_3', 'r_I', 'r_ova', 'r_ovb')):
     """Run a model on a set of offers.
 
@@ -99,8 +100,9 @@ def run_model(model, offers, filename=None, opportunistic=True, verbose=True, pa
             for x_A, x_B in tqdm(offers.offers):
                 model.one_trial(x_a=x_A, x_b=x_B)
 
-        analysis = DataAnalysis(model)
-        analysis.clear_history()
+        analysis = DataAnalysis(model, preprocess=preprocess)
+        if preprocess:
+            analysis.clear_history()
 
         if verbose:
             print('Done! (took {})'.format(human_duration(time.time() - start_time)))

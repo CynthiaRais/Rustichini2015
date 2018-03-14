@@ -64,7 +64,6 @@ class Model:
 
                         w_p = 1.75,
 
-
                         hysteresis = False,
 
                         random_seed  = 0,

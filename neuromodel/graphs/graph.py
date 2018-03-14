@@ -251,3 +251,78 @@ class Graph:
 
         self.save_fig(fig, title)
         bpl.show(fig)
+
+    _fig9_colors_A1_rgb = ((253,  26,  32), (253, 100,  35), (254, 192,  44), (223, 255,  49),
+                           (131, 254,  43), ( 46, 254,  40), ( 31, 254,  75), ( 32, 254, 161),
+                           ( 34, 254, 253), ( 20, 158, 252), ( 10,  64, 251), ( 35,   1, 251),
+                           (128,   8, 251), (222,  22, 252), (253,  26, 190), (253,  26, 100))
+
+    _fig9_colors_A3_rgb = ((234,  51,  35), (235,  72,  38), (237, 111,  45), (241, 157,  56),
+                           (247, 205,  70), (255, 254,  84), (214, 252,  81), (177, 251,  79),
+                           (146, 250,  77), (125, 250,  76), (117, 250,  76), (117, 250,  90),
+                           (117, 250, 122), (117, 250, 162), (117, 251, 207), (116, 251, 253),
+                           ( 91, 202, 250), ( 66, 153, 247), ( 40, 104, 246), ( 13,  59, 245),
+                           (  0,  29, 245), ( 44,  31, 245), ( 92,  35, 245), (140,  41, 245),
+                           (187,  50, 246), (234,  60, 247), (234,  56, 198), (234,  54, 150),
+                           (234,  52, 104), (234,  51,  61))
+
+    _fig9_colors_A1, _fig9_colors_A3 = {}, {}
+
+    def _prepare_fig9_color(self):
+        if len(self._fig9_colors_A1) == 0:
+            colors_hex_A1 = ["#%02x%02x%02x" % (r, g, b)
+                             for r, g, b in self._fig9_colors_A1_rgb]
+            for x_A, x_B in [(x_A, x_B) for x_A in range(16) for x_B in range(16)]:
+                self._fig9_colors_A1[(x_A, x_B)] = colors_hex_A1[int(abs(x_A - x_B))]
+
+        if len(self._fig9_colors_A3) == 0:
+            colors_hex_A3 = ["#%02x%02x%02x" % (r, g, b)
+                             for r, g, b in self._fig9_colors_A3_rgb]
+            for x_A, x_B in [(x_A, x_B) for x_A in range(16) for x_B in range(16)]:
+                if x_A != 0 or x_B != 0:
+                    self._fig9_colors_A3[(x_A, x_B)] = colors_hex_A3[int(x_A + x_B - 1)]
+
+    def fig9_offers(self, offers, title, color_rotation=0, size=SIZE):
+        fig = bpl.figure(title=title, plot_width=size, plot_height=size,
+                         tools=TOOLS, x_range=[-0.5, 15.5], y_range=[-0.5, 15.5])
+        utils_bokeh.tweak_fig(fig)
+        self._prepare_fig9_color()
+
+        xs, ys, colors = [], [], []
+        for x_A, x_B in offers:
+            xs.append(x_B)
+            ys.append(x_A)
+            if color_rotation == 0:
+                colors.append(self._fig9_colors_A1[(x_A, x_B)])
+            elif color_rotation == 90:
+                colors.append(self._fig9_colors_A3[(x_A, x_B)])
+            else:
+                raise NotImplementedError
+
+        fig.circle(x=xs, y=ys,  size=10, line_color=colors, fill_color=None,
+                   line_width=2)
+
+        self.save_fig(fig, title)
+        bpl.show(fig)
+
+    def fig9_activity(self, analysis, offers, title, color_rotation=0, size=SIZE, xy_max=40):
+        fig = bpl.figure(title=title, plot_width=size, plot_height=size,
+                         tools=TOOLS, x_range=[0, xy_max], y_range=[0, xy_max])
+        utils_bokeh.tweak_fig(fig)
+        self._prepare_fig9_color()
+
+        results = analysis.fig9_average_activity(offers)
+        xs, ys, colors = [], [], []
+        for offer, trials in results.items():
+            if color_rotation == 0:
+                color = self._fig9_colors_A1[offer]
+            elif color_rotation == 90:
+                color = self._fig9_colors_A3[offer]
+            for x, y in trials:
+                xs.append(x)
+                ys.append(y)
+                colors.append(color)
+        fig.cross(xs, ys, size=10, color=colors)
+
+        self.save_fig(fig, title)
+        bpl.show(fig)

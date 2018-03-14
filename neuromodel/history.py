@@ -89,10 +89,11 @@ class History:
         self.trials_choice.pop((0, 0, 'B'))
 
     def add_trial(self, trial_history):
-        key = (trial_history.x_a, trial_history.x_b)
-        self.trials[key].append(trial_history.export(keys=self.keys))
-        key_choice = (trial_history.x_a, trial_history.x_b, trial_history.choice)
-        self.trials_choice[key_choice].append(trial_history.export(keys=self.keys))
+        offer = (trial_history.x_a, trial_history.x_b)
+        self.trials[offer].append(trial_history.export(keys=self.keys))
+        offer_choice = (trial_history.x_a, trial_history.x_b, trial_history.choice)
+        self.trials_choice[offer_choice].append(trial_history.export(keys=self.keys))
 
     def clear(self):
+        print('Bla')
         self.trials, self.trials_choice = None, None

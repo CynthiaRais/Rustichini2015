@@ -57,7 +57,7 @@ class DataAnalysis:
             self.choices[key] = choices_A[key], choices_B[key]
 
 
-    def mean_window(self, y, size=11):
+    def mean_window(self, y, size=201):
         return scipy.signal.savgol_filter(y, size, 1)
 
     def step_range(self, time_range):

@@ -5,14 +5,15 @@ import scipy.optimize
 
 class DataAnalysis:
 
-    def __init__(self, model):
+    def __init__(self, model, preprocess=True):
 
         self.model = model
 
         self.ΔA = self.model.ΔA
         self.ΔB = self.model.ΔB
 
-        self.preprocessing()
+        if preprocess:
+            self.preprocessing()
 
     def clear_history(self):
         """Clear trial history.
@@ -56,8 +57,8 @@ class DataAnalysis:
             self.choices[key] = choices_A[key], choices_B[key]
 
 
-    def mean_window(self, y):
-        return scipy.signal.savgol_filter(y, 11, 1)
+    def mean_window(self, y, size=201):
+        return scipy.signal.savgol_filter(y, size, 1)
 
     def step_range(self, time_range):
         """Transform a time_range (in seconds) into a step_range.
@@ -74,7 +75,7 @@ class DataAnalysis:
         :param key:          name of the variable to consider (e.g. 'r_2', 'r_I')
         :param time_window:  time window in seconds from which to compute the mean (e.g. (0, 0.5)).
                              Times are relative to the offer time.
-s
+
         Used in Figure 4E, 4H, 6A, 6E, 6I
         """
         step_range = self.step_range(time_window)
@@ -102,10 +103,10 @@ s
         for (x_A, x_B, choice), means in self.means_choice.items():
             if len(means) > 0:
                 if choice == 'A':
-                    q = int(3 * x_A / (self.ΔA + 1))
+                    q = int(3 * x_A / (self.ΔA[1] + 1))
                     means_lmh[q].append(means[key][1000:4000])
                 if choice == 'B':
-                    q = int(3 * x_B / (self.ΔB + 1))
+                    q = int(3 * x_B / (self.ΔB[1] + 1))
                     means_lmh[q].append(means[key][1000:4000])
 
         return [self.mean_window(np.mean(m, axis=0)) for m in means_lmh]
@@ -123,7 +124,7 @@ s
 
         for (x_A, x_B, choice), means in self.means_choice.items():
             if len(means) > 0:
-                q = int(3 * x_B / (self.ΔB + 1))
+                q = int(3 * x_B / (self.ΔB[1] + 1))
                 means_lmh[q].append(means[key][1000:4000])
 
         return [self.mean_window(np.mean(m, axis=0)) for m in means_lmh]
@@ -233,17 +234,24 @@ s
 
         Used in Figure 8B.
         """
-        firing_rates = {'easy': [], 'split': []}
+        A_means = {'easy': [], 'split':[]}
         step_range = self.step_range((-0.5, 1.0))
 
-        for (x_A, x_B, choice), means in self.means_choice.items():
-            if x_A in A_offers and choice == 'A' and len(means) > 0:
-                if len(self.means_choice[(x_A, x_B, 'B')]) > 0:  # B was also chosen sometimes
-                    firing_rates['split'].append(means[key][step_range[0]:step_range[1]])
-                else:
-                    firing_rates['easy'].append(means[key][step_range[0]:step_range[1]])
-            return (self.mean_window(np.mean(firing_rates['easy'], axis=0)),
-                    self.mean_window(np.mean(firing_rates['split'], axis=0)))
+        for A_offer in A_offers:
+            firing_rates = {'easy': [], 'split': []}
+            for (x_A, x_B, choice), means in self.means_choice.items():
+                if x_A == A_offer and choice == 'A' and len(means) > 0:
+                    if len(self.means_choice[(x_A, x_B, 'B')]) > 0:  # B was also chosen sometimes
+                        for _ in range(len(self.means_choice[(x_A, x_B, 'A')])):
+                            firing_rates['split'].append(means[key][step_range[0]:step_range[1]])
+                    else:
+                        for _ in range(len(self.means_choice[(x_A, x_B, 'A')])):
+                            firing_rates['easy'].append(means[key][step_range[0]:step_range[1]])
+            A_means['easy'].append(np.mean(firing_rates['easy'], axis=0))
+            A_means['split'].append(np.mean(firing_rates['split'], axis=0))
+
+        return (self.mean_window(np.mean(A_means['easy'], axis=0), size=201),
+                self.mean_window(np.mean(A_means['split'], axis=0), size=201))
 
     def choice_hysteresis(self, key='r_2', time_window=(-0.5, 1.0)):
         self.previous = {'split': {'A': [], 'B': []}, 'easy': {'A': [], 'B': []}}
@@ -259,7 +267,7 @@ s
                 self.mean_window(np.mean(self.previous['split']['A'], axis=0)),
                 self.mean_window(np.mean(self.previous['split']['B'], axis=0)))
 
-    def regression_hysteresis(self, type=None, range_A = 20):
+    def regression_hysteresis(self, type=None, ΔA=(0, 20), ΔB=(0, 20)):
         # hysteresis
         X_A, X_B, choice_B = {'easy': [], 'split': []}, {'easy': [], 'split': []}, {'easy': [], 'split': []}
         for (x_a, x_b), (n_a, n_b) in sorted(self.choices.items()):
@@ -278,8 +286,8 @@ s
                                                             choice_B['split'], bounds=((-20,) * 6, (20,) * 6))
 
         # computing the regressed model over all possible quantities by 0.5 increments.
-        X_A_reg = np.arange(0, range_A +0.5, 0.5)
-        X_B_reg = np.arange(0, 20.5, 0.5)
+        X_A_reg = np.arange(ΔA[0], ΔA[1] + 0.5, 0.5)
+        X_B_reg = np.arange(ΔB[0], ΔB[1] + 0.5, 0.5)
         X_A_reg, X_B_reg = np.meshgrid(X_A_reg, X_B_reg)
         choice_B_reg_easy = 100 * self.approx_polynome((X_A_reg, X_B_reg), *a_opt_easy)
         choice_B_reg_split = 100 * self.approx_polynome((X_A_reg, X_B_reg), *a_opt_split)
@@ -290,3 +298,24 @@ s
         else:
             return ValueError
 
+    def fig9_average_activity(self, offers):
+        """
+        For each trial, the average activity between 400ms and 600ms after the
+        offer of CJA cells (y-axis) and CJB cells (x-axis).
+
+        :param offers:  only trials that have an offer belonging to the
+                        `offers` set will be considered.
+
+        The data is returned as a dictionary offer -> list of x/y coordinates.
+        """
+        results = {offer: [] for offer in offers}
+        step_range = self.step_range((0.4, 0.6))
+
+        for offer, trials in self.model.history.trials.items():
+            if offer in offers:
+                for trial in trials:
+                    r_cja_mean = np.mean(trial['r_1'][step_range[0]:step_range[1]])
+                    r_cjb_mean = np.mean(trial['r_2'][step_range[0]:step_range[1]])
+                    results[offer].append((r_cjb_mean, r_cja_mean))
+
+        return results

@@ -79,20 +79,21 @@ class History:
         self.reset()
 
     def reset(self):
-        self.trials = {(x_A, x_B): [] for x_A in range(self.model.ΔA + 1)
-                                      for x_B in range(self.model.ΔB + 1)}
+        self.trials = {(x_A, x_B): [] for x_A in range(self.model.ΔA[0], self.model.ΔA[1] + 1)
+                                      for x_B in range(self.model.ΔB[0], self.model.ΔB[1] + 1)}
         self.trials.pop((0, 0)) # not running this case.
-        self.trials_choice = {(x_A, x_B, choice): [] for x_A in range(self.model.ΔA + 1)
-                                                     for x_B in range(self.model.ΔB + 1)
+        self.trials_choice = {(x_A, x_B, choice): [] for x_A in range(self.model.ΔA[0], self.model.ΔA[1] + 1)
+                                                     for x_B in range(self.model.ΔB[0], self.model.ΔB[1] + 1)
                                                      for choice in ['A', 'B']}
         self.trials_choice.pop((0, 0, 'A'))
         self.trials_choice.pop((0, 0, 'B'))
 
     def add_trial(self, trial_history):
-        key = (trial_history.x_a, trial_history.x_b)
-        self.trials[key].append(trial_history.export(keys=self.keys))
-        key_choice = (trial_history.x_a, trial_history.x_b, trial_history.choice)
-        self.trials_choice[key_choice].append(trial_history.export(keys=self.keys))
+        offer = (trial_history.x_a, trial_history.x_b)
+        self.trials[offer].append(trial_history.export(keys=self.keys))
+        offer_choice = (trial_history.x_a, trial_history.x_b, trial_history.choice)
+        self.trials_choice[offer_choice].append(trial_history.export(keys=self.keys))
 
     def clear(self):
+        print('Bla')
         self.trials, self.trials_choice = None, None

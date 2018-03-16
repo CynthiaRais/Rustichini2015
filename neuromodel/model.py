@@ -6,6 +6,8 @@ from .utils import autoinit
 
 class Model:
 
+    desc = ''
+
     @autoinit # set all __init__ arguments as instance members
     def __init__(self,  # Network parameters
                         N_E         = 1600,
@@ -39,20 +41,20 @@ class Model:
                         c_I = 615,
 
                         # Parameters used to model OV cells
-                        r_o     = 0,                   # spike/s (0 or 6)
-                        Δ_r     = 8,                   # spike/s
-                        t_offer = 1.0,                 # s
+                        r_o     = 0,              # spike/s (0 or 6)
+                        Δ_r     = 8,              # spike/s
+                        t_offer = 1.0,            # s
                         a       = 0.175,
                         b       = 0.030,
                         c       = 0.400,
                         d       = 0.100,
 
                         # Parameters of the experience
-                        t_exp = 2.0,                   # s
-                        dt    = 0.0005,                # s
-                        n     = 4000,                  # number of trials
-                        ΔA    = 20,                    # maximum quantity of juice A
-                        ΔB    = 20,                    # maximum quantity of juice B
+                        t_exp = 2.0,              # s
+                        dt    = 0.0005,           # s
+                        n     = 4000,             # number of trials
+                        ΔA    = (0, 20),          # min/max quantity of juice A
+                        ΔB    = (0, 20),          # min/max quantity of juice B
 
                         # Hebbian learning and synaptic imbalance
                         δ_J_hl   = (1, 1),
@@ -61,9 +63,6 @@ class Model:
                         δ_J_nmda = (1, 1),
 
                         w_p = 1.75,
-
-                        range_A = None,
-                        range_B = None,
 
                         hysteresis = False,
 
@@ -133,8 +132,10 @@ class Model:
         """Compute the external AMPA current for pyramidal cells (eq. 8)"""
         return -self.J_ampa_ext_pyr * self.τ_ampa * self.C_ext * self.r_ext + self.I_η[i]
 
-    def I_ampa_rec(self, i, j):  # 9
+    def I_ampa_rec(self, i):  # 9
         """Compute the recurrent AMPA current for CJA and CJB cells (eq. 9)"""
+        assert i in ('1', '2')
+        j = '2' if i == '1' else '1' # j != i
         return (-self.N_E * self.f * self.J_ampa_rec_pyr * (self.w_p * self.S_ampa[i] + self.w_m * self.S_ampa[j])
                 - self.N_E * (1 - 2 * self.f) * self.J_ampa_rec_pyr * self.w_m * self.S_ampa['3'])
 
@@ -143,8 +144,10 @@ class Model:
         return (-self.N_E * self.f * self.J_ampa_rec_pyr * (self.S_ampa['1'] + self.S_ampa['2'])
                 - self.N_E * (1 - 2 * self.f) * self.J_ampa_rec_pyr * self.S_ampa['3'])
 
-    def I_nmda_rec(self, i, j):  # 11
+    def I_nmda_rec(self, i):  # 11
         """Compute the recurrent NMDA current for CJA and CJB cells (eq. 11)"""
+        assert i in ('1', '2')
+        j = '2' if i == '1' else '1' # j != i
         return (-self.N_E * self.f * self.J_nmda_rec_pyr * self.δ_J_nmda[i] * (self.w_p * self.S_nmda[i] + self.w_m * self.S_nmda[j])
                 - self.N_E * (1 - 2 * self.f) * self.J_nmda_rec_pyr * self.w_m * self.S_nmda['3'])
 
@@ -156,7 +159,6 @@ class Model:
     def I_gaba_rec(self, i):  # 13
         """Compute the recurrent NMDA current for pyramidal cells (eq. 13)"""
         return -self.N_I * self.J_gaba_rec_pyr * self.δ_J_gaba[i] * self.S_gaba
-
 
     def I_ampa_ext_I(self):  # 14
         """Compute the external AMPA current for interneurons (eq. 14)"""
@@ -212,7 +214,7 @@ class Model:
         g_t = self.g_t(t)
 
         f_t = g_t / self.g_max
-        #assert f_t <= 1, 'firing ov trop haut'
+        assert f_t <= 1
         r_ov = self.r_o + self.Δ_r * f_t * x_i
         return r_ov
 
@@ -272,30 +274,28 @@ class Model:
 
         # firing rate of ov cells
         self.r_ov = {}  # TODO: do better
-        self.r_ov['1'] = self.firing_ov_cells(x_a, self.range_A[0], self.range_A[1], t)
-        self.r_ov['2'] = self.firing_ov_cells(x_b, self.range_B[0], self.range_B[1], t)
-        # assert r_ova <= 8, 'r_ova = {}'.format(r_ova)
-        # assert r_ovb <= 8, 'r_ovb = {}'.format(r_ovb)
+        self.r_ov['1'] = self.firing_ov_cells(x_a, self.ΔA[0], self.ΔA[1], t)
+        self.r_ov['2'] = self.firing_ov_cells(x_b, self.ΔB[0], self.ΔB[1], t)
 
         # computing ampa currents
         for i in ['1', '2', '3']:
-            I_ampa_ext[i] = self.I_ampa_ext(i)  # equation 8
+            I_ampa_ext[i] = self.I_ampa_ext(i) # equation 8
         I_ampa_ext['I'] = self.I_ampa_ext_I()  # equation 14
 
-        for i, j in [('1', '2'), ('2', '1')]:  # i != j
-            I_ampa_rec[i] = self.I_ampa_rec(i, j)  # equation 9
+        for i in ['1', '2']:
+            I_ampa_rec[i] = self.I_ampa_rec(i) # equation 9
         I_ampa_rec['3'] = self.I_ampa_rec_3()  # equation 12
         I_ampa_rec['I'] = self.I_ampa_rec_I()  # equation 15
 
         # computing nmda currents
-        for i, j in [('1', '2'), ('2', '1')]:  # i != j
-            I_nmda_rec[i] = self.I_nmda_rec(i, j)  # equation 10
+        for i in ['1', '2']:
+            I_nmda_rec[i] = self.I_nmda_rec(i) # equation 10
         I_nmda_rec['3'] = self.I_nmda_rec_3()  # equation 11
         I_nmda_rec['I'] = self.I_nmda_rec_I()  # equation 16
 
         # computing gaba currents
         for i in ['1', '2', '3']:
-            I_gaba_rec[i] = self.I_gaba_rec(i)  # equation 13
+            I_gaba_rec[i] = self.I_gaba_rec(i) # equation 13
         I_gaba_rec['I'] = self.I_gaba_rec_I()  # equation 17
 
         # computing primary input currents

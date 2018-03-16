@@ -7,10 +7,12 @@ from matplotlib.markers import MarkerStyle
 
 import numpy as np
 
+A_color = '#bd5151' # 189, 81, 81  fig4: '#c5392b'
+B_color = '#575aa3' #  87, 90,163  fig4: '#2e3abf'
 
 def _prepare_plot(x_label='offer A', y_label='offer B', z_label=None, title='', z_ticks=None):
 
-    fig = plt.figure(figsize=(6, 6))
+    fig = plt.figure(figsize=(10, 10))
     ax = fig.gca(projection='3d')
     ax.set_xlim([0, 20])
     ax.set_ylim([0, 20])
@@ -56,7 +58,7 @@ def _prepare_plot(x_label='offer A', y_label='offer B', z_label=None, title='', 
     return fig, ax
 
 
-def tuningcurve(XYZC, show=True, filename_suffix='', **kwargs):
+def tuningcurve(XYZC, show=True, model_desc='', **kwargs):
     """
     Tuning curve plotting code for Fig. 4.[B, F, J], Fig. 6.[B, F, J], Fig. 10.[C, I].
 
@@ -79,17 +81,19 @@ def tuningcurve(XYZC, show=True, filename_suffix='', **kwargs):
             ZB.append(z)
 
     # Plot the markers.
-    surf = ax.scatter(XA, YA, ZA, marker='D', edgecolor='red',  facecolor=(0,0,0,0), s=50)
-    surf = ax.scatter(XB, YB, ZB, marker='o', edgecolor='blue', facecolor=(0,0,0,0), s=70)
+    surf = ax.scatter(XA, YA, ZA, marker='D', edgecolor=A_color, linewidths=2,
+                      facecolor=(0,0,0,0), s=100)
+    surf = ax.scatter(XB, YB, ZB, marker='o', edgecolor=B_color, linewidths=2,
+                      facecolor=(0,0,0,0), s=140)
 
-    plt.savefig('figures/{}{}.pdf'.format(kwargs['title'], filename_suffix))
+    plt.savefig('figures/{}{}.pdf'.format(kwargs['title'], model_desc))
 
     if show:
         plt.show()
 
 
 
-def regression_3D(data, show=True, filename_suffix='', **kwargs):
+def regression_3D(data, show=True, model_desc='', **kwargs):
     X , Y, Z, X_reg, Y_reg, Z_reg = data
     fig, ax = _prepare_plot(**kwargs)
     ax.view_init(azim=-35, elev=31)
@@ -98,6 +102,6 @@ def regression_3D(data, show=True, filename_suffix='', **kwargs):
     ax.plot_surface(X_reg, Y_reg, Z_reg, cmap=cm.jet, linewidth=0, antialiased=True)
     ax.scatter(X, Y, Z, marker='.', edgecolor='grey',  facecolor=(0,0,0,0), s=20)
 
-    plt.savefig('figures/{}{}.pdf'.format(kwargs['title'], filename_suffix))
+    plt.savefig('figures/{}{}.pdf'.format(kwargs['title'], model_desc))
     if show:
         plt.show()

@@ -3,7 +3,7 @@ from neuromodel import Offers, Model, ReplicatedModel, run_model
 
 
 # configuring offers
-ΔA, ΔB, n = 20, 20, 4000
+ΔA, ΔB, n = (0, 20), (0, 20), 4000
 offers = Offers(ΔA=ΔA, ΔB=ΔB, n=n, random_seed=0)
 
 def compute_fig4_data(model_class=Model):
@@ -13,11 +13,9 @@ def compute_fig4_data(model_class=Model):
     :param model_class:  set to ReplicatedModel if you want to replicate the published figures.
                          set to Model to use the 'corrected' model, as described in the article.
     """
-    model = model_class(n=n, ΔA=ΔA, ΔB=ΔB, random_seed=1,
-                        range_A=offers.range_A, range_B=offers.range_B)
+    model = model_class(n=n, random_seed=1, ΔA=ΔA, ΔB=ΔB)
 
-    filename_suffix = '_replicate' if model_class is ReplicatedModel else ''
-    filename='data/fig4[{}]{}.pickle'.format(n, filename_suffix)
+    filename='data/fig4[{}]{}.pickle'.format(n, model.desc)
     return run_model(model, offers, history_keys=('r_ovb', 'r_2', 'r_I'), filename=filename)
 
 

@@ -9,6 +9,9 @@ class ReplicatedModel(model.Model):
     and Camillo Padoa-Schioppa.
     """
 
+    desc = '_replicate'
+
+
     def firing_rate_I(self, phi_I):  # 2
         """Compute the update of  the firing rate of interneurons (eq. 2)
 
@@ -24,6 +27,13 @@ class ReplicatedModel(model.Model):
         """
         return x / x_max
 
+    def I_nmda_rec(self, i):  # 11
+        """Compute the recurrent NMDA current for CJA and CJB cells (eq. 11)"""
+        assert i in ('1', '2')
+        j = '2' if i == '1' else '1' # j != i
+        return (-self.N_E * self.f * self.J_nmda_rec_pyr * (self.δ_J_nmda[i] * self.w_p * self.S_nmda[i] + self.w_m * self.S_nmda[j])
+                - self.N_E * (1 - 2 * self.f) * self.J_nmda_rec_pyr * self.w_m * self.S_nmda['3'])
+
 
 class QuantitativelyReplicatedModel(ReplicatedModel):
     """This model quantitatively reproduces the behavior of the Matlab code obtained from
@@ -34,6 +44,8 @@ class QuantitativelyReplicatedModel(ReplicatedModel):
     same random sequence as the Matlab code. As this is much less efficient, this model is much
     slower than ReplicatedModel, and therefore is only used in `test_replicated.py`.
     """
+
+    desc = '_qreplicate'
 
     def η(self):
         """Compute η, white noise with unit noise.

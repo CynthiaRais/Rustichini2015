@@ -2,7 +2,7 @@ import numpy as np
 
 class Offers:
 
-    def __init__(self, ΔA=20, ΔB=20, n=4000, random_seed=1, range_A=None, range_B=None):
+    def __init__(self, ΔA=(0, 20), ΔB=(0, 20), n=4000, random_seed=1):
         self.random = np.random.RandomState(seed=random_seed)
 
         self.n = n
@@ -10,26 +10,21 @@ class Offers:
 
         self.generate_offers()
 
-        self.range_A = range_A
-        if self.range_A is None:
-            self.range_A = min(x_A for x_A, x_B in self.offers), max(x_A for x_A, x_B in self.offers)
-        self.range_B = range_B
-        if self.range_B is None:
-            self.range_B = min(x_B for x_A, x_B in self.offers), max(x_B for x_A, x_B in self.offers)
-
     def generate_offers(self):
         """Generate the list of offers (x_A, x_B) of juice quantity"""
+        # will every possible offer be seen at least once?
+        assert (self.ΔA[1] - self.ΔA[0]) * (self.ΔB[1] - self.ΔB[0]) < self.n
+
         self.offers = []
         while len(self.offers) < self.n:
             self.offers += self.generate_block()
         self.random.shuffle(self.offers)
         self.offers = self.offers[:self.n]
 
-
     def generate_block(self):
         """Generate a block of every of every possible offer"""
-        block = [(x_A, x_B) for x_A in range(0, self.ΔA + 1)
-                            for x_B in range(0, self.ΔB + 1)][1:] # remove (0, 0)
+        block = [(x_A, x_B) for x_A in range(self.ΔA[0], self.ΔA[1] + 1)
+                            for x_B in range(self.ΔB[0], self.ΔB[1] + 1)][1:] # remove (0, 0)
         return block
 
 

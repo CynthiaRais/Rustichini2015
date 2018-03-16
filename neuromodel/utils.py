@@ -57,7 +57,13 @@ def run_trial(offer, model):
     return trial_history
 
 
-def run_model(model, offers, filename=None, opportunistic=True, verbose=True, parallel=False,
+def load_analysis(filename):
+    with open(filename, 'rb') as f:
+        return pickle.load(f)
+
+
+def run_model(model, offers, filename=None, opportunistic=True, verbose=True,
+              parallel=False, preprocess=True,
               history_keys=('r_1', 'r_2', 'r_3', 'r_I', 'r_ova', 'r_ovb')):
     """Run a model on a set of offers.
 
@@ -66,10 +72,9 @@ def run_model(model, offers, filename=None, opportunistic=True, verbose=True, pa
     """
     if opportunistic and os.path.isfile(filename): # load from disk.
         if verbose:
-            print('Loading results of {} from disk: {}.'.format(model.__class__.__name__,
-                                                                    filename))
-        with open(filename, 'rb') as f:
-            analysis = pickle.load(f)
+            print('Loading results of {} from disk: {}.'.format(
+                  model.__class__.__name__, filename))
+        analysis = load_analysis(filename)
 
     else: # compute from scratch.
         start_time = time.time()
@@ -95,8 +100,9 @@ def run_model(model, offers, filename=None, opportunistic=True, verbose=True, pa
             for x_A, x_B in tqdm(offers.offers):
                 model.one_trial(x_a=x_A, x_b=x_B)
 
-        analysis = DataAnalysis(model)
-        analysis.clear_history()
+        analysis = DataAnalysis(model, preprocess=preprocess)
+        if preprocess:
+            analysis.clear_history()
 
         if verbose:
             print('Done! (took {})'.format(human_duration(time.time() - start_time)))

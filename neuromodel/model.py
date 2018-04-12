@@ -90,7 +90,7 @@ class Model:
         self.g_max = max(self.g_t(t) for t in np.arange(self.dt, self.t_exp + self.dt, self.dt))
 
         self.history = history.History(self, keys=history_keys)
-        self.reset_trajectories()
+        self.reset_conditions()
 
         if self.verbose:
             print("Finished model initialization.")
@@ -98,16 +98,16 @@ class Model:
 
     def firing_rate_pyr(self, i, phi_i): # 1
         """Compute the update of the firing rate of pyramidale cells (eq. 1)"""
-        return self.dt * ((- self.r[i] + phi_i) / self.τ_ampa)
+        return self.dt * (- self.r[i] + phi_i) / self.τ_ampa
 
     def firing_rate_I(self, phi_I):  # 2
         """Compute the update of  the firing rate of interneurons (eq. 2)"""
-        return self.dt * ((-self.r['I'] + phi_I) / self.τ_gaba)
+        return self.dt * (-self.r['I'] + phi_I) / self.τ_gaba
 
 
     def channel_ampa(self, i):  # 3
         """Compute the update to the AMPA gating variable (eq. 3)"""
-        return self.dt * ((-self.S_ampa[i] / self.τ_ampa) + self.r[i])
+        return self.dt * (-self.S_ampa[i] / self.τ_ampa + self.r[i])
 
     def channel_nmda(self, i):  # 4
         """Compute the update to the NMDA gating variable (eq. 4)"""
@@ -119,9 +119,9 @@ class Model:
         return self.dt * (-self.S_gaba / self.τ_gaba + self.r[i])
 
 
-    def Φ(self, I_syn, c, i, gain):  # 6
+    def Φ(self, I_syn, c, I, gain):  # 6
         """Input-ouput relation for leaky integrate-and-fire cell (Abbott and Chance, 2005) (eq. 6)"""
-        return ((c * I_syn - i) / (1 - np.exp(-gain * (c * I_syn - i))))
+        return (c * I_syn - I) / (1 - np.exp(-gain * (c * I_syn - I)))
 
         ## Currents and parameters
 
@@ -184,16 +184,12 @@ class Model:
         return self.random.normal(0, 1)
 
     def I_η_update(self, j):  # 18
-        """Compute the update to I_η, modelized by a Ornstein-Uhlenbeck process (eq. 18)."""
+        """Compute the update to I_η, modelized by a Ornstein-Uhlenbeck process (eq. 18).
+
+        Derived from equation 18 using the Euler–Maruyama method.
+        """
         return (-self.I_η[j] * (self.dt / self.τ_ampa) +
                 self.η() * np.sqrt(self.dt / self.τ_ampa) * self.σ_η)
-        #
-        # D = 2 * self.σ_η**2 / self.τ_ampa
-        # return self.dt * (-self.I_η[j] / self.τ_ampa + np.sqrt(D) * self.η())
-        #
-        # return self.dt * (-self.I_η[j]
-        #                   + self.η() * np.sqrt(2 * self.τ_ampa * self.σ_η**2)) / self.τ_ampa
-
 
     def I_stim(self, i):  # 19
         """Computing the primary input (eq. 19)"""
@@ -228,8 +224,8 @@ class Model:
         return choice_B
 
 
-    def reset_trajectories(self):
-        """Reset all state trajectories"""
+    def reset_conditions(self):
+        """Reset all state conditions to the initial ones"""
         self.r      = {'1': 3, '2': 3, '3': 3, 'I': 8}
         self.I_η    = {'1': 0, '2': 0, '3': 0, 'I': 0}
         self.S_ampa = {'1': 0, '2': 0, '3': 0}
@@ -237,22 +233,11 @@ class Model:
         self.S_gaba = 0
         self.choice = None
 
-    def hysteresis_trajectories(self):
-        self.r = {'1': self.r['1'], '2': self.r['2'], '3': self.r['3'], 'I': self.r['I']}
-        self.I_η = {'1': 0, '2': 0, '3': 0, 'I': 0}
-        self.S_ampa = {'1': self.S_ampa['1'], '2': self.S_ampa['2'], '3': self.S_ampa['3']}
-        self.S_nmda = {'1': self.S_nmda['1'], '2': self.S_nmda['2'], '3': self.S_nmda['3']}
-        self.S_gaba = self.S_gaba
-        self.choice = None
-
     def one_trial(self, x_a, x_b):
         """Compute one trial"""
-
-        # Firing rate of OV B cell, CJ B cell and CV cell for one trial
-        if self.hysteresis:
-            self.hysteresis_trajectories()
-        else :
-            self.reset_trajectories()
+        if not self.hysteresis:
+            self.reset_conditions()
+        self.choice = None
 
         self.trial_history = history.TrialHistory(self, x_a, x_b, full_log=self.full_log)
 
@@ -326,6 +311,5 @@ class Model:
         # generating noise
         for j in ['1', '2', '3', 'I']:
             self.I_η[j] += self.I_η_update(j)  # equation 18
-
 
         self.trial_history.update(self, I_ampa_ext, I_ampa_rec, I_nmda_rec, I_gaba_rec, I_stim, I_syn, phi)

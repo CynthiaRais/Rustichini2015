@@ -17,7 +17,7 @@ class ReplicatedModel(model.Model):
 
         In this equation, `self.τ_ampa` should be `self.τ_gaba`.
         """
-        return ((-self.r['I'] + phi_I) / self.τ_ampa) * self.dt
+        return self.dt * ((-self.r['I'] + phi_I) / self.τ_ampa)
 
     def range_adaptation(self, x, x_min, x_max):
         """Compute the range adaptation of a juice quantity (eq. 20)

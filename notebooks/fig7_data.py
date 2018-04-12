@@ -12,7 +12,7 @@ def compute_fig7_data(model_class=Model, w_p=1.82):
                         hysteresis=True)
 
     filename='data/fig7_{}[{}]{}.pickle'.format(w_p, n, model.desc)
-    return run_model(model, offers, history_keys=('r_2'), filename=filename)
+    return run_model(model, offers, history_keys=('r_2',), filename=filename)
 
 
 if __name__ == '__main__':

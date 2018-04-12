@@ -5,6 +5,10 @@ from .utils import autoinit
 
 
 class Model:
+    """Replication of the model from "A neuro-computational model of economic
+    decisions" by Aldo Rustichini and Camillo Padoa-Schioppa. This model
+    reproduces the model as described in the article.
+    """
 
     desc = ''
 

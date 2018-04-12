@@ -14,7 +14,7 @@ import dotdot
 from neuromodel import QuantitativelyReplicatedModel
 
 
-VERBOSE  = True  # useful output when mismatch are detected.
+VERBOSE  = False # useful output when mismatch are detected.
 FULL_LOG = False  # checks every variable, not only r_ovb, r_2, r_3 and r_I
                   # (requires full_log matlab files)
 
@@ -67,7 +67,8 @@ class TestReplicability(unittest.TestCase):
                 print('checking {}A{}B ...'.format(x_a, x_b))
             K = 6000
 
-            print('loading {}'.format('data/matlab/{}testdata{}A{}B.mat'.format(prefix, x_a, x_b)))
+            if VERBOSE:
+                print('loading {}'.format('data/matlab/{}testdata{}A{}B.mat'.format(prefix, x_a, x_b)))
             datamat  = scipy.io.loadmat('data/matlab/{}testdata{}A{}B.mat'.format(prefix, x_a, x_b))
             seed_mat = access_data(datamat, 'seed')[0]
             assert seed_mat != 0, "Seed 0 is not supported, due to implementation differences between Numpy and Matlab."
@@ -124,17 +125,17 @@ class TestReplicability(unittest.TestCase):
         x_a, x_b = x_ab
         return self._aux_test_replicable(x_a, x_b)
 
-    def test_replication(self, ΔA=(0, 20), ΔB=(0, 20)):
-        """Test all offers combination for replicability.
-
-        Note here that to avoid large files, the Matlab's logs contains values sampled every 100th
-        timestep (every 0.05s), and comparisons are done against thoses values and timesteps with
-        the Python model data.
-        """
-        pool = pathos.multiprocessing.Pool()
-        pool.map(self._aux2_test_replicable, [(x_a, x_b) for x_a in range(ΔA[0], ΔA[1]+1)
-                                                         for x_b in range(ΔB[0], ΔB[1]+1)])
-        print('done!')
+    # def test_replication(self, ΔA=(0, 20), ΔB=(0, 20)):
+    #     """Test all offers combination for replicability.
+    #
+    #     Note here that to avoid large files, the Matlab's logs contains values sampled every 100th
+    #     timestep (every 0.05s), and comparisons are done against thoses values and timesteps with
+    #     the Python model data.
+    #     """
+    #     pool = pathos.multiprocessing.Pool()
+    #     pool.map(self._aux2_test_replicable, [(x_a, x_b) for x_a in range(ΔA[0], ΔA[1]+1)
+    #                                                      for x_b in range(ΔB[0], ΔB[1]+1)])
+    #     print('done!')
 
     def test_specific_offers(self, offers=[(1, 10)]):
         """Test specific offers.

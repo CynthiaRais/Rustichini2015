@@ -56,8 +56,7 @@ class Model:
                         ΔA    = (0, 20),          # min/max quantity of juice A
                         ΔB    = (0, 20),          # min/max quantity of juice B
 
-                        # Hebbian learning and synaptic imbalance
-                        δ_J_hl   = (1, 1),
+                        # Synaptic imbalance
                         δ_J_stim = (2, 1),
                         δ_J_gaba = (1, 1, 1),
                         δ_J_nmda = (1, 1),
@@ -79,8 +78,10 @@ class Model:
 
         self.w_m = 1 - f * (self.w_p - 1) / (1 - self.f)
 
-        # Hebbian learning and synaptic imbalance
-        self.δ_J_hl   = {'1': δ_J_hl[0],   '2': δ_J_hl[1]}
+        # Hebbian learning (p. 1384)
+        self.δ_J_hl = {'1': self.ΔA[1]/self.ΔB[1], '2': 1}
+
+        # Synaptic imbalance
         self.δ_J_stim = {'1': δ_J_stim[0], '2': δ_J_stim[1]}
         self.δ_J_nmda = {'1': δ_J_nmda[0], '2': δ_J_nmda[1]}
         self.δ_J_gaba = {'1': δ_J_gaba[0], '2': δ_J_gaba[1], '3': δ_J_gaba[2]}

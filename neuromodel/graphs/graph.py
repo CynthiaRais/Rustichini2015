@@ -1,3 +1,5 @@
+"""Graph class and code for bokeh graphs"""
+
 import os
 import warnings
 
@@ -7,18 +9,11 @@ import bokeh
 import bokeh.plotting as bpl
 from bokeh.models import FixedTicker, FuncTickFormatter
 from bokeh.models import LinearColorMapper, BasicTicker, ColorBar
-from bokeh.io import export_png
 
 import matplotlib as mpl
 
-from . import utils_bokeh
-from . import graphs3d
-
-import os
-
-import matplotlib.pyplot as plt
-import scipy.linalg
-from mpl_toolkits.mplot3d import Axes3D
+from . import utils_bokeh as ubkh
+from . import graphs_mpl
 
 
 A_color = '#bd5151' # 189, 81, 81  fig4: '#c5392b'
@@ -31,43 +26,54 @@ blue_pale   = '#9090c3'
 blue_dark   = '#3a4596'
 
 SIZE = 500
-
-
 TOOLS = ()
+
 
 class Graph:
 
-    def __init__(self, analysis):
+    def __init__(self, analysis, show=None):
+        if show is None: # True only if in a notebook
+            self.show = ubkh.JUPYTER
+
         self.x_axis = 1000 * np.arange(-0.5, 1.0, analysis.model.dt)
         self.x_range = np.min(self.x_axis), np.ceil(np.max(self.x_axis))
         self.model_desc = analysis.model.desc
         bpl.output_notebook(hide_banner=True)
 
-    def fix_x_ticks(self, fig):
-        fig.xaxis[0].ticker = FixedTicker(ticks=[-500, 0, 500, 1000])
+    def set_x_ticks(self, fig, ticks=None):
+        if ticks is None:
+            ticks=(-500, 0, 500, 1000)
+        fig.xaxis[0].ticker = FixedTicker(ticks=ticks)
 
+    def set_y_ticks(self, fig, ticks=None):
+        if ticks is not None: # no default value
+            fig.yaxis[0].ticker = FixedTicker(ticks=ticks)
+
+    def save_and_show(self, fig, title, ext='png'):
+        full_title = '{}{}'.format(title, self.model_desc)
+        ubkh.save_fig(fig, full_title, ext=ext, verbose=not self.show)
+        if self.show:
+            bpl.show(fig)
+
+        # matplotlib graphs
 
     def tuning_curve(self, tuning_data, title):
-        graphs3d.tuningcurve(tuning_data, x_label='offer A', y_label='offer B', title=title,
-                             model_desc=self.model_desc)
+        graphs_mpl.tuningcurve(tuning_data, x_label='offer A', y_label='offer B', title=title,
+                             model_desc=self.model_desc, show=self.show)
 
-    def save_fig(self, fig, title):
-        """Save files as png"""
-        if not os.path.exists('figures'):
-            os.mkdir('figures')
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            export_png(fig, filename='figures/{}{}.png'.format(title, self.model_desc))
+    def regression_3D(self, data, **kwargs):
+        return graphs_mpl.regression_3D(data, show=self.show, model_desc=self.model_desc, **kwargs)
+
+        # bokeh graphs
 
     def specific_set(self, x_offers, firing_rate, percents_B, y_range=None,
                      title='', size=SIZE):
         """Figure 4C, 4G, 4K"""
-        fig = bpl.figure(title=title, plot_width=size, plot_height=size,
+        fig = ubkh.figure(title=title, plot_width=size, plot_height=size,
                          tools=TOOLS,
                          y_range=(y_range[0] - 0.05 * (y_range[1] - y_range[0]), y_range[1]))
-        utils_bokeh.tweak_fig(fig)
 
-        fig.xaxis[0].ticker = FixedTicker(ticks=list(range(len(x_offers))))
+        self.set_x_ticks(fig, list(range(len(x_offers))))
         fig.xaxis.formatter = FuncTickFormatter(code="""
             var labels = {};
             return labels[tick];
@@ -89,8 +95,7 @@ class Graph:
         fig.diamond(x=xs_A, y=list(r_A.values()), size=15, color=A_color, alpha=0.75)
         fig.circle( x=xs_B, y=list(r_B.values()), size=10, color=B_color, alpha=0.75)
 
-        self.save_fig(fig, title)
-        bpl.show(fig)
+        self.save_and_show(fig, title)
 
 
     def means_lowmedhigh(self, means, title, y_range=(0, 25), y_ticks=None,
@@ -99,38 +104,32 @@ class Graph:
 
         Used in Figures 4A, 4I, 6A, 6E, 6I.
         """
-        fig = bpl.figure(title=title, plot_width=size, plot_height=size,
+        fig = ubkh.figure(title=title, plot_width=size, plot_height=size,
                          tools=TOOLS, x_range=self.x_range, y_range=y_range)
-        utils_bokeh.tweak_fig(fig)
-        self.fix_x_ticks(fig)
-        if y_ticks is not None:
-            fig.yaxis[0].ticker = FixedTicker(ticks=y_ticks)
+        self.set_x_ticks(fig)
+        self.set_y_ticks(fig, y_ticks)
         fig.line(x=(0, 0), y=y_range, color="black", line_dash='dashed')
 
         fig.multi_line([self.x_axis, self.x_axis, self.x_axis], means,
                        color=[grey_low, grey_medium, grey_high], line_width=4)
 
-        self.save_fig(fig, title)
-        bpl.show(fig)
+        self.save_and_show(fig, title)
 
 
     def means_chosen_value(self, means, title='', y_range=(0, 25), y_ticks=None,
                            size=SIZE):
         xs_A, ys_A, xs_B, ys_B = means
 
-        fig = bpl.figure(title=title, plot_width=size, plot_height=size,
+        fig = ubkh.figure(title=title, plot_width=size, plot_height=size,
                          tools=TOOLS, y_range=y_range)
-        utils_bokeh.tweak_fig(fig)
-        if y_ticks is not None:
-            fig.yaxis[0].ticker = FixedTicker(ticks=y_ticks)
+        self.set_y_ticks(fig, y_ticks)
 
         fig.diamond(x=xs_A, y=ys_A, color=A_color, size=22, fill_color=None,
                     line_color=A_color, line_alpha=0.5, line_width=2)
         fig.circle( x=xs_B, y=ys_B, color=B_color, size=15, fill_color=None,
                     line_color=B_color, line_alpha=0.5, line_width=2)
 
-        self.save_fig(fig, title)
-        bpl.show(fig)
+        self.save_and_show(fig, title)
 
 
     def firing_offer_B(self, tuning_ovb, y_range=(0, 5), title='', size=SIZE):
@@ -144,26 +143,23 @@ class Graph:
                 xs_circles.append(x_B)
                 ys_circles.append(r_ovb)
 
-        fig = bpl.figure(title=title, plot_width=size, plot_height=size,
+        fig = ubkh.figure(title=title, plot_width=size, plot_height=size,
                          tools=TOOLS, y_range=y_range)
-        utils_bokeh.tweak_fig(fig)
 
         fig.diamond(xs_diamonds, ys_diamonds, size=15, fill_color=None, line_color=A_color, line_alpha=0.5)
         fig.circle(xs_circles, ys_circles, size=10, fill_color=None, line_color=B_color, line_alpha=0.5)
 
-        self.save_fig(fig, title)
-        bpl.show(fig)
+        self.save_and_show(fig, title)
 
 
     def means_chosen_choice(self, mean_chosen_choice, title='Figure 4E',
                             y_range=(0, 25), y_ticks=(0, 5, 10, 15, 20, 25),
                             colors=[grey_low, grey_high], line_width=4,
                             size=SIZE, legends=None):
-        fig = bpl.figure(title=title, plot_width=size, plot_height=size,
+        fig = ubkh.figure(title=title, plot_width=size, plot_height=size,
                          tools=TOOLS, x_range=self.x_range, y_range=y_range)
-        utils_bokeh.tweak_fig(fig)
-        self.fix_x_ticks(fig)
-        fig.yaxis[0].ticker = FixedTicker(ticks=y_ticks)
+        self.set_x_ticks(fig)
+        self.set_y_ticks(fig, y_ticks)
         fig.line(x=(0, 0), y=y_range, color="black", line_dash='dashed')
 
         if legends is None:
@@ -178,18 +174,16 @@ class Graph:
         # fig.multi_line([self.x_axis, self.x_axis], mean_chosen_choice,
         #                color=colors, line_width=line_width, line_cap='round', legend=legends)
         #
-        self.save_fig(fig, title)
-        bpl.show(fig)
+        self.save_and_show(fig, title)
 
 
     def firing_choice(self, tunnig_cjb, title='Figure 4H', size=SIZE):
         """Figure 4H"""
-        fig = bpl.figure(title=title, plot_width=size, plot_height=size,
+        fig = ubkh.figure(title=title, plot_width=size, plot_height=size,
                          tools=TOOLS, x_range=[0.75, 2.25], y_range=[0, 18])
 
-        utils_bokeh.tweak_fig(fig)
-        fig.xaxis[0].ticker = FixedTicker(ticks=[1, 2])
-        fig.yaxis[0].ticker = FixedTicker(ticks=[0, 5, 10, 15])
+        self.set_y_ticks(fig, [0, 5, 10, 15])
+        self.set_x_ticks(fig, [1, 2])
         fig.xaxis.formatter = FuncTickFormatter(code="""
             var labels = {};
             return labels[tick];
@@ -200,8 +194,7 @@ class Graph:
         fig.diamond(x=len(y_A)*[1], y=y_A, size=15, fill_color=None, line_color=A_color, line_alpha=0.5)
         fig.circle (x=len(y_B)*[2], y=y_B, size=10, fill_color=None, line_color=B_color, line_alpha=0.501)
 
-        self.save_fig(fig, title)
-        bpl.show(fig)
+        self.save_and_show(fig, title)
 
 
     def regression_2D(self, data_5B, title='Figure 5B', size=SIZE):
@@ -209,9 +202,8 @@ class Graph:
         x = np.linspace(0, 20, N)
         y = np.linspace(0, 20, N)
         xx, yy = np.meshgrid(x, y)
-        fig = bpl.figure(x_range=(0, 20), y_range=(0, 20), tools=TOOLS,
+        fig = ubkh.figure(x_range=(0, 20), y_range=(0, 20), tools=TOOLS,
                          plot_width=int(1.14*size), plot_height=size, title=title)
-        utils_bokeh.tweak_fig(fig)
 
         jet = ["#%02x%02x%02x" % (int(r), int(g), int(b))
                for r, g, b, _ in 228*mpl.cm.jet(mpl.colors.Normalize()(np.arange(0, 1, 0.01)))]
@@ -222,25 +214,20 @@ class Graph:
                              label_standoff=12, border_line_color=None, location=(0,0))
         fig.add_layout(color_bar, 'right')
 
-        self.save_fig(fig, title)
-        bpl.show(fig)
-
-    def regression_3D(self, data, show=True, **kwargs):
-        return graphs3d.regression_3D(data, show=show, model_desc=self.model_desc, **kwargs)
+        self.save_and_show(fig, title)
 
 
-    def means_previous_choice(self, means, title, y_range=(0, 40), y_ticks=None,
-                              size=SIZE):
+    def means_previous_choice(self, means, title, size=SIZE,
+                              x_range=None, y_range=(0, 40), x_ticks=None, y_ticks=None):
         """Graphs for 'previous choice' figures.
 
         Used in Figures 7C and 7E.
         """
-        fig = bpl.figure(title=title, plot_width=size, plot_height=size,
-                         tools=TOOLS, x_range=self.x_range, y_range=y_range)
-        utils_bokeh.tweak_fig(fig)
-        self.fix_x_ticks(fig)
-        if y_ticks is not None:
-            fig.yaxis[0].ticker = FixedTicker(ticks=y_ticks)
+        x_range = self.x_range if x_range is None else x_range
+        fig = ubkh.figure(title=title, plot_width=size, plot_height=size,
+                         tools=TOOLS, x_range=x_range, y_range=y_range)
+        self.set_x_ticks(fig, x_ticks)
+        self.set_y_ticks(fig, y_ticks)
         fig.line(x=(0, 0), y=y_range, color="black", line_dash='dashed')
 
         colors = ["#%02x%02x%02x" % (int(r), int(g), int(b)) for r, g, b in
@@ -249,8 +236,8 @@ class Graph:
         fig.multi_line([self.x_axis, self.x_axis, self.x_axis, self.x_axis], means,
                        color=colors, line_width=3)
 
-        self.save_fig(fig, title)
-        bpl.show(fig)
+        self.save_and_show(fig, title)
+
 
     _fig9_colors_A1_rgb = ((253,  26,  32), (253, 100,  35), (254, 192,  44), (223, 255,  49),
                            (131, 254,  43), ( 46, 254,  40), ( 31, 254,  75), ( 32, 254, 161),
@@ -283,9 +270,8 @@ class Graph:
                     self._fig9_colors_A3[(x_A, x_B)] = colors_hex_A3[int(x_A + x_B - 1)]
 
     def fig9_offers(self, offers, title, color_rotation=0, size=SIZE):
-        fig = bpl.figure(title=title, plot_width=size, plot_height=size,
+        fig = ubkh.figure(title=title, plot_width=size, plot_height=size,
                          tools=TOOLS, x_range=[-0.5, 15.5], y_range=[-0.5, 15.5])
-        utils_bokeh.tweak_fig(fig)
         self._prepare_fig9_color()
 
         xs, ys, colors = [], [], []
@@ -302,13 +288,12 @@ class Graph:
         fig.circle(x=xs, y=ys,  size=10, line_color=colors, fill_color=None,
                    line_width=2)
 
-        self.save_fig(fig, title)
-        bpl.show(fig)
+        self.save_and_show(fig, title)
+
 
     def fig9_activity(self, analysis, offers, title, color_rotation=0, size=SIZE, xy_max=40):
-        fig = bpl.figure(title=title, plot_width=size, plot_height=size,
+        fig = ubkh.figure(title=title, plot_width=size, plot_height=size,
                          tools=TOOLS, x_range=[0, xy_max], y_range=[0, xy_max])
-        utils_bokeh.tweak_fig(fig)
         self._prepare_fig9_color()
 
         results = analysis.fig9_average_activity(offers)
@@ -324,5 +309,4 @@ class Graph:
                 colors.append(color)
         fig.cross(xs, ys, size=10, color=colors)
 
-        self.save_fig(fig, title)
-        bpl.show(fig)
+        self.save_and_show(fig, title)

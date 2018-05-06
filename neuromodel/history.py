@@ -95,5 +95,4 @@ class History:
         self.trials_choice[offer_choice].append(trial_history.export(keys=self.keys))
 
     def clear(self):
-        print('Bla')
         self.trials, self.trials_choice = None, None

@@ -1,3 +1,5 @@
+"""3D graphs using matplotlib"""
+
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
 from matplotlib import cm
@@ -9,6 +11,7 @@ import numpy as np
 
 A_color = '#bd5151' # 189, 81, 81  fig4: '#c5392b'
 B_color = '#575aa3' #  87, 90,163  fig4: '#2e3abf'
+
 
 def _prepare_plot(x_label='offer A', y_label='offer B', z_label=None, title='', z_ticks=None):
 

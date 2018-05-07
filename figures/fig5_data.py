@@ -18,8 +18,8 @@ def compute_fig5_data(model_class=Model, δ_J_stim=(1, 1),
     filename='data/fig5_{}[{}]{}.pickle'.format(desc, n, model.desc)
     run_model(model, offers, history_keys=(), filename=filename)
 
-if __name__ == '__main__':
 
+if __name__ == '__main__':
     def aux(args):
         compute_fig5_data(model_class=args['model_class'],
                           δ_J_stim=args['δ_J_stim'], δ_J_nmda=args['δ_J_nmda'],

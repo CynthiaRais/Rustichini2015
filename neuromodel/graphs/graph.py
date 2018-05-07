@@ -49,7 +49,7 @@ class Graph:
         if ticks is not None: # no default value
             fig.yaxis[0].ticker = FixedTicker(ticks=ticks)
 
-    def save_and_show(self, fig, title, ext='png'):
+    def save_and_show(self, fig, title, ext='pdf'):
         full_title = '{}{}'.format(title, self.model_desc)
         ubkh.save_fig(fig, full_title, ext=ext, verbose=not self.show)
         if self.show:

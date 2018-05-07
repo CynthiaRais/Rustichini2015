@@ -7,3 +7,5 @@ matplotlib
 selenium
 pathos
 jupyter
+pillow
+pypdf2

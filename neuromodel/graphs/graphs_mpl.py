@@ -15,7 +15,7 @@ B_color = '#575aa3' #  87, 90,163  fig4: '#2e3abf'
 
 def _prepare_plot(x_label='offer A', y_label='offer B', z_label=None, title='', z_ticks=None):
 
-    fig = plt.figure(figsize=(10, 10))
+    fig = plt.figure(figsize=(9, 10))
     ax = fig.gca(projection='3d')
     ax.set_xlim([0, 20])
     ax.set_ylim([0, 20])
@@ -89,7 +89,9 @@ def tuningcurve(XYZC, show=True, model_desc='', **kwargs):
     surf = ax.scatter(XB, YB, ZB, marker='o', edgecolor=B_color, linewidths=2,
                       facecolor=(0,0,0,0), s=140)
 
-    plt.savefig('figures/{}{}.pdf'.format(kwargs['title'], model_desc))
+    filepath = 'pdfs/{}{}.pdf'.format(kwargs['title'].replace(' ', '_'), model_desc)
+    print('saving {}'.format(filepath))
+    plt.savefig(filepath)
 
     if show:
         plt.show()
@@ -105,6 +107,6 @@ def regression_3D(data, show=True, model_desc='', **kwargs):
     ax.plot_surface(X_reg, Y_reg, Z_reg, cmap=cm.jet, linewidth=0, antialiased=True)
     ax.scatter(X, Y, Z, marker='.', edgecolor='grey',  facecolor=(0,0,0,0), s=20)
 
-    plt.savefig('figures/{}{}.pdf'.format(kwargs['title'], model_desc))
+    plt.savefig('pdfs/{}{}.pdf'.format(kwargs['title'].replace(' ', '_'), model_desc))
     if show:
         plt.show()

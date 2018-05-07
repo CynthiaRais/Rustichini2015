@@ -1,0 +1,174 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Figures Comparator</title>
+</head>
+
+<body>
+
+<div class="slider">
+<input type="range" min="0" max="1" value="0" step="0.01" class="slider" id="comparison-slider">
+  <output for="comparison-slider" id="slider-value"></output>
+</div>
+
+<div>
+<table width="900" border="0">
+  <tbody>
+    <tr>
+      <td>
+    		<figure>
+          <figcaption class="figtitle">Figure 4A</figcaption>
+          <div class="fig_unit">
+            <img class="figure" src="originals/Figure_4A.png"/>
+            <div class="overlay">
+              <img class="figure" src="overlays/Figure_4A.png"/>
+            </div>
+          </div>
+    		</figure>
+  	  </td>
+      <td>
+        <figure>
+          <figcaption class="figtitle">Figure 4C</figcaption>
+          <div class="fig_unit">
+            <img class="figure" src="originals/Figure_4C.png"/>
+            <div class="overlay">
+              <img class="figure" src="overlays/Figure_4C.png"/>
+            </div>
+          </div>
+    		</figure>
+  	  </td>
+      <td>
+        <figure>
+          <figcaption class="figtitle">Figure 4D</figcaption>
+          <div class="fig_unit">
+            <img class="figure" src="originals/Figure_4D.png"/>
+            <div class="overlay">
+              <img class="figure" src="overlays/Figure_4D.png"/>
+            </div>
+          </div>
+    		</figure>
+  	  </td>
+    </tr>
+    <tr>
+      <td>
+        <figure>
+          <figcaption class="figtitle">Figure 4E</figcaption>
+          <div class="fig_unit">
+            <img class="figure" src="originals/Figure_4E.png"/>
+            <div class="overlay">
+              <img class="figure" src="overlays/Figure_4E.png"/>
+            </div>
+          </div>
+    		</figure>
+  	  </td>
+      <td>
+        <figure>
+          <figcaption class="figtitle">Figure 4G</figcaption>
+          <div class="fig_unit">
+            <img class="figure" src="originals/Figure_4G.png"/>
+            <div class="overlay">
+              <img class="figure" src="overlays/Figure_4G.png"/>
+            </div>
+          </div>
+    		</figure>
+  	  </td>
+      <td>
+        <figure>
+          <figcaption class="figtitle">Figure 4H</figcaption>
+          <div class="fig_unit">
+            <img class="figure" src="originals/Figure_4H.png"/>
+            <div class="overlay">
+              <img class="figure" src="overlays/Figure_4H.png"/>
+            </div>
+          </div>
+    		</figure>
+  	  </td>
+    </tr>
+    <tr>
+      <td>
+        <figure>
+          <figcaption class="figtitle">Figure 4I</figcaption>
+          <div class="fig_unit">
+            <img class="figure" src="originals/Figure_4I.png"/>
+            <div class="overlay">
+              <img class="figure" src="overlays/Figure_4I.png"/>
+            </div>
+          </div>
+        </figure>
+      </td>
+      <td>
+        <figure>
+          <figcaption class="figtitle">Figure 4K</figcaption>
+          <div class="fig_unit">
+            <img class="figure" src="originals/Figure_4K.png"/>
+            <div class="overlay">
+              <img class="figure" src="overlays/Figure_4K.png"/>
+            </div>
+          </div>
+        </figure>
+      </td>
+      <td>
+        <figure>
+          <figcaption class="figtitle">Figure 4L</figcaption>
+          <div class="fig_unit">
+            <img class="figure" src="originals/Figure_4L.png"/>
+            <div class="overlay">
+              <img class="figure" src="overlays/Figure_4L.png"/>
+            </div>
+          </div>
+        </figure>
+      </td>
+    </tr>
+  </tbody>
+</table>
+</div>
+</body>
+
+<style>
+.fig_unit{
+  position:relative;
+  width:500px;
+  height:500px;
+}
+.overlay{
+    position:absolute;
+    top:0px;
+    left:0px;
+}
+.figure{
+  width:500px;
+  height:500px;
+}
+
+
+/** Slider CSS **/
+.slider {
+    width: 50%;
+    /* text-align: center; */
+}
+
+/* .slider {
+    width: 80%;
+    text-align: center;
+} */
+
+.figtitle {
+  text-align: center;
+  padding: 10px 10px 10px 10px;
+}
+
+</style>
+
+
+<script src='jquery.min.js'></script>
+<script>
+$('#comparison-slider').on("change mousemove", function() {
+  $('#slider-value').html($(this).val());
+  $('.overlay img').css({
+    'opacity': $(this).val()
+  });
+});
+</script>
+
+</html>

@@ -53,9 +53,10 @@ def transparent_background(fig):
 
 def save_fig(fig, title, ext='png', verbose=True):
     """Save files as png or pdf"""
-    filename = 'figures/{}'.format(title, ext)
-    if not os.path.exists('figures'):
-        os.mkdir('figures')
+    title = title.replace(' ', '_')
+    filename = '{}s/{}'.format(ext, title, ext)
+    if not os.path.exists(ext + 's'):
+        os.mkdir(ext + 's')
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         if ext == 'png':
@@ -65,6 +66,7 @@ def save_fig(fig, title, ext='png', verbose=True):
             export_svgs(fig, filename=filename+'.svg')
             if ext == 'pdf':
                 svg2pdf(filename+'.svg')
+                os.remove(filename+'.svg')
     if verbose:
         print('saving {}.{}'.format(filename, ext))
 

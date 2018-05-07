@@ -1,8 +1,10 @@
 .DS_Store
 
-notebooks/figures/
-notebooks/html/
-notebooks/data
+figures/pngs
+figures/svgs
+figures/pdfs
+figures/html
+figures/data
 
 # Byte-compiled / optimized / DLL files
 .pytest_cache/

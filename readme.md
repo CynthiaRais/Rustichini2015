@@ -1,19 +1,23 @@
 # Rustichini2015
-Reproduction of "a neuro-computational model of economic decisions"
+Reproduction of "A neuro-computational model of economic decisions"
 
 
 ## Install
 
-Requires Python 3.3 or higher.
+Requires Python 3.5 or higher. Tested on Linux and macOS.
 ```
 pip install -r requirements.txt
 ```
 
-You also need to install PhantomJS:
+To produce and manipulate figures, you will also need to install PhantomJS:
 ```
 npm install -g phantomjs
 ```
-
+And Inkscape and imagemagick. In macOS, with [Homebrew](https://brew.sh/):
+```
+brew cast install inkscape
+brew install imagemagick
+```
 
 ## Generating graphs
 

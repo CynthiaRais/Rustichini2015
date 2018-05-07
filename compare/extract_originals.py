@@ -65,6 +65,7 @@ class PDF:
 
 if __name__ == '__main__':
     pdf = PDF('Rustichini2015.pdf')
+
     pdf.extract_image(7,  75,  82, 128, 128, 'originals/Figure_4A')
     pdf.extract_image(7, 320,  82, 128, 128, 'originals/Figure_4C', (900, 0, 100, 1000))
     pdf.extract_image(7, 432,  82, 128, 128, 'originals/Figure_4D')
@@ -75,6 +76,21 @@ if __name__ == '__main__':
     pdf.extract_image(7, 320, 360, 128, 128, 'originals/Figure_4K', (900, 0, 100, 1000))
     pdf.extract_image(7, 432, 360, 128, 128, 'originals/Figure_4L')
 
-    pdf.close()
+    pdf.extract_image(8, 410,  69, 168, 168, 'originals/Figure_5B')
+    pdf.extract_image(8, 410, 245, 168, 168, 'originals/Figure_5C')
+    pdf.extract_image(8, 235, 245, 168, 168, 'originals/Figure_5D')
 
-    subprocess.run(['convert', '-size', '100x60', 'xc:skyblue', '-fill', 'white', '-stroke', 'black', '-draw', "rectangle 20,10 80,50", 'draw_rect.gif'])
+    pdf.extract_image(9,  69,  87, 128, 128, 'originals/Figure_6A')
+    pdf.extract_image(9, 198,  87, 128, 128, 'originals/Figure_6B')
+    pdf.extract_image(9, 325,  87, 128, 128, 'originals/Figure_6C')
+    pdf.extract_image(9, 445,  87, 128, 128, 'originals/Figure_6D')
+    pdf.extract_image(9,  69, 217, 128, 128, 'originals/Figure_6E')
+    pdf.extract_image(9, 198, 217, 128, 128, 'originals/Figure_6F')
+    pdf.extract_image(9, 325, 217, 128, 128, 'originals/Figure_6G')
+    pdf.extract_image(9, 445, 217, 128, 128, 'originals/Figure_6H')
+    pdf.extract_image(9,  69, 347, 128, 128, 'originals/Figure_6I')
+    pdf.extract_image(9, 198, 347, 128, 128, 'originals/Figure_6J')
+    pdf.extract_image(9, 325, 347, 128, 128, 'originals/Figure_6K')
+    pdf.extract_image(9, 445, 347, 128, 128, 'originals/Figure_6L')
+
+    pdf.close()

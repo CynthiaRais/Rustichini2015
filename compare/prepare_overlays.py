@@ -12,7 +12,7 @@ def _process_overlay(name, x, y, w, h, pdfpath, color='red'):
 
     png_name = 'overlays/{}.png'.format(name)
     cmds = [['convert', '-density', '300', filepath, png_name],
-            ['convert', '-channel', 'RGB', png_name, '+level-colors', '{},'.format(color), png_name],
+            # ['convert', '-channel', 'RGB', png_name, '+level-colors', '{},'.format(color), png_name],
             ['convert', '-size', '1000x1000', 'xc:transparent', 'overlays/background.png'],
             ['composite', '-geometry', '{}x{}!+{}+{}'.format(w, h, x, y),
              png_name, 'overlays/background.png', png_name]]
@@ -33,3 +33,7 @@ if __name__ == '__main__':
     process_overlay('Figure_4I', 149,  69, 785, 798, pdfpath)
     process_overlay('Figure_4K',  88,  66, 789, 870, pdfpath)
     process_overlay('Figure_4L',  72,  70, 769, 799, pdfpath)
+
+    process_overlay('Figure_5B',  89,   7,1019, 890, pdfpath)
+    process_overlay('Figure_5C',  90,  16,1017, 891, pdfpath)
+    process_overlay('Figure_5D', 106,  15,1016, 892, pdfpath)

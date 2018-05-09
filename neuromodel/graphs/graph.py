@@ -35,6 +35,9 @@ class Graph:
         if show is None: # True only if in a notebook
             self.show = ubkh.JUPYTER
 
+        self.ΔA = analysis.ΔA
+        self.ΔB = analysis.ΔB
+
         self.x_axis = 1000 * np.arange(-0.5, 1.0, analysis.model.dt)
         self.x_range = np.min(self.x_axis), np.ceil(np.max(self.x_axis))
         self.model_desc = analysis.model.desc
@@ -57,12 +60,17 @@ class Graph:
 
         # matplotlib graphs
 
-    def tuning_curve(self, tuning_data, title):
-        graphs_mpl.tuningcurve(tuning_data, x_label='offer A', y_label='offer B', title=title,
-                             model_desc=self.model_desc, show=self.show)
+    def tuning_curve(self, tuning_data, title, **kwargs):
+        kwargs['show'] = kwargs.get('show', self.show)
+        return graphs_mpl.tuningcurve(tuning_data, title=title,
+                   x_label='offer A', y_label='offer B',
+                   model_desc=self.model_desc, ΔA=self.ΔA, ΔB=self.ΔB, **kwargs)
 
     def regression_3D(self, data, **kwargs):
-        return graphs_mpl.regression_3D(data, show=self.show, model_desc=self.model_desc, **kwargs)
+
+        kwargs['show'] = kwargs.get('show', self.show)
+        return graphs_mpl.regression_3D(data, model_desc=self.model_desc,
+                                        ΔA=self.ΔA, ΔB=self.ΔB, **kwargs)
 
         # bokeh graphs
 

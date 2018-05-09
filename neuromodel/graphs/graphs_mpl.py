@@ -13,12 +13,13 @@ A_color = '#bd5151' # 189, 81, 81  fig4: '#c5392b'
 B_color = '#575aa3' #  87, 90,163  fig4: '#2e3abf'
 
 
-def _prepare_plot(x_label='offer A', y_label='offer B', z_label=None, title='', z_ticks=None):
+def _prepare_plot(x_label='offer A', y_label='offer B', title='',
+                  z_label=None, z_ticks=None, ΔA=(0, 20), ΔB=(0, 20)):
 
     fig = plt.figure(figsize=(9, 10))
     ax = fig.gca(projection='3d')
-    ax.set_xlim([0, 20])
-    ax.set_ylim([0, 20])
+    ax.set_xlim(ΔA)
+    ax.set_ylim(ΔB)
     ax.set_autoscaley_on(False)
     ax.invert_xaxis()
 
@@ -40,10 +41,13 @@ def _prepare_plot(x_label='offer A', y_label='offer B', z_label=None, title='', 
         plt.setp(item, fontsize=7)
 
     # Ticks
-    xy_ticks = [0, 10, 20]
-    for axis in [ax.xaxis, ax.yaxis]:
-        axis.set_major_locator(ticker.FixedLocator(xy_ticks))
-        axis.set_major_formatter(ticker.FixedFormatter(['{:d}'.format(tick) for tick in xy_ticks]))
+    x_ticks = [5*i for i in range(int(ΔA[1]/5)+1)]
+    ax.xaxis.set_major_locator(ticker.FixedLocator(x_ticks))
+    ax.xaxis.set_major_formatter(ticker.FixedFormatter(['{:d}'.format(tick) for tick in x_ticks]))
+
+    y_ticks = [5*i for i in range(int(ΔB[1]/5)+1)]
+    ax.yaxis.set_major_locator(ticker.FixedLocator(y_ticks))
+    ax.yaxis.set_major_formatter(ticker.FixedFormatter(['{:d}'.format(tick) for tick in y_ticks]))
 
     if z_ticks is not None:
         ax.zaxis.set_major_locator(ticker.FixedLocator(z_ticks))
@@ -61,14 +65,17 @@ def _prepare_plot(x_label='offer A', y_label='offer B', z_label=None, title='', 
     return fig, ax
 
 
-def tuningcurve(XYZC, show=True, model_desc='', **kwargs):
+def tuningcurve(XYZC, show=True, model_desc='', fig=None, **kwargs):
     """
     Tuning curve plotting code for Fig. 4.[B, F, J], Fig. 6.[B, F, J], Fig. 10.[C, I].
 
     :param XYZC:  list of (x, y, z, choice) values, with choice either 'A' or 'B'.
     """
 
-    fig, ax = _prepare_plot(**kwargs)
+    if fig is None:
+        fig, ax = _prepare_plot(**kwargs)
+    else:
+        ax = fig.gca(projection='3d')
 
     XA, YA, ZA = [], [], []
     XB, YB, ZB = [], [], []
@@ -96,17 +103,26 @@ def tuningcurve(XYZC, show=True, model_desc='', **kwargs):
     if show:
         plt.show()
 
+    return fig
 
 
-def regression_3D(data, show=True, model_desc='', **kwargs):
+def regression_3D(data, show=True, model_desc='', point_color='grey',
+                  fig=None, azim=-35, elev=5, marker='o', **kwargs):
     X , Y, Z, X_reg, Y_reg, Z_reg = data
-    fig, ax = _prepare_plot(**kwargs)
-    ax.view_init(azim=-35, elev=31)
+
+    if fig is None:
+        fig, ax = _prepare_plot(z_ticks=[0, 25, 50, 75, 100], **kwargs)
+        ax.view_init(azim=azim, elev=elev)
+    else:
+        ax = fig.axes[0] #fig.gca(projection='3d')
+
     ax.set_zlim(0.0, 100.0)
 
-    ax.plot_surface(X_reg, Y_reg, Z_reg, cmap=cm.jet, linewidth=0, antialiased=True)
-    ax.scatter(X, Y, Z, marker='.', edgecolor='grey',  facecolor=(0,0,0,0), s=20)
+    ax.plot_surface(X_reg, Y_reg, Z_reg, cmap=cm.jet, alpha=0.5, linewidth=0, antialiased=True)
+    ax.scatter(X, Y, Z, marker=marker, edgecolor=point_color, facecolor=point_color, s=20)
 
     plt.savefig('pdfs/{}{}.pdf'.format(kwargs['title'].replace(' ', '_'), model_desc))
     if show:
         plt.show()
+
+    return fig

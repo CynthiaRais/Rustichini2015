@@ -20,5 +20,5 @@ def compute_fig4_data(model_class=Model):
 
 
 if __name__ == '__main__':
-    compute_fig4_data(model_class=ReplicatedModel)
     compute_fig4_data(model_class=Model)
+    compute_fig4_data(model_class=ReplicatedModel)

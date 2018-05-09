@@ -17,6 +17,7 @@ import neuromodel.graphs
 
 # In[ ]:
 
+smooth = 'mean'
 
 # # model_class=Model              # use the corrected model that matches the article's description
 # model_class=ReplicatedModel  # use a model that can replicate published figures
@@ -41,7 +42,8 @@ for model_class in [Model, ReplicatedModel]:
         model = model_class(n=n, ΔA=ΔA, ΔB=ΔB, random_seed=1)
 
         filename = 'data/fig4[{}]{}.pickle'.format(n, model.desc)
-        return run_model(model, offers, history_keys=('r_ovb', 'r_2', 'r_I'), filename=filename)
+        return run_model(model, offers, history_keys=('r_ovb', 'r_2', 'r_I'),
+                         smooth=smooth, filename=filename)
 
 
     # In[ ]:

@@ -25,18 +25,19 @@ if __name__ == '__main__':
                           δ_J_stim=args['δ_J_stim'], δ_J_nmda=args['δ_J_nmda'],
                           δ_J_gaba=args['δ_J_gaba'], desc=args['desc'])
 
-    runs=[{'model_class': ReplicatedModel, 'desc': 'AMPA',
+    runs=[{'model_class':           Model, 'desc': 'AMPA',
+           'δ_J_stim': (2, 1), 'δ_J_nmda': (1, 1),    'δ_J_gaba': (1, 1, 1)},
+          {'model_class':           Model, 'desc': 'NMDA',
+           'δ_J_stim': (1, 1), 'δ_J_nmda': (1.05, 1), 'δ_J_gaba': (1, 1, 1)},
+          {'model_class':           Model, 'desc': 'GABA',
+           'δ_J_stim': (1, 1), 'δ_J_nmda': (1, 1),    'δ_J_gaba': (1, 1.02, 1)}
+          {'model_class': ReplicatedModel, 'desc': 'AMPA',
            'δ_J_stim': (2, 1), 'δ_J_nmda': (1, 1),    'δ_J_gaba': (1, 1, 1)},
           {'model_class': ReplicatedModel, 'desc': 'NMDA',
            'δ_J_stim': (1, 1), 'δ_J_nmda': (1.05, 1), 'δ_J_gaba': (1, 1, 1)},
           {'model_class': ReplicatedModel, 'desc': 'GABA',
            'δ_J_stim': (1, 1), 'δ_J_nmda': (1, 1),    'δ_J_gaba': (1, 1.02, 1)},
-          {'model_class':           Model, 'desc': 'AMPA',
-           'δ_J_stim': (2, 1), 'δ_J_nmda': (1, 1),    'δ_J_gaba': (1, 1, 1)},
-          {'model_class':           Model, 'desc': 'NMDA',
-           'δ_J_stim': (1, 1), 'δ_J_nmda': (1.05, 1), 'δ_J_gaba': (1, 1, 1)},
-          {'model_class':           Model, 'desc': 'GABA',
-           'δ_J_stim': (1, 1), 'δ_J_nmda': (1, 1),    'δ_J_gaba': (1, 1.02, 1)}]
+          ]
 
     pool = pathos.multiprocessing.Pool()
     pool.map(aux, runs)

@@ -19,10 +19,7 @@ if __name__ == '__main__':
     def aux(args):
         compute_fig7_data(hysteresis=args['hysteresis'], model_class=args['model_class'])
 
-    runs=[{'model_class': model, 'hysteresis': hysteresis} for hysteresis in [True, False]
+    runs=[{'model_class': model, 'hysteresis': hysteresis} for hysteresis in [True]
                                              for model in [Model, ReplicatedModel]]
     pool = pathos.multiprocessing.Pool()
     pool.map(aux, runs)
-
-    # pool = pathos.multiprocessing.Pool()
-    # pool.map(compute_fig7_data, [Model, ReplicatedModel])

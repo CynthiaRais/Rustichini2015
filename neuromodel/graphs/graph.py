@@ -165,7 +165,7 @@ class Graph:
                             colors=[grey_low, grey_high], line_width=4,
                             size=SIZE, legends=None):
         fig = ubkh.figure(title=title, plot_width=size, plot_height=size,
-                         tools=TOOLS, x_range=self.x_range, y_range=y_range)
+                          tools=TOOLS, x_range=self.x_range, y_range=y_range)
         self.set_x_ticks(fig)
         self.set_y_ticks(fig, y_ticks)
         fig.line(x=(0, 0), y=y_range, color="black", line_dash='dashed')
@@ -179,9 +179,6 @@ class Graph:
 
         fig.legend.location = 'top_left'
 
-        # fig.multi_line([self.x_axis, self.x_axis], mean_chosen_choice,
-        #                color=colors, line_width=line_width, line_cap='round', legend=legends)
-        #
         self.save_and_show(fig, title)
 
 
@@ -241,8 +238,10 @@ class Graph:
         colors = ["#%02x%02x%02x" % (int(r), int(g), int(b)) for r, g, b in
                   [(167, 39, 46), (48, 64, 143), (219, 144, 146), (139, 140, 192)]]
 
-        fig.multi_line([self.x_axis, self.x_axis, self.x_axis, self.x_axis], means,
-                       color=colors, line_width=3)
+        for i, mean_y in enumerate(means):
+            fig.line(self.x_axis, mean_y[:-1], color=colors[i], line_width=3)
+        # fig.multi_line([self.x_axis, self.x_axis, self.x_axis, self.x_axis], means,
+        #                color=colors, line_width=3)
 
         self.save_and_show(fig, title)
 

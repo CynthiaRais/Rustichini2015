@@ -66,7 +66,7 @@ def save_fig(fig, title, ext='png', verbose=True):
             export_svgs(fig, filename=filename+'.svg')
             if ext == 'pdf':
                 svg2pdf(filename+'.svg')
-                os.remove(filename+'.svg')
+                #os.remove(filename+'.svg')
     if verbose:
         print('saving {}.{}'.format(filename, ext))
 

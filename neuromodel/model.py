@@ -54,7 +54,7 @@ class Model:
                         d       = 0.100,
 
                         # Parameters of the experience
-                        t_exp = 2.0,              # s
+                        t_exp = 3.0,              # s
                         dt    = 0.0005,           # s
                         n     = 4000,             # number of trials
                         ΔA    = (0, 20),          # min/max quantity of juice A

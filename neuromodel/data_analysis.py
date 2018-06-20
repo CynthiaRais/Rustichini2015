@@ -260,8 +260,8 @@ class DataAnalysis:
             A_means['easy'].append(np.mean(firing_rates['easy'], axis=0))
             A_means['split'].append(np.mean(firing_rates['split'], axis=0))
 
-        return (self.mean_window(np.mean(A_means['easy'], axis=0), size=201),
-                self.mean_window(np.mean(A_means['split'], axis=0), size=201))
+        return (self.mean_window(np.mean(A_means['easy'], axis=0), window=0.2),
+                self.mean_window(np.mean(A_means['split'], axis=0), window=0.2))
 
     def choice_hysteresis(self, key='r_2', time_window=(-0.5, 1.0)):
         self.previous = {'split': {'A': [], 'B': []}, 'easy': {'A': [], 'B': []}}

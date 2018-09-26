@@ -17,6 +17,7 @@ def compute_fig9_data(model_class, w_p=1.75, ΔJ=30):
     filename = 'data/fig9_{}_{}[{}]{}.pickle'.format(w_p, ΔJ, n, model.desc)
     return run_model(model, offers, history_keys=('r_1', 'r_2'), filename=filename, preprocess=False)
 
+
 if __name__ == '__main__':
         def aux(args):
             compute_fig9_data(**args)
@@ -28,5 +29,6 @@ if __name__ == '__main__':
         for args in runs:
             aux(args)
 
+        # we don't use multiprocessing because of high memory requirements.
         # pool = pathos.multiprocessing.Pool()
         # pool.map(aux, runs)

@@ -1,14 +1,21 @@
+import os
+import shutil
+import warnings
+import subprocess
+
 from bokeh import io
 from bokeh import plotting
-from bokeh.models import FixedTicker, AdaptiveTicker, FuncTickFormatter, LabelSet, ColumnDataSource
 from bokeh.layouts import row, column, gridplot
+from bokeh.io import export_png, export_svgs
 
-COLOR_A = '#fa6900'
-COLOR_B = '#69d2e7'
 
-COLORS_AB       = [COLOR_A, COLOR_B]
+try:
+    get_ipython() # checking if (it seems) we are in a notebook
+    plotting.output_notebook(hide_banner=True)
+    JUPYTER = True
+except NameError:
+    JUPYTER = False
 
-plotting.output_notebook(hide_banner=True)
 
 def tweak_fig(fig):
     tight_layout(fig)
@@ -31,20 +38,56 @@ def disable_grid(fig):
     fig.xgrid.grid_line_color = None
     fig.ygrid.grid_line_color = None
 
-
 def figure(*args, **kwargs):
     fig = plotting.figure(*args, **kwargs)
     tweak_fig(fig)
+    transparent_background(fig)
     return fig
 
+def transparent_background(fig):
+    fig.background_fill_color = None
+    fig.border_fill_color     = None
 
-    ## Removing returns
 
-def show(*args, **kwargs):
-    return plotting.show(*args, **kwargs)
+# saving figure
 
-def interact(*args, **kwargs):
-    ipywidgets.widgets.interact(*args, **kwargs)
+def save_fig(fig, title, ext='png', verbose=True):
+    """Save files as png or pdf"""
+    title = title.replace(' ', '_')
+    filename = '{}s/{}'.format(ext, title, ext)
+    if not os.path.exists(ext + 's'):
+        os.mkdir(ext + 's')
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        if ext == 'png':
+            export_png(fig, filename=filename+'.png')
+        else: # svg or pdf
+            fig.output_backend = 'svg'
+            export_svgs(fig, filename=filename+'.svg')
+            if ext == 'pdf':
+                svg2pdf(filename+'.svg')
+                #os.remove(filename+'.svg')
+    if verbose:
+        print('saving {}.{}'.format(filename, ext))
 
-def select(name, options):
-    return SelectionSlider(description=name,  options=list(options))
+def svg2pdf(filename):
+    """Convert a svg into a pdf.
+
+    Use inkscape if available, else relies on `svglib`
+    :param filename:  the path to the svg file, i.e. `path/to/file.svg`
+    """
+    abs_filename = os.path.abspath(os.path.expanduser(filename))
+    pdf_filename = os.path.splitext(abs_filename)[0] + '.pdf'
+
+    if shutil.which('inkscape') is not None:
+        cmd = 'inkscape "{}" --export-pdf="{}"'.format(abs_filename, pdf_filename)
+        subprocess.call(cmd, shell=True)
+    else:
+        try:
+            import svglib
+            import reportlab
+            rlg_file = svglib.svglib.svg2rlg(abs_filename)
+            reportlab.graphics.renderPDF.drawToFile(rlg_file, pdf_filename)
+        except ImportError as e:
+            print('Inkscape was not detected. Please install it, or svglib '
+                  'using `pip install svglib reportlab`')

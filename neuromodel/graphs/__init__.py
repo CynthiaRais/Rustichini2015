@@ -1,5 +1,4 @@
-from .graphs2d import line, lines
-from .utils_bokeh import tweak_fig
+#from .graphs2d import line, lines
 from .graph import Graph
 
 from .graph import blue_pale, blue_dark

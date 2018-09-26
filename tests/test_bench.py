@@ -1,7 +1,7 @@
 import dotdot
 from neuromodel import Model, History, DataAnalysis, Offers
 
-ΔA, ΔB, n = (0, 20), (0, 20), 100
+ΔA, ΔB, n = (0, 20), (0, 20), 500
 offers = Offers(ΔA=ΔA, ΔB=ΔB, n=n)
 
 w_p = 1.55
@@ -16,12 +16,12 @@ def run_model(model, offers, data_keys=('r_1', 'r_2', 'r_3', 'r_I', 'r_ova', 'r_
     """
     model.history = History(model, keys=data_keys)
 
-    for i, (x_A, x_B) in enumerate(offers.offers):
+    for i, (x_A, x_B) in enumerate(offers.offers[:25]):
         model.one_trial(x_a=x_A, x_b=x_B)
 
     analysis = DataAnalysis(model)
 
     return analysis
 
-
-run_model(model, offers, data_keys=('r_2', 'r_I'))
+if __name__ == '__main__':
+    run_model(model, offers, data_keys=('r_2', 'r_I'))

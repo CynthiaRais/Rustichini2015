@@ -5,13 +5,15 @@ import scipy.optimize
 
 class DataAnalysis:
 
-    def __init__(self, model, preprocess=True):
+    def __init__(self, model, preprocess=True, smooth='mean'):
 
         self.model = model
 
         self.ΔA = self.model.ΔA
         self.ΔB = self.model.ΔB
 
+        assert smooth in ('mean', 'savgol')
+        self.smooth = smooth
         if preprocess:
             self.preprocessing()
 
@@ -56,9 +58,17 @@ class DataAnalysis:
         for key in choices_A.keys():
             self.choices[key] = choices_A[key], choices_B[key]
 
+        self.trials_sequence = self.model.history.trials_sequence
 
-    def mean_window(self, y, size=201):
-        return scipy.signal.savgol_filter(y, size, 1)
+
+    def mean_window(self, y, window=0.050):
+        """Smooth out the data"""
+        n_window = int(window / self.model.dt)
+
+        if self.smooth == 'mean':
+            return [np.mean(y[i:min(i+n_window, len(y) + 1)]) for i in range(len(y))]
+        elif self.smooth == 'savgol':
+            return scipy.signal.savgol_filter(y, n_window, 1)
 
     def step_range(self, time_range):
         """Transform a time_range (in seconds) into a step_range.
@@ -250,8 +260,8 @@ class DataAnalysis:
             A_means['easy'].append(np.mean(firing_rates['easy'], axis=0))
             A_means['split'].append(np.mean(firing_rates['split'], axis=0))
 
-        return (self.mean_window(np.mean(A_means['easy'], axis=0), size=201),
-                self.mean_window(np.mean(A_means['split'], axis=0), size=201))
+        return (self.mean_window(np.mean(A_means['easy'], axis=0), window=0.2),
+                self.mean_window(np.mean(A_means['split'], axis=0), window=0.2))
 
     def choice_hysteresis(self, key='r_2', time_window=(-0.5, 1.0)):
         self.previous = {'split': {'A': [], 'B': []}, 'easy': {'A': [], 'B': []}}
@@ -267,8 +277,11 @@ class DataAnalysis:
                 self.mean_window(np.mean(self.previous['split']['A'], axis=0)),
                 self.mean_window(np.mean(self.previous['split']['B'], axis=0)))
 
-    def regression_hysteresis(self, type=None, ΔA=(0, 20), ΔB=(0, 20)):
+    def regression_hysteresis(self, type=None):
         # hysteresis
+        if type in ('A.', 'B.'):
+            return self.regression_hysteresis_AB(type=type)
+
         X_A, X_B, choice_B = {'easy': [], 'split': []}, {'easy': [], 'split': []}, {'easy': [], 'split': []}
         for (x_a, x_b), (n_a, n_b) in sorted(self.choices.items()):
             if x_a != 0 or x_b != 0:
@@ -286,8 +299,8 @@ class DataAnalysis:
                                                             choice_B['split'], bounds=((-20,) * 6, (20,) * 6))
 
         # computing the regressed model over all possible quantities by 0.5 increments.
-        X_A_reg = np.arange(ΔA[0], ΔA[1] + 0.5, 0.5)
-        X_B_reg = np.arange(ΔB[0], ΔB[1] + 0.5, 0.5)
+        X_A_reg = np.arange(self.model.ΔA[0], self.model.ΔA[1] + 0.5, 0.5)
+        X_B_reg = np.arange(self.model.ΔB[0], self.model.ΔB[1] + 0.5, 0.5)
         X_A_reg, X_B_reg = np.meshgrid(X_A_reg, X_B_reg)
         choice_B_reg_easy = 100 * self.approx_polynome((X_A_reg, X_B_reg), *a_opt_easy)
         choice_B_reg_split = 100 * self.approx_polynome((X_A_reg, X_B_reg), *a_opt_split)
@@ -296,7 +309,53 @@ class DataAnalysis:
         elif type == 'split':
             return X_A['split'], X_B['split'], 100 * np.array(choice_B['split']), X_A_reg, X_B_reg, choice_B_reg_split
         else:
-            return ValueError
+            raise ValueError
+
+    def regression_hysteresis_AB(self, type=None):
+        """Regression Hysteresis"""
+        # hysteresis
+        total_B = {}
+        for i, (x_a, x_b, choice) in enumerate(self.trials_sequence):
+            if i > 0:
+                total_B.setdefault((x_a, x_b), [[0, 0], [0, 0]])
+                if self.trials_sequence[i-1][2] == 'A': # previous choice was A.
+                    total_B[x_a, x_b][0][1] += 1
+                    if choice == 'B': # current choice was B
+                        total_B[x_a, x_b][0][0] += 1
+                else:
+                    total_B[x_a, x_b][1][1] += 1
+                    if choice == 'B':
+                        total_B[x_a, x_b][1][0] += 1
+
+
+        X_A, X_B, choice_B = {'A.': [], 'B.': []}, {'A.': [], 'B.': []}, {'A.': [], 'B.': []}
+
+        for (x_a, x_b), choices in total_B.items():
+            X_A['A.'].append(x_a)
+            X_B['A.'].append(x_b)
+            choice_B['A.'].append(choices[0][0]/max(1, choices[0][1]))
+            X_A['B.'].append(x_a)
+            X_B['B.'].append(x_b)
+            choice_B['B.'].append(choices[1][0]/max(1, choices[1][1]))
+
+        a_opt_A_, a_cov_A_ = scipy.optimize.curve_fit(self.approx_polynome, [X_A['A.'], X_B['A.']],
+                                                      choice_B['A.'], bounds=((-20,) * 6, (20,) * 6))
+        a_opt_B_, a_cov_B_ = scipy.optimize.curve_fit(self.approx_polynome, [X_A['B.'], X_B['B.']],
+                                                      choice_B['B.'], bounds=((-20,) * 6, (20,) * 6))
+
+        # computing the regressed model over all possible quantities by 0.5 increments.
+        X_A_reg = np.arange(self.model.ΔA[0], self.model.ΔA[1] + 0.5, 0.5)
+        X_B_reg = np.arange(self.model.ΔB[0], self.model.ΔB[1] + 0.5, 0.5)
+        X_A_reg, X_B_reg = np.meshgrid(X_A_reg, X_B_reg)
+        choice_B_reg_A_ = 100 * self.approx_polynome((X_A_reg, X_B_reg), *a_opt_A_)
+        choice_B_reg_B_ = 100 * self.approx_polynome((X_A_reg, X_B_reg), *a_opt_B_)
+        if type == 'A.':
+            return X_A['A.'], X_B['A.'], 100 * np.array(choice_B['A.']), X_A_reg, X_B_reg, choice_B_reg_A_
+        elif type == 'B.':
+            return X_A['B.'], X_B['B.'], 100 * np.array(choice_B['B.']), X_A_reg, X_B_reg, choice_B_reg_B_
+        else:
+            raise ValueError
+
 
     def fig9_average_activity(self, offers):
         """
